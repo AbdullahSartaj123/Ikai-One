@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: logiflow
+      POSTGRES_PASSWORD: logiflow
+      POSTGRES_DB: logiflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - logiflow-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U logiflow -d logiflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - logiflow-redis:/data
+volumes:
+  logiflow-postgres:
+  logiflow-redis:
