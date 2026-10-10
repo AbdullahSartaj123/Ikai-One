@@ -31,7 +31,7 @@ footer{border-top:1px solid var(--line);padding:25px 0;color:#85869a;font-size:1
 <header>
   <div class="wrap nav">
     <a class="brand" href="#" aria-label="Zaid Sherazy home"><span class="logo">ZS</span>Zaid Sherazy</a>
-    <nav class="links" aria-label="Main navigation"><a href="#services">Solutions</a><a href="#how-it-works">How it works</a><a href="#tracking">Track shipment</a><a href="#signup">For businesses</a></nav>
+    <nav class="links" aria-label="Main navigation"><a href="#bill-generator">Shipping bill</a><a href="#services">Solutions</a><a href="#how-it-works">How it works</a><a href="#tracking">Track shipment</a><a href="#signup">For businesses</a></nav>
     <div class="nav-actions"><a class="btn btn-outline" href="#signin">Sign in</a><a class="btn btn-primary" href="#signup">Sign up free ↗</a></div>
   </div>
 </header>
@@ -42,7 +42,7 @@ footer{border-top:1px solid var(--line);padding:25px 0;color:#85869a;font-size:1
         <div class="eyebrow"><span class="eyebrow-dot"></span> E-COMMERCE SHIPPING, SIMPLIFIED</div>
         <h1>Your business moves fast.<br><em>Shipping should too.</em></h1>
         <p class="hero-copy">Manage courier shipments, track deliveries, organize cash-on-delivery, and bring your shipping operations together in one simple workspace built for businesses in Pakistan.</p>
-        <div class="hero-actions"><a class="btn btn-primary" href="#signup">Start shipping free <span>→</span></a><a class="btn btn-outline" href="#services">Explore solutions</a></div>
+        <div class="hero-actions"><a class="btn btn-primary" href="#signup">Start shipping free <span>→</span></a><a class="btn btn-outline" href="#bill-generator">Create shipping bill ↓</a><a class="btn btn-outline" href="#services">Explore solutions</a></div>
         <div class="hero-points"><span>Multiple courier workflows</span><span>Shipment visibility</span><span>COD operations</span></div>
       </div>
       <div class="visual" aria-label="Illustration of a shipping operations dashboard">
@@ -97,7 +97,7 @@ footer{border-top:1px solid var(--line);padding:25px 0;color:#85869a;font-size:1
           <div class="bill-totals" aria-live="polite">
             <div class="bill-total-row"><span>Shipping + packing + tax</span><strong id="bill-charge-preview">PKR 250.00</strong></div>
             <div class="bill-total-row"><span>COD amount (collected from recipient)</span><strong id="bill-cod-preview">PKR 0.00</strong></div>
-            <div class="bill-total-row grand"><span>Total payable to sender/courier*</span><strong id="bill-grand-preview">PKR 250.00</strong></div>
+            <div class="bill-total-row grand"><span>Total shipping charges*</span><strong id="bill-grand-preview">PKR 250.00</strong></div>
           </div>
           <div class="bill-actions"><button class="btn btn-primary" type="submit">Download PDF ↓</button><button class="btn btn-outline" type="button" id="bill-reset">Clear form</button></div>
           <div class="bill-status" id="bill-status" role="status" aria-live="polite"></div>
@@ -171,18 +171,52 @@ document.getElementById('bill-number').value='ZS-'+new Date().toISOString().slic
 document.getElementById('bill-reset').addEventListener('click',function(){document.getElementById('bill-form').reset();document.getElementById('bill-date').value=new Date().toISOString().slice(0,10);document.getElementById('bill-status').textContent='';updateBillTotals()});
 function pdfEscape(value){return String(value??'').normalize('NFKD').replace(/[^\x20-\x7E]/g,' ').replace(/\\/g,'\\\\').replace(/\(/g,'\\(').replace(/\)/g,'\\)')}
 function makePdf(lines){
-  const commands=['BT','/F1 18 Tf','50 790 Td','('+pdfEscape(lines[0])+') Tj','/F1 10 Tf'];
-  let y=760;
-  for(let i=1;i<lines.length;i++){commands.push('1 0 0 1 50 '+y+' Tm','('+pdfEscape(lines[i])+') Tj');y-=22;if(y<55&&i<lines.length-1){commands.push('ET');break}}
-  commands.push('ET');
-  const stream=commands.join('\n');
-  const objects=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>','<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>','<< /Length '+new TextEncoder().encode(stream).length+' >>\nstream\n'+stream+'\nendstream'];
-  let pdf='%PDF-1.4\n';const offsets=[0];
-  objects.forEach(function(obj,i){offsets.push(new TextEncoder().encode(pdf).length);pdf+=(i+1)+' 0 obj\n'+obj+'\nendobj\n'});
+  const wrapped=[];
+  lines.forEach(function(line){
+    const text=String(line??'');
+    if(!text){wrapped.push('');return;}
+    let remaining=text;
+    while(remaining.length>88){let cut=remaining.lastIndexOf(' ',88);if(cut<35)cut=88;wrapped.push(remaining.slice(0,cut));remaining=remaining.slice(cut).trimStart();}
+    wrapped.push(remaining);
+  });
+  const pageLines=[];
+  for(let i=0;i<wrapped.length;i+=48)pageLines.push(wrapped.slice(i,i+48));
+  if(!pageLines.length)pageLines.push(['ZAID SHERAZY - SHIPPING BILL']);
+  const objects=[];
+  objects[1]='<< /Type /Catalog /Pages 2 0 R >>';
+  objects[3]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>';
+  const pageRefs=[];
+  pageLines.forEach(function(pageLinesForPage,pageIndex){
+    const pageObj=4+pageIndex*2;
+    const contentObj=pageObj+1;
+    pageRefs.push(pageObj+' 0 R');
+    const commands=[];
+    let y=790;
+    pageLinesForPage.forEach(function(line,lineIndex){
+      const isTitle=pageIndex===0&&lineIndex===0;
+      commands.push('BT');
+      commands.push(isTitle?'/F1 16 Tf':'/F1 9 Tf');
+      commands.push('1 0 0 1 45 '+y+' Tm');
+      commands.push('('+pdfEscape(line)+') Tj');
+      commands.push('ET');
+      y-=isTitle?28:14;
+    });
+    const stream=commands.join('\\n');
+    objects[pageObj]='<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents '+contentObj+' 0 R >>';
+    objects[contentObj]='<< /Length '+new TextEncoder().encode(stream).length+' >>\\nstream\\n'+stream+'\\nendstream';
+  });
+  objects[2]='<< /Type /Pages /Kids ['+pageRefs.join(' ')+'] /Count '+pageLines.length+' >>';
+  let pdf='%PDF-1.4\\n';
+  const offsets=[0];
+  for(let i=1;i<objects.length;i++){
+    if(!objects[i])continue;
+    offsets[i]=new TextEncoder().encode(pdf).length;
+    pdf+=i+' 0 obj\\n'+objects[i]+'\\nendobj\\n';
+  }
   const xref=new TextEncoder().encode(pdf).length;
-  pdf+='xref\n0 '+(objects.length+1)+'\n0000000000 65535 f \n';
-  for(let i=1;i<offsets.length;i++)pdf+=String(offsets[i]).padStart(10,'0')+' 00000 n \n';
-  pdf+='trailer\n<< /Size '+(objects.length+1)+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF';
+  pdf+='xref\\n0 '+objects.length+'\\n0000000000 65535 f \\n';
+  for(let i=1;i<objects.length;i++)pdf+=offsets[i]!==undefined?String(offsets[i]).padStart(10,'0')+' 00000 n \\n':'0000000000 00000 f \\n';
+  pdf+='trailer\\n<< /Size '+objects.length+' /Root 1 0 R >>\\nstartxref\\n'+xref+'\\n%%EOF';
   return new Blob([new TextEncoder().encode(pdf)],{type:'application/pdf'});
 }
 document.getElementById('bill-form').addEventListener('submit',function(event){
