@@ -201,22 +201,22 @@ function makePdf(lines){
       commands.push('ET');
       y-=isTitle?28:14;
     });
-    const stream=commands.join('\\n');
+    const stream=commands.join('\n');
     objects[pageObj]='<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents '+contentObj+' 0 R >>';
-    objects[contentObj]='<< /Length '+new TextEncoder().encode(stream).length+' >>\\nstream\\n'+stream+'\\nendstream';
+    objects[contentObj]='<< /Length '+new TextEncoder().encode(stream).length+' >>\nstream\n'+stream+'\nendstream';
   });
   objects[2]='<< /Type /Pages /Kids ['+pageRefs.join(' ')+'] /Count '+pageLines.length+' >>';
-  let pdf='%PDF-1.4\\n';
+  let pdf='%PDF-1.4\n';
   const offsets=[0];
   for(let i=1;i<objects.length;i++){
     if(!objects[i])continue;
     offsets[i]=new TextEncoder().encode(pdf).length;
-    pdf+=i+' 0 obj\\n'+objects[i]+'\\nendobj\\n';
+    pdf+=i+' 0 obj\n'+objects[i]+'\nendobj\n';
   }
   const xref=new TextEncoder().encode(pdf).length;
-  pdf+='xref\\n0 '+objects.length+'\\n0000000000 65535 f \\n';
-  for(let i=1;i<objects.length;i++)pdf+=offsets[i]!==undefined?String(offsets[i]).padStart(10,'0')+' 00000 n \\n':'0000000000 00000 f \\n';
-  pdf+='trailer\\n<< /Size '+objects.length+' /Root 1 0 R >>\\nstartxref\\n'+xref+'\\n%%EOF';
+  pdf+='xref\n0 '+objects.length+'\n0000000000 65535 f \n';
+  for(let i=1;i<objects.length;i++)pdf+=offsets[i]!==undefined?String(offsets[i]).padStart(10,'0')+' 00000 n \n':'0000000000 00000 f \n';
+  pdf+='trailer\n<< /Size '+objects.length+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF';
   return new Blob([new TextEncoder().encode(pdf)],{type:'application/pdf'});
 }
 document.getElementById('bill-form').addEventListener('submit',function(event){
