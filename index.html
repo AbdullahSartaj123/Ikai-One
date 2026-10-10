@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="LogiFlow helps businesses ship smarter with courier choices, shipment tracking, and cash-on-delivery visibility in one place.">
+<title>LogiFlow — Ship smarter</title>
+<style>
+:root{--ink:#10203a;--muted:#65728a;--blue:#2855e7;--blue2:#173bb7;--cyan:#dff7f8;--bg:#f7f9fc;--line:#e5eaf2;--white:#fff;--green:#16a477}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:var(--white);line-height:1.55}a{color:inherit;text-decoration:none}.wrap{width:min(1140px,calc(100% - 40px));margin:auto}
+header{height:78px;display:flex;align-items:center;border-bottom:1px solid #eef1f6;background:#fff}.nav{display:flex;align-items:center;justify-content:space-between;gap:24px}.brand{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:850;letter-spacing:-.8px}.logo{width:35px;height:35px;border-radius:11px;background:linear-gradient(135deg,#3768ff,#18b8ca);display:grid;place-items:center;color:white;font-weight:900;font-size:19px}.links{display:flex;gap:28px;color:#4e5b72;font-size:14px;font-weight:650}.nav-actions{display:flex;gap:10px;align-items:center}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:10px;padding:12px 18px;font-weight:750;font-size:14px;border:1px solid transparent;cursor:pointer;transition:.2s}.btn-primary{background:var(--blue);color:#fff;box-shadow:0 7px 18px #2855e72b}.btn-primary:hover{background:var(--blue2);transform:translateY(-1px)}.btn-plain{border-color:var(--line);background:white}
+.hero{overflow:hidden;background:radial-gradient(ellipse at 88% 20%,#e4f8f8 0,transparent 36%),linear-gradient(180deg,#f9fbff,#fff);padding:78px 0 70px}.hero-grid{display:grid;grid-template-columns:1.04fr .96fr;gap:52px;align-items:center}.eyebrow{display:inline-flex;align-items:center;gap:8px;border:1px solid #d8e3ff;border-radius:30px;background:#fff;color:#2855e7;padding:7px 12px;font-size:12px;font-weight:800;letter-spacing:.3px}.dot{width:7px;height:7px;border-radius:50%;background:#21b987}.hero h1{font-size:clamp(40px,5vw,64px);letter-spacing:-2.9px;line-height:1.06;margin:20px 0 18px;max-width:640px}.hero h1 span{color:var(--blue)}.hero p{font-size:18px;color:var(--muted);max-width:560px;margin:0 0 26px}.hero-buttons{display:flex;gap:12px;flex-wrap:wrap}.trust{display:flex;gap:18px;align-items:center;margin-top:28px;color:#718097;font-size:12px;flex-wrap:wrap}.trust strong{color:#34435b}.hero-art{position:relative;min-height:390px;display:grid;place-items:center}.orbit{position:absolute;width:340px;height:340px;border-radius:50%;border:1px dashed #cbd8f7}.orbit:before,.orbit:after{content:"";position:absolute;border:1px solid #e0e8fb;border-radius:50%;inset:30px}.orbit:after{inset:65px}.ship-card{position:relative;width:min(100%,390px);padding:24px;border-radius:22px;background:white;border:1px solid #e7edf7;box-shadow:0 28px 75px #193e7b18;transform:rotate(-2deg)}.card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}.small-label{font-size:11px;color:#7d899c;font-weight:750;text-transform:uppercase;letter-spacing:.7px}.pill{background:#e6faf3;color:#11815e;border-radius:20px;padding:6px 10px;font-size:11px;font-weight:800}.tracking-no{font-size:22px;font-weight:850;letter-spacing:-.5px;margin:3px 0 18px}.progress{display:flex;align-items:center;gap:8px;margin:20px 0 18px}.step{height:9px;border-radius:8px;background:#dce5f5;flex:1}.step.done{background:var(--green)}.step.active{background:var(--blue)}.route{display:flex;justify-content:space-between;gap:16px;font-size:12px}.route strong{display:block;font-size:14px}.route small{color:var(--muted)}.courier-list{border-top:1px solid var(--line);margin-top:20px;padding-top:15px;display:flex;align-items:center;justify-content:space-between}.courier-logos{display:flex;gap:6px}.courier{font-size:10px;font-weight:850;padding:7px 8px;border-radius:7px;background:#f0f4fb;color:#4b5d7b}.float-tag{position:absolute;background:white;border:1px solid #e5ebf5;border-radius:13px;padding:12px 15px;box-shadow:0 14px 30px #193e7b14;font-size:12px;font-weight:800}.float-tag small{display:block;color:#758198;font-weight:600}.tag-a{top:42px;right:0}.tag-b{bottom:37px;left:0}.tag-icon{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:9px;background:#e7fbf5;color:#0e966a;margin-right:7px}
+.stats{padding:26px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;text-align:center}.stat strong{display:block;font-size:24px;letter-spacing:-.7px}.stat span{color:var(--muted);font-size:12px}
+section{padding:82px 0}.section-head{text-align:center;max-width:680px;margin:0 auto 42px}.section-head .kicker{color:var(--blue);font-weight:850;text-transform:uppercase;letter-spacing:1.2px;font-size:11px}.section-head h2{font-size:clamp(30px,4vw,43px);letter-spacing:-1.7px;line-height:1.12;margin:10px 0 13px}.section-head p{color:var(--muted);margin:0}.features{background:var(--bg)}.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.feature{background:#fff;border:1px solid var(--line);border-radius:17px;padding:26px;box-shadow:0 6px 20px #1d3a6b05}.feature-icon{width:47px;height:47px;display:grid;place-items:center;border-radius:14px;background:#eaf0ff;color:var(--blue);font-size:22px;margin-bottom:18px}.feature:nth-child(2) .feature-icon{background:#e1f8f4;color:#0c9877}.feature:nth-child(3) .feature-icon{background:#fff1df;color:#c57918}.feature h3{margin:0 0 8px;font-size:18px}.feature p{margin:0;color:var(--muted);font-size:14px}
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}.step-card{position:relative;padding:12px 14px}.step-number{width:42px;height:42px;border-radius:13px;background:#eaf0ff;color:var(--blue);display:grid;place-items:center;font-weight:900;margin-bottom:18px}.step-card h3{margin:0 0 7px}.step-card p{color:var(--muted);font-size:14px;margin:0}
+.cta{padding:0 0 82px}.cta-box{border-radius:24px;background:linear-gradient(115deg,#1d43c7,#2867ee 62%,#19aebe);padding:48px;display:flex;align-items:center;justify-content:space-between;gap:28px;color:white;overflow:hidden;position:relative}.cta-box:after{content:"";position:absolute;width:280px;height:280px;border:1px solid #ffffff30;border-radius:50%;right:17%;top:-160px;box-shadow:0 0 0 35px #ffffff0a,0 0 0 70px #ffffff08}.cta-box h2{font-size:clamp(28px,3vw,38px);line-height:1.12;letter-spacing:-1.2px;margin:0 0 10px;position:relative;z-index:1}.cta-box p{margin:0;color:#e0e9ff;position:relative;z-index:1}.cta-box .btn{background:white;color:#2046c9;white-space:nowrap;position:relative;z-index:1}
+footer{border-top:1px solid var(--line);padding:28px 0;color:#78849a;font-size:12px}.footer-row{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}.footer-brand{color:var(--ink);font-size:16px;font-weight:850}
+@media(max-width:850px){.links{display:none}.hero{padding:55px 0}.hero-grid{grid-template-columns:1fr;gap:28px}.hero-art{min-height:360px}.tag-a{right:4%}.tag-b{left:4%}.feature-grid{grid-template-columns:1fr 1fr}.cta-box{padding:34px;align-items:flex-start;flex-direction:column}}
+@media(max-width:560px){.wrap{width:min(100% - 28px,1140px)}header{height:68px}.brand{font-size:19px}.nav-actions .btn-plain{display:none}.nav-actions .btn{padding:10px 12px}.hero h1{letter-spacing:-1.9px}.hero p{font-size:16px}.hero-art{min-height:330px}.orbit{width:280px;height:280px}.ship-card{padding:19px;width:calc(100% - 18px)}.tag-a{top:10px}.tag-b{bottom:6px}.stats-grid{grid-template-columns:1fr 1fr;row-gap:22px}section{padding:62px 0}.feature-grid,.steps-grid{grid-template-columns:1fr}.cta{padding-bottom:60px}.cta-box{padding:28px 23px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="#" aria-label="LogiFlow home"><span class="logo">L</span>LogiFlow</a>
+    <nav class="links" aria-label="Main navigation">
+      <a href="#solutions">Solutions</a><a href="#how-it-works">How it works</a><a href="#features">Features</a>
+    </nav>
+    <div class="nav-actions"><a class="btn btn-plain" href="#contact">Sign in</a><a class="btn btn-primary" href="#contact">Get started ↗</a></div>
+  </div>
+</header>
+<main>
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow"><span class="dot"></span> ONE PLATFORM. MULTIPLE COURIERS.</div>
+        <h1>Ship smarter.<br><span>Grow faster.</span></h1>
+        <p>Manage shipments, compare courier options, track every delivery, and stay on top of COD — all from one simple shipping platform.</p>
+        <div class="hero-buttons"><a class="btn btn-primary" href="#contact">Start shipping free <span>→</span></a><a class="btn btn-plain" href="#how-it-works">See how it works <span>↘</span></a></div>
+        <div class="trust"><span>✓ <strong>Multiple courier options</strong></span><span>✓ <strong>Centralized tracking</strong></span><span>✓ <strong>COD visibility</strong></span></div>
+      </div>
+      <div class="hero-art" aria-label="Illustration of shipment tracking dashboard">
+        <div class="orbit"></div>
+        <div class="float-tag tag-a">⚡ Faster workflows<small>Less manual follow-up</small></div>
+        <div class="ship-card">
+          <div class="card-top"><span class="small-label">Shipment overview</span><span class="pill">● In transit</span></div>
+          <div class="small-label">TRACKING NUMBER</div><div class="tracking-no">LF-2048-7391</div>
+          <div class="progress"><span class="step done"></span><span class="step done"></span><span class="step active"></span><span class="step"></span></div>
+          <div class="route"><div><strong>Lahore</strong><small>Shipment picked up</small></div><div style="text-align:right"><strong>Karachi</strong><small>Estimated delivery</small></div></div>
+          <div class="courier-list"><span class="small-label">Courier options</span><div class="courier-logos"><span class="courier">TCS</span><span class="courier">LEOPARDS</span><span class="courier">POSTEX</span></div></div>
+        </div>
+        <div class="float-tag tag-b"><span class="tag-icon">✓</span> One clear view<small>Shipments, statuses & COD</small></div>
+      </div>
+    </div>
+  </section>
+  <div class="stats"><div class="wrap stats-grid">
+    <div class="stat"><strong>One dashboard</strong><span>Manage shipping in one place</span></div>
+    <div class="stat"><strong>Multi-courier</strong><span>Keep options flexible</span></div>
+    <div class="stat"><strong>Live visibility</strong><span>Follow shipment progress</span></div>
+    <div class="stat"><strong>COD ready</strong><span>Organize cash-on-delivery</span></div>
+  </div></div>
+  <section class="features" id="solutions">
+    <div class="wrap">
+      <div class="section-head"><div class="kicker">A simpler way to ship</div><h2>Your shipping operations,<br>all in one place.</h2><p>Bring daily shipping tasks into one organized workflow, so your team can focus on customers and growth.</p></div>
+      <div class="feature-grid" id="features">
+        <article class="feature"><div class="feature-icon">⇄</div><h3>Multiple courier options</h3><p>Keep your courier services organized in one workspace and choose the right option for each shipment.</p></article>
+        <article class="feature"><div class="feature-icon">⌖</div><h3>Shipment tracking</h3><p>See shipment progress in one view and make it easier for your team to follow up on delays.</p></article>
+        <article class="feature"><div class="feature-icon">₨</div><h3>COD & reports</h3><p>Keep cash-on-delivery details, shipment activity, and operational reporting easier to manage.</p></article>
+      </div>
+    </div>
+  </section>
+  <section id="how-it-works">
+    <div class="wrap">
+      <div class="section-head"><div class="kicker">Get started in three steps</div><h2>From order to delivery,<br>without the chaos.</h2><p>A clear, straightforward flow for e-commerce businesses and growing brands.</p></div>
+      <div class="steps-grid">
+        <article class="step-card"><div class="step-number">01</div><h3>Add your shipment</h3><p>Enter shipment details or connect your workflow when integrations are available.</p></article>
+        <article class="step-card"><div class="step-number">02</div><h3>Choose a courier</h3><p>Review available services and select the delivery option that suits your needs.</p></article>
+        <article class="step-card"><div class="step-number">03</div><h3>Track and reconcile</h3><p>Follow shipment status and keep COD information organized for your operations team.</p></article>
+      </div>
+    </div>
+  </section>
+  <section class="cta" id="contact"><div class="wrap"><div class="cta-box"><div><h2>Ready to make shipping simpler?</h2><p>Build a more organized shipping workflow with LogiFlow.</p></div><a class="btn" href="mailto:hello@logiflow.example?subject=LogiFlow%20Getting%20Started">Talk to our team ↗</a></div></div></section>
+</main>
+<footer><div class="wrap footer-row"><a class="brand footer-brand" href="#"><span class="logo">L</span>LogiFlow</a><span>© 2026 LogiFlow. Shipping operations, simplified.</span><span>Designed for growing businesses in Pakistan.</span></div></footer>
+</body>
+</html>
