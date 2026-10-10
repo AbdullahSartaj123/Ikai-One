@@ -17,6 +17,10 @@ section{padding:82px 0}.section-head{text-align:center;max-width:680px;margin:0 
 footer{border-top:1px solid var(--line);padding:28px 0;color:#78849a;font-size:12px}.footer-row{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}.footer-brand{color:var(--ink);font-size:16px;font-weight:850}
 @media(max-width:850px){.links{display:none}.hero{padding:55px 0}.hero-grid{grid-template-columns:1fr;gap:28px}.hero-art{min-height:360px}.tag-a{right:4%}.tag-b{left:4%}.feature-grid{grid-template-columns:1fr 1fr}.cta-box{padding:34px;align-items:flex-start;flex-direction:column}}
 @media(max-width:560px){.wrap{width:min(100% - 28px,1140px)}header{height:68px}.brand{font-size:19px}.nav-actions .btn-plain{display:none}.nav-actions .btn{padding:10px 12px}.hero h1{letter-spacing:-1.9px}.hero p{font-size:16px}.hero-art{min-height:330px}.orbit{width:280px;height:280px}.ship-card{padding:19px;width:calc(100% - 18px)}.tag-a{top:10px}.tag-b{bottom:6px}.stats-grid{grid-template-columns:1fr 1fr;row-gap:22px}section{padding:62px 0}.feature-grid,.steps-grid{grid-template-columns:1fr}.cta{padding-bottom:60px}.cta-box{padding:28px 23px}}
+
+.signup-section{background:var(--bg);padding:76px 0}.signup-layout{display:grid;grid-template-columns:.9fr 1.1fr;gap:42px;align-items:start}.signup-copy{padding:22px 0}.signup-copy h2{font-size:clamp(30px,4vw,44px);line-height:1.1;letter-spacing:-1.5px;margin:14px 0}.signup-copy p{color:var(--muted);font-size:16px}.signup-benefits{list-style:none;padding:0;margin:24px 0;display:grid;gap:13px;color:#42516a;font-size:14px}.signup-benefits li:before{content:"✓";display:inline-grid;place-items:center;width:23px;height:23px;border-radius:7px;background:#e2f8f1;color:#11815e;font-weight:900;margin-right:10px}.signup-card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:30px;box-shadow:0 18px 50px #193e7b0d}.signup-card h3{font-size:23px;letter-spacing:-.6px;margin:0 0 5px}.signup-card .form-intro{font-size:13px;color:var(--muted);margin:0 0 23px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.field{display:flex;flex-direction:column;gap:7px}.field.full{grid-column:1/-1}.field label{font-size:12px;font-weight:800;color:#34435b}.field input{width:100%;border:1px solid #dce3ee;border-radius:9px;padding:12px 13px;font:inherit;font-size:14px;color:var(--ink);outline:none;background:#fff}.field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #2855e714}.terms{display:flex;gap:9px;align-items:flex-start;font-size:12px;color:var(--muted);margin:18px 0}.terms input{margin-top:3px;accent-color:var(--blue)}.signup-submit{width:100%;border:0}.form-status{display:none;margin-top:14px;padding:12px;border-radius:9px;font-size:13px;background:#fff4e3;color:#8a5610}.form-status.show{display:block}.form-footnote{text-align:center;font-size:11px;color:#8792a4;margin:14px 0 0}
+@media(max-width:850px){.signup-layout{grid-template-columns:1fr;gap:20px}.signup-copy{padding:0}.signup-section{padding:58px 0}}
+@media(max-width:560px){.signup-card{padding:22px 17px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}}
 </style>
 </head>
 <body>
@@ -79,8 +83,58 @@ footer{border-top:1px solid var(--line);padding:28px 0;color:#78849a;font-size:1
       </div>
     </div>
   </section>
-  <section class="cta" id="contact"><span id="signin"></span><span id="signup"></span><div class="wrap"><div class="cta-box"><div><h2>Ready to make shipping simpler?</h2><p>Build a more organized shipping workflow with Zaid Sherazy.</p></div><a class="btn" href="mailto:hello@zaidsherazy.example?subject=Zaid Sherazy%20Getting%20Started">Talk to our team ↗</a></div></div></section>
+  <section class="signup-section" id="signup">
+    <div class="wrap signup-layout">
+      <div class="signup-copy">
+        <div class="eyebrow"><span class="dot"></span> GET STARTED WITH ZAID SHERAZY</div>
+        <h2>Create your account.<br><span style="color:var(--blue)">Simplify shipping.</span></h2>
+        <p>Set up your business profile to get ready to manage shipments, courier options, tracking, and COD in one place.</p>
+        <ul class="signup-benefits">
+          <li>Organize your shipping operations</li>
+          <li>Keep shipment status and COD visible</li>
+          <li>Prepare your business for multi-courier workflows</li>
+        </ul>
+      </div>
+      <div class="signup-card">
+        <h3>Create an account</h3>
+        <p class="form-intro">Enter your details to get started.</p>
+        <form id="signup-form">
+          <div class="form-grid">
+            <div class="field"><label for="full-name">Full name</label><input id="full-name" name="fullName" autocomplete="name" placeholder="Your full name" required></div>
+            <div class="field"><label for="business-name">Business name</label><input id="business-name" name="businessName" autocomplete="organization" placeholder="Your store or company" required></div>
+            <div class="field"><label for="signup-email">Work email</label><input id="signup-email" name="email" type="email" autocomplete="email" placeholder="you@company.com" required></div>
+            <div class="field"><label for="phone">Phone number</label><input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="+92 3XX XXXXXXX" required></div>
+            <div class="field"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" required></div>
+            <div class="field"><label for="confirm-password">Confirm password</label><input id="confirm-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Re-enter password" required></div>
+          </div>
+          <label class="terms"><input type="checkbox" id="terms" required><span>I agree to the terms of service and privacy policy.</span></label>
+          <button class="btn btn-primary signup-submit" type="submit">Create account ↗</button>
+          <div class="form-status" id="signup-status" role="status" aria-live="polite"></div>
+          <p class="form-footnote">Your account is not created until signup is connected to a secure backend.</p>
+        </form>
+      </div>
+    </div>
+  </section>
+  <section class="cta" id="contact"><div class="wrap"><div class="cta-box"><div><h2>Ready to make shipping simpler?</h2><p>Build a more organized shipping workflow with Zaid Sherazy.</p></div><a class="btn" href="mailto:hello@zaidsherazy.example?subject=Zaid%20Sherazy%20Getting%20Started">Talk to our team ↗</a></div></div></section>
 </main>
 <footer><div class="wrap footer-row"><a class="brand footer-brand" href="#"><span class="logo">ZS</span>Zaid Sherazy</a><span>© 2026 Zaid Sherazy. Shipping operations, simplified.</span><span>Designed for growing businesses in Pakistan.</span></div></footer>
+
+<script>
+document.getElementById('signup-form').addEventListener('submit', function(event) {
+  event.preventDefault();
+  const password = document.getElementById('password');
+  const confirmPassword = document.getElementById('confirm-password');
+  const status = document.getElementById('signup-status');
+  status.classList.add('show');
+  if (password.value !== confirmPassword.value) {
+    confirmPassword.setCustomValidity('Passwords do not match.');
+    confirmPassword.reportValidity();
+    confirmPassword.setCustomValidity('');
+    status.textContent = 'Your passwords do not match. Please check them and try again.';
+    return;
+  }
+  status.textContent = 'The form is validated, but account creation is not active yet. Connect a secure backend to register users.';
+});
+</script>
 </body>
 </html>
