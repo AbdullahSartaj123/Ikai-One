@@ -25,6 +25,33 @@ footer{border-top:1px solid var(--line);padding:25px 0;color:#85869a;font-size:1
 .bill-section{padding:64px 0;background:#fff7fb;border-block:1px solid #f5e4ed}.bill-layout{display:grid;grid-template-columns:.82fr 1.18fr;gap:34px;align-items:start}.bill-intro h2{font-size:clamp(30px,4vw,42px);line-height:1.12;letter-spacing:-1.5px;margin:12px 0}.bill-intro p{font-size:14px;color:var(--muted)}.bill-note{margin-top:22px;padding:15px;border-radius:12px;background:#fff;border:1px solid #f1dce7;font-size:12px;color:#737488}.bill-card{background:#fff;border:1px solid #eedfe8;border-radius:18px;padding:24px;box-shadow:var(--shadow)}.bill-card-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}.bill-card-head h3{margin:0;font-size:20px}.bill-badge{font-size:10px;font-weight:900;color:var(--pink-dark);background:var(--pink-soft);border-radius:20px;padding:7px 10px}.bill-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.bill-field{display:flex;flex-direction:column;gap:6px}.bill-field.full{grid-column:1/-1}.bill-field label{font-size:11px;font-weight:850;color:#45465e}.bill-field input,.bill-field select,.bill-field textarea{width:100%;padding:11px 12px;border:1px solid #e5dce4;border-radius:9px;background:#fff;color:var(--ink);font-size:13px;outline:none}.bill-field input:focus,.bill-field select:focus,.bill-field textarea:focus{border-color:var(--pink);box-shadow:0 0 0 3px #e83e8c12}.bill-subhead{grid-column:1/-1;font-size:12px;font-weight:900;color:var(--pink-dark);padding-top:5px;border-bottom:1px solid #f0e4eb;padding-bottom:7px}.bill-totals{margin:18px 0;padding:14px;border-radius:12px;background:#fff7fb;border:1px solid #f4e2eb}.bill-total-row{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:#686a80;padding:4px 0}.bill-total-row.grand{border-top:1px solid #edd9e4;margin-top:7px;padding-top:10px;color:var(--ink);font-size:16px;font-weight:900}.bill-actions{display:flex;gap:10px;flex-wrap:wrap}.bill-actions .btn{flex:1}.bill-status{font-size:12px;color:#16815f;margin-top:12px;min-height:18px}
 @media(max-width:850px){.bill-layout{grid-template-columns:1fr;gap:20px}.bill-intro{max-width:650px}}
 @media(max-width:560px){.bill-section{padding:48px 0}.bill-card{padding:18px 14px}.bill-form-grid{grid-template-columns:1fr}.bill-field.full,.bill-subhead{grid-column:auto}.bill-card-head{align-items:flex-start;flex-direction:column}.bill-actions{flex-direction:column}}
+
+/* Theme switcher and live Pakistan date/time */
+.header-tools{display:flex;align-items:center;gap:12px;margin-left:auto}
+.live-clock{display:flex;flex-direction:column;align-items:flex-end;line-height:1.25;white-space:nowrap;padding-right:12px;border-right:1px solid var(--line)}
+.live-clock strong{font-size:12px;color:var(--ink);font-variant-numeric:tabular-nums}
+.live-clock span{font-size:10px;color:var(--muted)}
+.theme-toggle{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font-size:11px;font-weight:850;cursor:pointer;white-space:nowrap}
+.theme-toggle:hover{border-color:var(--pink)}
+.theme-toggle .theme-icon{font-size:15px}
+html[data-theme="dark"]{color-scheme:dark;--ink:#f8edf4;--muted:#bcaab7;--line:#3b2a38;--surface:#241b24;--bg:#1b151d;--pink-soft:#3b2030;--pink-pale:#211821;--shadow:0 22px 65px #0005}
+html[data-theme="dark"] body{background:#171219;color:var(--ink)}
+html[data-theme="dark"] header,html[data-theme="dark"] footer,html[data-theme="dark"] .trustbar{background:#1d1720;border-color:#3b2a38}
+html[data-theme="dark"] .hero{background:radial-gradient(ellipse at 82% 15%,#462238 0,transparent 34%),linear-gradient(180deg,#211721,#171219 88%)}
+html[data-theme="dark"] .eyebrow,html[data-theme="dark"] .btn-outline,html[data-theme="dark"] .dashboard,html[data-theme="dark"] .float-card,html[data-theme="dark"] .mini-stat,html[data-theme="dark"] .dash-chart,html[data-theme="dark"] .service-card,html[data-theme="dark"] .order-card,html[data-theme="dark"] .signup-card,html[data-theme="dark"] .bill-card,html[data-theme="dark"] .bill-note,html[data-theme="dark"] .field input,html[data-theme="dark"] .bill-field input,html[data-theme="dark"] .bill-field select,html[data-theme="dark"] .bill-field textarea,html[data-theme="dark"] .track-fields input,html[data-theme="dark"] .track-tab{background:#241b24;color:var(--ink);border-color:#443141}
+html[data-theme="dark"] .feature-section,html[data-theme="dark"] .signup-section,html[data-theme="dark"] .bill-section,html[data-theme="dark"] .tracking-form{background:#1c151d;border-color:#3b2a38}
+html[data-theme="dark"] .visual-glow,html[data-theme="dark"] .feature-art{background:linear-gradient(145deg,#3d2031,#261a27);border-color:#563148}
+html[data-theme="dark"] .tracking-box{background:#241b24;border-color:#443141}
+html[data-theme="dark"] .bill-totals{background:#211821;border-color:#443141}
+html[data-theme="dark"] .bill-field label,html[data-theme="dark"] .field label,html[data-theme="dark"] .links,html[data-theme="dark"] .trust-item,html[data-theme="dark"] .feature-list li,html[data-theme="dark"] .route strong,html[data-theme="dark"] .dash-title,html[data-theme="dark"] .service-card h3,html[data-theme="dark"] .step-card h3{color:var(--ink)}
+html[data-theme="dark"] .step-card{border-color:#443141}
+html[data-theme="dark"] .step-number,html[data-theme="dark"] .feature-icon{background:#3b2030}
+html[data-theme="dark"] .service-card .watermark{color:#35202e}
+html[data-theme="dark"] .bars i{background:linear-gradient(180deg,#a83c71,#4c263d)}
+html[data-theme="dark"] .bars i:nth-child(6){background:linear-gradient(180deg,#e83e8c,#a83c71)}
+html[data-theme="dark"] .track-tab.active{background:var(--pink);color:white}
+@media(max-width:1050px){.header-tools{gap:7px}.live-clock{display:none}}
+@media(max-width:680px){.header-tools{gap:6px}.theme-toggle{padding:9px}.theme-toggle .theme-label{display:none}.nav{gap:10px}.brand{font-size:16px}.nav-actions .btn{padding:9px 10px;font-size:11px}}
 </style>
 </head>
 <body>
@@ -32,6 +59,10 @@ footer{border-top:1px solid var(--line);padding:25px 0;color:#85869a;font-size:1
   <div class="wrap nav">
     <a class="brand" href="#" aria-label="Zaid Sherazy home"><span class="logo">ZS</span>Zaid Sherazy</a>
     <nav class="links" aria-label="Main navigation"><a href="#bill-generator">Shipping bill</a><a href="#services">Solutions</a><a href="#how-it-works">How it works</a><a href="#tracking">Track shipment</a><a href="#signup">For businesses</a></nav>
+    <div class="header-tools">
+      <div class="live-clock" aria-label="Current date and time in Pakistan"><strong id="header-time">--:--:--</strong><span id="header-date">Loading date…</span></div>
+      <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Switch to night mode" title="Switch day/night mode"><span class="theme-icon" id="theme-icon">☾</span><span class="theme-label" id="theme-label">Night mode</span></button>
+    </div>
     <div class="nav-actions"><a class="btn btn-outline" href="#signin">Sign in</a><a class="btn btn-primary" href="#signup">Sign up free ↗</a></div>
   </div>
 </header>
@@ -160,7 +191,32 @@ footer{border-top:1px solid var(--line);padding:25px 0;color:#85869a;font-size:1
 </main>
 <footer><div class="wrap footer-row"><a class="brand footer-brand" href="#"><span class="logo">ZS</span>Zaid Sherazy</a><span>© 2026 Zaid Sherazy. Shipping operations, simplified.</span><span>Designed for growing businesses in Pakistan.</span></div></footer>
 <script>
-
+(function(){
+  const root=document.documentElement;
+  const toggle=document.getElementById('theme-toggle');
+  const icon=document.getElementById('theme-icon');
+  const label=document.getElementById('theme-label');
+  function setTheme(theme){
+    root.setAttribute('data-theme',theme);
+    const night=theme==='dark';
+    icon.textContent=night?'☀':'☾';
+    label.textContent=night?'Day mode':'Night mode';
+    toggle.setAttribute('aria-label',night?'Switch to day mode':'Switch to night mode');
+    toggle.setAttribute('title',night?'Switch to day mode':'Switch to night mode');
+  }
+  setTheme('light');
+  toggle.addEventListener('click',function(){setTheme(root.getAttribute('data-theme')==='dark'?'light':'dark')});
+  const timeEl=document.getElementById('header-time');
+  const dateEl=document.getElementById('header-date');
+  function updateClock(){
+    const now=new Date();
+    timeEl.textContent=new Intl.DateTimeFormat('en-PK',{timeZone:'Asia/Karachi',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true}).format(now);
+    dateEl.textContent=new Intl.DateTimeFormat('en-PK',{timeZone:'Asia/Karachi',weekday:'short',day:'2-digit',month:'short',year:'numeric'}).format(now);
+  }
+  updateClock();
+  window.setInterval(updateClock,1000);
+})();
+ 
 function billValue(id){return document.getElementById(id).value.trim()}
 function billNumber(id){return Math.max(0,Number(document.getElementById(id).value)||0)}
 function money(n){return 'PKR '+n.toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2})}
