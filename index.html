@@ -52,6 +52,19 @@ html[data-theme="dark"] .bars i:nth-child(6){background:linear-gradient(180deg,#
 html[data-theme="dark"] .track-tab.active{background:var(--blue);color:white}
 @media(max-width:1050px){.header-tools{gap:7px}.live-clock{display:none}}
 @media(max-width:680px){.header-tools{gap:6px}.theme-toggle{padding:9px}.theme-toggle .theme-label{display:none}.nav{gap:10px}.brand{font-size:16px}.nav-actions .btn{padding:9px 10px;font-size:11px}}
+
+.partner-strip{padding:27px 0 30px;background:var(--surface);border-block:1px solid var(--line);overflow:hidden}
+.partner-heading{text-align:center;margin:0 0 18px;font-size:11px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)}
+.partner-marquee{display:flex;overflow:hidden;gap:0;position:relative;mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)}
+.partner-track{display:flex;align-items:center;gap:16px;flex:0 0 auto;min-width:max-content;animation:partner-scroll 32s linear infinite}
+.partner-marquee:hover .partner-track{animation-play-state:paused}
+.partner-pill{display:flex;align-items:center;justify-content:center;min-width:150px;height:58px;padding:0 22px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);font-size:16px;font-weight:900;letter-spacing:-.35px;box-shadow:0 5px 18px #1e40af08}
+.partner-pill:nth-child(3n+1){color:#1d4ed8}.partner-pill:nth-child(3n+2){color:#0f766e}.partner-pill:nth-child(3n){color:#475569}
+.partner-footnote{text-align:center;margin:13px 0 0;color:var(--muted);font-size:10px}
+@keyframes partner-scroll{to{transform:translateX(-50%)}}
+html[data-theme="dark"] .partner-pill{background:#172033;border-color:#3b2a38;color:#dbeafe}
+@media(prefers-reduced-motion:reduce){.partner-track{animation:none}.partner-marquee{overflow-x:auto;mask-image:none}}
+
 </style>
 </head>
 <body>
@@ -88,6 +101,19 @@ html[data-theme="dark"] .track-tab.active{background:var(--blue);color:white}
         <div class="float-card float-b"><span class="float-icon">✓</span> Less manual follow-up<small>Keep every shipment organized</small></div>
       </div>
     </div>
+  </section>
+
+  <section class="partner-strip" aria-label="Courier and third-party logistics providers">
+    <div class="wrap"><h2 class="partner-heading">Courier &amp; 3PL network</h2></div>
+    <div class="partner-marquee" aria-label="Courier brands">
+      <div class="partner-track">
+        <span class="partner-pill">TCS</span><span class="partner-pill">Leopards Courier</span><span class="partner-pill">PostEx</span><span class="partner-pill">M&amp;P</span><span class="partner-pill">BlueEX</span><span class="partner-pill">Trax</span><span class="partner-pill">Call Courier</span><span class="partner-pill">Rider</span><span class="partner-pill">Swyft</span>
+      </div>
+      <div class="partner-track" aria-hidden="true">
+        <span class="partner-pill">TCS</span><span class="partner-pill">Leopards Courier</span><span class="partner-pill">PostEx</span><span class="partner-pill">M&amp;P</span><span class="partner-pill">BlueEX</span><span class="partner-pill">Trax</span><span class="partner-pill">Call Courier</span><span class="partner-pill">Rider</span><span class="partner-pill">Swyft</span>
+      </div>
+    </div>
+    <p class="partner-footnote">Provider names are shown for reference. Availability and live integrations depend on agreements and setup.</p>
   </section>
   <section class="bill-section" id="bill-generator">
     <div class="wrap bill-layout">
