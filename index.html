@@ -85,8 +85,39 @@ html[data-theme="dark"] .team-card.ceo{background:linear-gradient(135deg,#172033
 @media(max-width:560px){.team-grid{grid-template-columns:1fr}.team-card.ceo{grid-column:auto;display:block}.team-avatar{margin-bottom:18px}}
 
 </style>
+<style>
+/* Landing-page refresh inspired by modern e-commerce logistics sites */
+.announcement-bar{position:relative;z-index:25;background:linear-gradient(100deg,#c9b9ff 0%,#f2d9f6 58%,#ffd5b0 100%);color:#1b2140;font-size:12px}
+.announcement-inner{width:min(1180px,calc(100% - 40px));min-height:38px;margin:auto;display:flex;align-items:center;justify-content:center;gap:10px;text-align:center}
+.announcement-icon{font-size:17px;color:#6548df}.announcement-inner strong{font-weight:900}.announcement-inner a{margin-left:6px;border:1px solid #7862dd;background:#ffffffb8;border-radius:8px;padding:5px 10px;font-weight:800;white-space:nowrap}.announcement-inner a:hover{background:#fff}
+header{height:78px;background:#fdfcffed}.brand{font-size:24px;letter-spacing:-1px}.logo{background:transparent;box-shadow:none;border-radius:0;width:36px;height:38px;color:var(--blue-dark)}.links{font-size:13px;font-weight:600;gap:24px;color:#343446}.links a:hover{color:#6c4ce8}
+.hero{background:radial-gradient(ellipse at 79% 83%,#ffb4c4c9 0,transparent 29%),radial-gradient(ellipse at 64% 100%,#ffe59b 0,transparent 30%),radial-gradient(ellipse at 12% 93%,#38c6f5 0,transparent 38%),linear-gradient(180deg,#f8f7fb 0%,#f8f7fb 47%,#fff 100%);padding:52px 0 46px;min-height:448px}
+.hero-grid{grid-template-columns:1.12fr .88fr;gap:32px}
+.eyebrow{display:none}
+h1{font-size:clamp(42px,4.2vw,58px);line-height:1.08;letter-spacing:-2.7px;max-width:720px;margin:9px 0 12px;color:#16161b}
+h1 em{color:inherit}.hero-copy{font-size:16px;line-height:1.65;color:#555463;max-width:560px;margin-bottom:30px}
+.hero-actions{display:flex;flex-direction:column;gap:0;align-items:stretch;max-width:660px}
+.hero-actions:before{content:"Get started with Ikai Logistics";font-size:19px;font-weight:650;color:#11121a;margin-bottom:11px}
+.hero-actions .btn-primary{display:none}
+.hero-actions .btn-outline{width:100%;max-width:450px;min-height:53px;border:1px solid #d7d5e0;border-radius:12px;background:#fff;color:#898895;box-shadow:0 3px 9px #1111;justify-content:flex-start;padding:13px 16px}
+.hero-actions .btn-outline:nth-child(2){max-width:200px;position:absolute;left:-9999px}
+.hero-actions .btn-outline:nth-child(3){max-width:200px;position:absolute;left:-9999px}
+.hero-actions:after{content:"Create a free business profile to explore shipping tools.";display:block;font-size:11px;color:#5a5968;margin-top:10px}
+.hero-points{display:none}
+.visual{min-height:390px}
+.visual-glow{width:310px;height:310px;background:linear-gradient(140deg,#f8f0ff,#eaf7ff);border-color:#e4daf8}
+.dashboard{width:min(100%,365px);padding:18px;border-radius:17px;transform:rotate(1deg);box-shadow:0 22px 65px #34235b20}
+.float-a{top:14px;right:-4px}.float-b{bottom:12px;left:-9px}
+.btn{border-radius:10px}
+.nav-actions .btn-outline{background:transparent;border-color:#8972fa;color:#755be9}.nav-actions .btn-primary{background:#7258e8;box-shadow:none}.nav-actions .btn-primary:hover{background:#6046d6}
+.trustbar{background:#fff}
+@media(max-width:1000px){.links{gap:13px}.header-tools{display:none}.hero-grid{grid-template-columns:1fr .8fr}.hero-actions .btn-outline{max-width:100%}}
+@media(max-width:760px){.announcement-inner{width:calc(100% - 20px);min-height:40px;font-size:10px;gap:6px}.announcement-inner a{padding:4px 6px}.announcement-icon{display:none}header{height:68px}.brand{font-size:19px}.nav-actions .btn-outline{display:none}.hero{padding:40px 0 28px}.hero-grid{grid-template-columns:1fr}.hero h1{font-size:clamp(38px,9vw,54px);letter-spacing:-2px}.hero-copy{font-size:15px}.hero-actions .btn-outline{max-width:none}.visual{min-height:290px;margin-top:8px}.visual-glow{width:245px;height:245px}.dashboard{max-width:360px}.float-a{right:1px;top:1px}.float-b{left:0;bottom:0}}
+@media(prefers-reduced-motion:reduce){.announcement-inner a{transition:none}}
+</style>
 </head>
 <body>
+<div class="announcement-bar"><div class="announcement-inner"><span class="announcement-icon">✦</span><span><strong>Ikai Logistics</strong> — Your shipping, tracking & COD in one place.</span><a href="#signup">Get started free <span aria-hidden="true">↗</span></a></div></div>
 <header>
   <div class="wrap nav">
     <a class="brand" href="#" aria-label="Ikai Logistics home"><span class="logo" aria-hidden="true"><svg viewBox="0 0 48 40" role="img" focusable="false"><g class="logo-envelope"><path d="M6 12Q6 9 9 9H39Q42 9 42 12V29Q42 32 39 32H9Q6 32 6 29Z" fill="#fff" stroke="#dbeafe" stroke-width="1.5"/><path d="M7 12L24 25L41 12" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 30L18 20M41 30L30 20" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round"/></g><g class="logo-rocket"><path d="M24 3C18 8 16 15 17 23L24 29L31 23C32 15 30 8 24 3Z" fill="#fff" stroke="#dbeafe" stroke-width="1.4"/><path d="M20 18Q24 14 28 18L27 23H21Z" fill="#60a5fa"/><circle cx="24" cy="12" r="2.5" fill="#2563eb"/><path d="M17 20L11 25L17 26M31 20L37 25L31 26" fill="#bfdbfe" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/><path d="M21 28L24 37L27 28Z" fill="#fbbf24"/><path d="M23 29L24 34L25 29Z" fill="#fff"/></g></svg></span>Ikai Logistics</a>
