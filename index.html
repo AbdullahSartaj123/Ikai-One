@@ -124,6 +124,33 @@ html[data-theme="dark"] .signup-inline .phone-wrap{background:#241b24;border-col
 html[data-theme="dark"] .signup-inline input{color:#f8edf4}
 html[data-theme="dark"] .signup-inline .phone-prefix{border-color:#3b2a38}
 
+
+/* Dropdown navigation inspired by modern shipping platforms */
+.nav{position:relative}
+.links{align-self:stretch;gap:clamp(12px,1.45vw,23px);font-size:13px;white-space:nowrap}
+.nav-item{position:relative;display:flex;align-items:center}
+.nav-link{display:inline-flex;align-items:center;gap:5px;min-height:48px;color:#292638;font-weight:700}
+.chevron{font-size:15px;color:#77718f;transition:transform .18s}
+.nav-item:hover .chevron,.nav-item:focus-within .chevron{transform:rotate(180deg)}
+.dropdown-menu{position:absolute;top:calc(100% - 4px);left:-18px;width:290px;padding:12px;background:#fff;border:1px solid #e7e3f4;border-radius:15px;box-shadow:0 18px 45px #2920441c;display:none;white-space:normal;z-index:40}
+.nav-item:hover .dropdown-menu,.nav-item:focus-within .dropdown-menu{display:block}
+.dropdown-heading{padding:8px 10px 10px;color:#7b6bbd;font-size:10px;font-weight:900;letter-spacing:1px;text-transform:uppercase}
+.dropdown-menu a{display:block;padding:10px;border-radius:9px;color:#242238;white-space:normal}
+.dropdown-menu a:hover,.dropdown-menu a:focus{background:#f5f2ff;color:#5e45d4}
+.dropdown-menu strong{display:block;font-size:13px;font-weight:850}
+.dropdown-menu small{display:block;color:#77758a;font-size:11px;font-weight:500;margin-top:2px;line-height:1.45}
+.pricing-link{align-self:center;font-weight:750}
+.mobile-menu-toggle{display:none}
+@media(max-width:1180px){.links{gap:10px;font-size:12px}.nav-actions{gap:6px}.nav-actions .btn{padding:10px 12px;font-size:12px}.signin-nav-btn{display:none}}
+@media(max-width:900px){.mobile-menu-toggle{display:flex;width:42px;height:42px;flex-direction:column;justify-content:center;align-items:center;gap:5px;border:1px solid #e3def5;border-radius:11px;background:#fff;cursor:pointer;order:4;flex:none}.mobile-menu-toggle span{display:block;width:18px;height:2px;border-radius:2px;background:#514477}.links{display:none;position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:45;align-self:auto;align-items:stretch;flex-direction:column;gap:0;padding:12px;background:#fff;border:1px solid #e7e3f4;border-radius:16px;box-shadow:0 20px 50px #29204420;max-height:calc(100vh - 100px);overflow:auto}.links.is-open{display:flex}.nav-item{display:block;border-bottom:1px solid #f0edf7}.nav-link{display:flex;justify-content:space-between;min-height:45px;width:100%;padding:0 8px}.dropdown-menu{position:static;width:100%;display:none;box-shadow:none;border:0;border-radius:8px;padding:0 6px 8px;background:#faf9ff}.nav-item.menu-open .dropdown-menu{display:block}.nav-item:hover .dropdown-menu{display:none}.nav-item.menu-open:hover .dropdown-menu,.nav-item.menu-open:focus-within .dropdown-menu{display:block}.pricing-link{display:flex;min-height:45px;padding:0 8px}.nav-actions{margin-left:auto}.nav-actions .track-nav-btn{display:none}.nav-actions .signin-nav-btn{display:inline-flex}}
+@media(max-width:560px){.nav{gap:8px}.nav-actions .signin-nav-btn{display:none}.mobile-menu-toggle{width:38px;height:38px}.links{top:calc(100% + 6px)}}
+html[data-theme="dark"] .dropdown-menu,html[data-theme="dark"] .links{background:#241b24;border-color:#3b2a38}
+html[data-theme="dark"] .dropdown-menu a,html[data-theme="dark"] .nav-link{color:#f8edf4}
+html[data-theme="dark"] .dropdown-menu a:hover,html[data-theme="dark"] .dropdown-menu a:focus,html[data-theme="dark"] .dropdown-menu{background:#241b24}
+html[data-theme="dark"] .dropdown-menu small{color:#bcaab7}
+html[data-theme="dark"] .mobile-menu-toggle{background:#241b24;border-color:#3b2a38}
+html[data-theme="dark"] .mobile-menu-toggle span{background:#f8edf4}
+
 </style>
 <style>
 /* Landing-page refresh inspired by modern e-commerce logistics sites */
@@ -159,9 +186,16 @@ h1 em{color:inherit}.hero-copy{font-size:16px;line-height:1.65;color:#555463;max
 <header>
   <div class="wrap nav">
     <a class="brand" href="#" aria-label="IKAI Logistics home"><span class="logo" aria-hidden="true"><svg viewBox="0 0 48 40" focusable="false"><g class="logo-envelope"><path d="M6 12Q6 9 9 9H39Q42 9 42 12V29Q42 32 39 32H9Q6 32 6 29Z" fill="#fff" stroke="#dbeafe" stroke-width="1.5"/><path d="M7 12L24 25L41 12" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 30L18 20M41 30L30 20" fill="none" stroke="#60a5fa" stroke-width="2" stroke-linecap="round"/></g><g class="logo-rocket"><path d="M24 3C18 8 16 15 17 23L24 29L31 23C32 15 30 8 24 3Z" fill="#fff" stroke="#dbeafe" stroke-width="1.4"/><path d="M20 18Q24 14 28 18L27 23H21Z" fill="#60a5fa"/><circle cx="24" cy="12" r="2.5" fill="#2563eb"/><path d="M17 20L11 25L17 26M31 20L37 25L31 26" fill="#bfdbfe" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/><path d="M21 28L24 37L27 28Z" fill="#fbbf24"/><path d="M23 29L24 34L25 29Z" fill="#fff"/></g></svg></span>IKAI</a>
-    <nav class="links" aria-label="Main navigation"><a href="#services">Solutions⌄</a><a href="#how-it-works">Platform⌄</a><a href="#bill-generator">Shipping tools</a><a href="#partners">Courier partners⌄</a><a href="#tracking">Track order</a><a href="#team">About us⌄</a></nav>
+    <button class="mobile-menu-toggle" type="button" id="mobile-menu-toggle" aria-expanded="false" aria-controls="main-navigation" aria-label="Open navigation menu"><span></span><span></span><span></span></button>
+    <nav class="links" id="main-navigation" aria-label="Main navigation">
+      <div class="nav-item has-dropdown"><a href="#services" class="nav-link" aria-haspopup="true">Products <span class="chevron">⌄</span></a><div class="dropdown-menu"><div class="dropdown-heading">Shipping platform</div><a href="#services"><strong>Multi-courier shipping</strong><small>Manage dispatches in one workflow</small></a><a href="#tracking"><strong>Shipment tracking</strong><small>Track order and delivery progress</small></a><a href="#bill-generator"><strong>Shipping bill generator</strong><small>Create a printable shipping bill</small></a><a href="#services"><strong>COD &amp; returns</strong><small>Organize payment and return workflows</small></a></div></div>
+      <div class="nav-item has-dropdown"><a href="#services" class="nav-link" aria-haspopup="true">Solutions <span class="chevron">⌄</span></a><div class="dropdown-menu"><div class="dropdown-heading">Solutions by business</div><a href="#services"><strong>E-commerce sellers</strong><small>For online stores and growing brands</small></a><a href="#services"><strong>D2C brands</strong><small>Manage direct-to-customer shipping</small></a><a href="#services"><strong>Marketplace sellers</strong><small>Bring daily dispatches together</small></a><a href="#team"><strong>Enterprise logistics</strong><small>Workflows for larger teams</small></a></div></div>
+      <div class="nav-item has-dropdown"><a href="#partners" class="nav-link" aria-haspopup="true">Integrations <span class="chevron">⌄</span></a><div class="dropdown-menu"><div class="dropdown-heading">Connect your workflow</div><a href="#partners"><strong>Courier partners</strong><small>Explore the courier network</small></a><a href="#services"><strong>Store integrations</strong><small>Plan connected order workflows</small></a></div></div>
+      <div class="nav-item has-dropdown"><a href="#how-it-works" class="nav-link" aria-haspopup="true">Resources <span class="chevron">⌄</span></a><div class="dropdown-menu"><div class="dropdown-heading">Helpful resources</div><a href="#how-it-works"><strong>How it works</strong><small>See the shipping workflow</small></a><a href="#bill-generator"><strong>Shipping tools</strong><small>Generate a shipping bill</small></a><a href="#contact"><strong>Help &amp; contact</strong><small>Get in touch with IKAI</small></a></div></div>
+      <a class="nav-link pricing-link" href="#signup">Pricing</a>
+    </nav>
     <div class="header-tools"><div class="live-clock" aria-label="Current date and time in Pakistan"><strong id="header-time">--:--:--</strong><span id="header-date">Loading date…</span></div><button type="button" class="theme-toggle" id="theme-toggle" aria-label="Switch to night mode" title="Switch day/night mode"><span class="theme-icon" id="theme-icon">☾</span><span class="theme-label" id="theme-label">Night mode</span></button></div>
-    <div class="nav-actions"><a class="btn btn-outline" href="#tracking">Track order</a><a class="btn btn-primary" href="#signup">Try IKAI free ↗</a></div>
+    <div class="nav-actions"><a class="btn btn-outline track-nav-btn" href="#tracking">Track order</a><a class="btn btn-outline signin-nav-btn" href="#signup">Sign in</a><a class="btn btn-primary" href="#signup">Sign up free ↗</a></div>
   </div>
 </header>
 <main>
@@ -330,6 +364,7 @@ h1 em{color:inherit}.hero-copy{font-size:16px;line-height:1.65;color:#555463;max
   window.setInterval(updateClock,1000);
 })();
  
+(function(){const toggle=document.getElementById('mobile-menu-toggle');const nav=document.getElementById('main-navigation');if(!toggle||!nav)return;toggle.addEventListener('click',function(){const open=nav.classList.toggle('is-open');toggle.setAttribute('aria-expanded',String(open));toggle.setAttribute('aria-label',open?'Close navigation menu':'Open navigation menu')});nav.querySelectorAll('.has-dropdown > .nav-link').forEach(function(link){link.addEventListener('click',function(event){if(window.matchMedia('(max-width: 900px)').matches){event.preventDefault();const item=link.parentElement;const wasOpen=item.classList.contains('menu-open');nav.querySelectorAll('.nav-item.menu-open').forEach(function(openItem){openItem.classList.remove('menu-open')});if(!wasOpen)item.classList.add('menu-open')}})});nav.querySelectorAll('a:not(.has-dropdown > .nav-link)').forEach(function(link){link.addEventListener('click',function(){nav.classList.remove('is-open');toggle.setAttribute('aria-expanded','false')})});document.addEventListener('keydown',function(event){if(event.key==='Escape'){nav.classList.remove('is-open');toggle.setAttribute('aria-expanded','false');toggle.focus()}});window.addEventListener('resize',function(){if(window.innerWidth>900){nav.classList.remove('is-open');toggle.setAttribute('aria-expanded','false');nav.querySelectorAll('.menu-open').forEach(function(item){item.classList.remove('menu-open')})}})})();
 function billValue(id){return document.getElementById(id).value.trim()}
 function billNumber(id){return Math.max(0,Number(document.getElementById(id).value)||0)}
 function money(n){return 'PKR '+n.toLocaleString('en-PK',{minimumFractionDigits:2,maximumFractionDigits:2})}
