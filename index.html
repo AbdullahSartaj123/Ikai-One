@@ -11,6 +11,34 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      .startup-fallback{min-height:100vh;display:grid;place-items:center;padding:28px;background:#f7f8f5;color:#192824;font-family:'DM Sans',sans-serif}
+      .startup-card{width:min(560px,100%);padding:30px;border:1px solid #e3e9e2;border-radius:18px;background:#fff;box-shadow:0 18px 60px #19282412}
+      .startup-card h1{margin:0 0 10px;font:800 25px/1.2 'Manrope',sans-serif}
+      .startup-card p{color:#6f7e76;font-size:14px;line-height:1.7}
+      .startup-card code{display:block;overflow-wrap:anywhere;padding:12px;border-radius:8px;background:#f2f4f1;color:#9e3b2e;font-size:12px}
+      .startup-card a{display:inline-block;margin:12px 10px 0 0;padding:10px 14px;border-radius:8px;background:#4659f5;color:#fff;text-decoration:none;font-size:13px;font-weight:700}
+    </style>
+    <script>
+      window.addEventListener('error', function (event) {
+        var root = document.getElementById('root');
+        if (!root || root.dataset.appMounted === 'true') return;
+        var message = event.message || 'The application script or one of its assets could not load.';
+        root.innerHTML = '<main class="startup-fallback"><section class="startup-card"><h1>IKAI One could not start</h1><p>The page loaded, but the app did not start correctly. This diagnostic is shown instead of a blank white screen.</p><code></code><p>Refresh after the latest Netlify deploy is published. If this message remains, share its error with support.</p><a href="/">Retry</a><a href="/login">Open login</a></section></main>';
+        var code = root.querySelector('code');
+        if (code) code.textContent = message;
+      });
+      window.addEventListener('unhandledrejection', function (event) {
+        var root = document.getElementById('root');
+        if (!root || root.dataset.appMounted === 'true') return;
+        var reason = event.reason && (event.reason.message || String(event.reason));
+        if (!reason) return;
+        var message = String(reason);
+        root.innerHTML = '<main class="startup-fallback"><section class="startup-card"><h1>IKAI One could not start</h1><p>An application startup error occurred instead of rendering the page.</p><code></code><a href="/">Retry</a><a href="/login">Open login</a></section></main>';
+        var code = root.querySelector('code');
+        if (code) code.textContent = message;
+      });
+    </script>
   </head>
-  <body><div id="root"></div><script type="module" src="/src/main.jsx"></script></body>
+  <body><div id="root"><main class="startup-fallback"><section class="startup-card"><h1>Loading IKAI One…</h1><p>Starting your shipping workspace. If this screen does not change, a startup error will be shown here instead of a blank page.</p></section></main></div><script type="module" src="./src/main.jsx"></script></body>
 </html>
