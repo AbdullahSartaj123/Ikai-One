@@ -42,27 +42,110 @@ function Brand({ light = false }) {
   </a>
 }
 
+const megaMenus = {
+  Products: {
+    className: 'products-mega',
+    columns: [
+      { title: 'SHIPPING', items: [
+        ['Domestic Shipping','Shipping across Pakistan','PackageCheck'],['Cargo Shipping','Nationwide B2B & bulk shipping','Truck'],['Quick','Speedy local deliveries at low costs','Zap'],['Fulfillment','Warehousing, packaging & shipping services','Boxes']
+      ]},
+      { title: 'CROSS-BORDER', items: [
+        ['ShipX','International shipping to 220+ countries','Globe2'],['CargoX','Cross-border B2B & bulk shipping','Truck'],['OceanX','Seamless FCL & LCL ocean freight','Ship'],['Connect','Send personal packages worldwide','Package']
+      ]},
+      { title: 'GROWTH & MARKETING', items: [
+        ['fastr by IKAI','AI-native pre-order and growth tools','Sparkles'],['Promise','Delivery estimates and trust signals','ShieldCheck'],['ONDC','Marketplace network integrations','Network']
+      ]},
+      { title: 'FINANCIAL SERVICES', items: [
+        ['Capital','Financial services support','WalletCards'],['Credit Score','Credit score for free','ChartNoAxesCombined']
+      ]},
+      { title: 'AI ENABLED PRODUCTS', items: [
+        ['Sense','Turn data into power with APIs','BrainCircuit'],['Trends','Consumer behaviour and commerce analytics','ChartNoAxesCombined'],['Voice AI','Build voice into customer workflows','Mic']
+      ]}
+    ],
+    side: { title: 'VALUE ADDED SERVICES', items: ['Delivery Boost','Dark Stores','Delight Tracking','Instant COD','Instant Pick Up','IKAI Prime','Omni','Packaging','Co-Pilot','Returns Management'] }
+  },
+  Platform: {
+    className: 'platform-mega',
+    featureTitle: 'FEATURES',
+    features: [
+      ['Cash on Delivery','WalletCards'],['Serviceable Pincodes','MapPin'],['API Integration','Code2'],['Multiple Pickup Locations','MapPinned'],['Print Shipping Labels','Printer'],['Email SMS Notification','MessageSquare'],['Amazon Self-Ship','Store'],['All Features','Grid2X2']
+    ],
+    promo: { title: 'Refer & Earn', text: 'Invite sellers to IKAI One and unlock rewards as the network grows.', link: 'Learn more', icon: 'Gift' }
+  },
+  Partners: {
+    className: 'partners-mega',
+    columns: [
+      {title:'INTEGRATIONS',items:[['Courier Integration','Connect multiple courier partners and automate shipping','PackageOpen'],['Channel Integration','Connect your online store and order management system','Network']]},
+      {title:'PARTNER PROGRAM',items:[['Become a Partner','Collaborate with IKAI One and unlock new growth opportunities','Handshake']]}
+    ]
+  },
+  Resources: {
+    className: 'resources-mega',
+    columns: [
+      {title:'PRODUCT HELP',items:[['Shipping Rate Calculator','Estimate delivery costs before you ship','Calculator'],['Volumetric Weight Calculator','Calculate chargeable parcel weight','Scale'],['Free eCommerce Tools','Useful tools for online sellers','Wrench'],['Knowledge Base','Guides for day-to-day shipping','GraduationCap'],['Developers','API docs and integration guides','Code2']]},
+      {title:'LEARN',items:[['Blog','Ideas for ecommerce and operations','PenLine'],['Ebook','Practical guides for growing teams','BookOpen'],['Encyclopedia','Shipping terms made simple','BookText'],['Videos and Podcast','Watch, listen and learn','PlaySquare'],['FAQs','Answers to common questions','MessageCircleQuestion']]}
+    ],
+    promo:{title:'Customer Stories',text:'Discover how sellers make their shipping operations simpler.',link:'Read stories',icon:'UsersRound'}
+  }
+}
+const menuIconMap = { PackageCheck, Truck, Zap, Boxes, Globe2, Ship: Truck, Package: Box, Sparkles, ShieldCheck, Network: PlugZap, WalletCards, ChartNoAxesCombined: BarChart3, BrainCircuit: Sparkles, Mic: MessageCircle, MapPin, MapPinned: MapPin, Code2: PlugZap, Printer: PackageCheck, MessageSquare: MessageCircle, Store: Box, Grid2X2: Boxes, Gift: Sparkles, PackageOpen: Boxes, Handshake: Globe2, Calculator: CircleDollarSign, Scale: Activity, Wrench: Zap, GraduationCap: ShieldCheck, PenLine: MessageCircle, BookOpen: Boxes, BookText: Boxes, PlaySquare: Zap, MessageCircleQuestion: MessageCircle, UsersRound: Boxes }
+function MegaItem({ item, onChoose, feature = false }) {
+  const [title, description, iconName] = item
+  const Icon = menuIconMap[iconName] || ArrowUpRight
+  return <a href={title === 'Track Order' ? '#tracking' : title === 'Shipping Rate Calculator' ? '#calculator' : '#platform'} className={feature ? 'mega-feature' : 'mega-item'} onClick={onChoose}>
+    <span className="mega-item-icon"><Icon size={feature ? 19 : 18}/></span>
+    <span className="mega-item-copy"><b>{title}</b>{description && <small>{description}</small>}</span>
+  </a>
+}
+function MegaMenu({ name, close }) {
+  const menu = megaMenus[name]
+  if (!menu) return null
+  if (name === 'Products') return <div className={'mega-menu '+menu.className} role="region" aria-label="Products menu">
+    <div className="products-main">{menu.columns.map(column=><section className="mega-column" key={column.title}><h3>{column.title}</h3>{column.items.map(item=><MegaItem key={item[0]} item={item} onChoose={close}/>)}</section>)}</div>
+    <aside className="products-side"><h3>{menu.side.title}</h3>{menu.side.items.map(item=><a key={item} href="#platform" onClick={close}>{item}</a>)}</aside>
+  </div>
+  if (name === 'Platform') return <div className={'mega-menu '+menu.className} role="region" aria-label="Platform menu">
+    <div className="platform-menu-main"><h3>{menu.featureTitle}</h3><div className="platform-feature-grid">{menu.features.map(item=><MegaItem key={item[0]} item={item} feature onChoose={close}/>)}</div></div>
+    <aside className="mega-promo"><div className="promo-art"><Sparkles size={28}/><span>IKAI</span></div><div><b>{menu.promo.title}</b><p>{menu.promo.text}</p><a href="#get-started" onClick={close}>{menu.promo.link} <ArrowUpRight size={14}/></a></div></aside>
+  </div>
+  return <div className={'mega-menu '+menu.className} role="region" aria-label={name+' menu'}>
+    <div className="mega-columns">{menu.columns.map(column=><section className="mega-column" key={column.title}><h3>{column.title}</h3>{column.items.map(item=><MegaItem key={item[0]} item={item} onChoose={close}/>)}</section>)}</div>
+    {menu.promo&&<aside className="mega-promo"><div className="promo-art"><Sparkles size={28}/><span>IKAI</span></div><div><b>{menu.promo.title}</b><p>{menu.promo.text}</p><a href="#get-started" onClick={close}>{menu.promo.link} <ArrowUpRight size={14}/></a></div></aside>}
+  </div>
+}
 function Header() {
-  const [open, setOpen] = useState(false)
+  const [activeMenu, setActiveMenu] = useState('')
+  const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 12)
     window.addEventListener('scroll', fn, { passive: true }); fn()
     return () => window.removeEventListener('scroll', fn)
   }, [])
-  const close = () => setOpen(false)
+  const close = () => { setActiveMenu(''); setMobileOpen(false) }
+  const toggle = name => setActiveMenu(current => current === name ? '' : name)
   return <>
     <div className="announcement"><Sparkles size={13}/><span>Shipping operations, brought together.</span><a href="#platform">Meet your new workspace <ArrowRight size={13}/></a></div>
-    <header className={'site-header' + (scrolled ? ' header-scrolled' : '')}>
+    <header className={'site-header mega-site-header' + (scrolled ? ' header-scrolled' : '')} onKeyDown={event => { if(event.key === 'Escape') close() }}>
       <div className="nav-shell">
         <Brand/>
-        <nav className={'main-nav' + (open ? ' nav-open' : '')} aria-label="Main navigation">
-          <a href="#platform" onClick={close}>Platform</a><a href="#solutions" onClick={close}>Solutions</a><a href="#how-it-works" onClick={close}>How it works</a><a href="#tracking" onClick={close}>Track a parcel</a><a href="#calculator" onClick={close}>Rate calculator</a>
-          <div className="mobile-nav-actions"><a className="nav-login" href="#get-started" onClick={close}>Log in</a><a className="button button-primary button-full" href="#get-started" onClick={close}>Get early access <ArrowUpRight size={16}/></a></div>
+        <nav className={'main-nav mega-main-nav' + (mobileOpen ? ' nav-open' : '')} aria-label="Main navigation">
+          {['Products','Platform','Pricing','Partners','Track Order','Resources','Investors'].map(name => {
+            const hasMenu = Boolean(megaMenus[name])
+            if(name === 'Pricing') return <a href="#calculator" key={name} onClick={close}>Pricing</a>
+            if(name === 'Track Order') return <a href="#tracking" key={name} onClick={close}>{name}</a>
+            if(name === 'Investors') return <a href="#about" key={name} onClick={close}>{name}</a>
+            return <div className={'mega-nav-item'+(activeMenu===name?' menu-active':'')} key={name}>
+              <button type="button" aria-expanded={activeMenu===name} onClick={() => toggle(name)} onMouseEnter={() => {if(window.matchMedia('(hover: hover) and (pointer: fine)').matches)setActiveMenu(name)}}>{name}<ChevronDown size={14}/></button>
+              {activeMenu===name&&<MegaMenu name={name} close={close}/>}
+            </div>
+          })}
+          <div className="mobile-nav-actions"><a className="nav-login" href="/login" onClick={close}>Log In</a><a className="button button-primary button-full" href="/signup" onClick={close}>Try for Free <ArrowUpRight size={16}/></a></div>
         </nav>
-        <div className="nav-actions"><a className="nav-login" href="#get-started">Log in</a><a className="button button-primary nav-cta" href="#get-started">Get early access <ArrowUpRight size={15}/></a></div>
-        <button className="menu-toggle" onClick={() => setOpen(!open)} aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open}>{open ? <X size={22}/> : <Menu size={22}/>}</button>
+        <div className="nav-actions"><a className="nav-login" href="/login">Log In</a><a className="button button-primary nav-cta" href="/signup">Try for Free <ArrowUpRight size={15}/></a></div>
+        <button className="menu-toggle" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen}>{mobileOpen ? <X size={22}/> : <Menu size={22}/>}</button>
       </div>
+      {activeMenu&&<button className="mega-backdrop" aria-label="Close navigation menu" onClick={close}/>}
     </header>
   </>
 }
