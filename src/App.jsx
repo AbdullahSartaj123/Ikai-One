@@ -310,7 +310,7 @@ function EarlyAccess({ notify }) {
 function Footer() {
   return <footer className="site-footer"><div className="container"><div className="footer-main">
     <div className="footer-brand-column"><Brand light/><p>The shipping workspace that brings your delivery operations into focus.</p><span className="footer-made"><i/> Built for the next move.</span></div>
-    <div className="footer-col"><b>EXPLORE</b><a href="#platform">Platform</a><a href="#solutions">Solutions</a><a href="#how-it-works">How it works</a></div>
+    <div className="footer-col"><b>EXPLORE</b><a href="#platform">Platform</a><a href="#solutions">Solutions</a><a href="#how-it-works">How it works</a><a href="/blog">Insights & Blog</a></div>
     <div className="footer-col"><b>TOOLS</b><a href="#tracking">Track a parcel</a><a href="#calculator">Rate preview</a><a href="#get-started">Early access</a></div>
     <div className="footer-col footer-col-contact"><b>THE IKAI APPROACH</b><span>Clarity over complexity.</span><span>Connected by design.</span><a href="#top" className="back-top">Back to top ↑</a></div>
   </div><div className="footer-bottom"><span>© {new Date().getFullYear()} IKAI One. All rights reserved.</span><span className="footer-status"><i/> Frontend preview · Sample data</span><span>Built for commerce that keeps moving.</span></div></div></footer>
