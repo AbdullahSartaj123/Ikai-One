@@ -63,3 +63,13 @@ These additional pages are frontend-only. Add a backend and provider integration
 The sidebar now has expandable submenus for order imports and risk review; shipment tracking, labels and SLA monitoring; pickup requests and manifest history; reverse pickups and return rules; NDR rules and buyer follow-ups; courier serviceability, scorecards and claims; zone rates and surcharges; channel settings and sync history; product categories and package profiles; stock adjustments and fulfilment; revenue/courier/returns reports; import/export jobs; tracking events and notification templates; team activity; API/webhook logs; and team, security and notification settings.
 
 All submenu destinations are registered as React Router routes. The new pages use sample records and session-only actions; no carrier, marketplace, finance or messaging provider is connected. Netlify remains configured to build from GitHub with `npm run build`, publish `dist`, and route SPA paths to `index.html`.
+
+
+## Operational reporting and exports
+
+Operations and submenu views now include a shared report workspace with a 30-day sample dataset (48 rows per view), filterable by date range, status, region/city, business segment and text search. KPI cards and trend/status charts update from the current selection. Export options include:
+- **Export data:** Excel-compatible CSV containing the filtered records and report metadata.
+- **Export summary:** CSV with the selected filters, headline metrics, status distribution and 7-day activity trend.
+- **Print / PDF:** Opens the browser print dialog so the report can be saved as PDF.
+
+These values are illustrative frontend mock data, not live courier, finance, order or inventory records. Dedicated Orders, Shipments and Billing pages retain their own workflows and table exports. The reporting UI is designed for backend data-source integration later; no real data connection is enabled.
