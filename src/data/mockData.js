@@ -38,6 +38,7 @@ export const navGroups = [
  ]},
  {title:'DELIVERY NETWORK',items:[
   {label:'Courier Partners',to:'/app/couriers',icon:'Truck'},
+  {label:'Rate Calculator',to:'/app/rate-calculator',icon:'Calculator'},
   {label:'Pickup Addresses',to:'/app/pickup-addresses',icon:'MapPin'},
   {label:'Shipping Rules',to:'/app/shipping-rules',icon:'Route'}
  ]},
