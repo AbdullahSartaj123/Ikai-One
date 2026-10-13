@@ -74,7 +74,7 @@
 .ops-filter-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
 .ops-filter-grid>label{display:flex;flex-direction:column;gap:7px;min-width:0}
 .ops-filter-grid>label>span{display:flex;align-items:center;gap:5px;color:#7b887d;font-size:9px;font-weight:800}
-.ops-filter-grid input,.ops-filter-grid select{width:100%;height:37px;min-width:0;padding:0 9px;border:1px solid #e2e8df;border-radius:8px;background:#fff;color:#48594c;font:500 10px inherit;outline:none}
+.ops-filter-grid input,.ops-filter-grid select{width:100%;height:37px;min-width:0;padding:0 9px;border:1px solid #e2e8df;border-radius:8px;background:#fff;color:#48594c;font-size:10px;font-weight:500;font-family:inherit;outline:none}
 .ops-filter-grid input:focus,.ops-filter-grid select:focus{border-color:#aab2ff;box-shadow:0 0 0 3px #eff0ff}
 .ops-filter-search{grid-column:span 2}
 .ops-filter-search .table-search{width:100%;min-height:37px}
