@@ -4,10 +4,16 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from 'react
 import { ArrowUpRight, Boxes } from 'lucide-react'
 import App from './App.jsx'
 import Login from './pages/Login.jsx'
+import Signup from './pages/Signup.jsx'
+import VerifyOTP from './pages/VerifyOTP.jsx'
+import Onboarding from './pages/Onboarding.jsx'
 import Dashboard from './pages/Dashboard.jsx'
+import ProtectedRoute from './components/ProtectedRoute.jsx'
+import { AuthProvider } from './context/AuthContext.jsx'
 import './styles.css'
 import './styles/theme.css'
 import './styles/dashboard.css'
+import './styles/auth.css'
 
 function ShipperEntry() {
   const location = useLocation()
@@ -15,12 +21,17 @@ function ShipperEntry() {
   return <Link to="/login" className="shipper-entry"><Boxes size={17}/> Shipper Login <ArrowUpRight size={15}/></Link>
 }
 function Root() {
-  return <BrowserRouter><ShipperEntry/><Routes>
+  return <AuthProvider><BrowserRouter><ShipperEntry/><Routes>
     <Route path="/" element={<App/>}/>
     <Route path="/login" element={<Login/>}/>
-    <Route path="/app" element={<Navigate to="/app/dashboard" replace/>}/>
-    <Route path="/app/*" element={<Dashboard/>}/>
+    <Route path="/signup" element={<Signup/>}/>
+    <Route path="/verify-otp" element={<VerifyOTP/>}/>
+    <Route path="/onboarding" element={<Onboarding/>}/>
+    <Route path="/app" element={<ProtectedRoute/>}>
+      <Route index element={<Navigate to="dashboard" replace/>}/>
+      <Route path="*" element={<Dashboard/>}/>
+    </Route>
     <Route path="*" element={<Navigate to="/" replace/>}/>
-  </Routes></BrowserRouter>
+  </Routes></BrowserRouter></AuthProvider>
 }
 createRoot(document.getElementById('root')).render(<React.StrictMode><Root/></React.StrictMode>)
