@@ -47,7 +47,7 @@ function PickupAddresses(){
  const open=(item=null)=>{setEditing(item?.id??null);setForm(item?{...item}:blank);setShowForm(true)}
  const change=(key,value)=>setForm(f=>({...f,[key]:value}))
  const save=e=>{e.preventDefault();if(!/^\d{5}$/.test(form.pincode)){setToast('Please enter a valid 5-digit pincode.');return}setAddresses(old=>{let next=editing?old.map(a=>a.id===editing?{...form,id:editing}:a):[...old,{...form,id:Math.max(0,...old.map(a=>a.id))+1}];if(form.default)next=next.map(a=>({...a,default:a.id===(editing||next[next.length-1].id)}));if(form.primary)next=next.map(a=>({...a,primary:a.id===(editing||next[next.length-1].id)}));return next});setShowForm(false);setToast(editing?'Address updated.':'Pickup address added.')}
- const setFlag=(id,key)=>setAddresses(old=>old.map(a=>({...a,[key]:a.id===id,!((a.id===id)&&a[key])})))
+ const setFlag=(id,key)=>setAddresses(old=>old.map(a=>({...a,[key]:a.id===id?!a[key]:key==='default'||key==='primary'?false:a[key]})))
  const remove=id=>{setAddresses(old=>old.filter(a=>a.id!==id));setToast('Pickup address removed.')}
  const shown=addresses.filter(a=>[a.label,a.name,a.city,a.pincode,a.state].some(v=>v.toLowerCase().includes(query.toLowerCase())))
  return <div className="page-stack logistics-page"><SectionHeading eyebrow="PICKUP LOCATIONS" title="Pickup addresses" description="Manage warehouse and dispatch locations used when booking courier pickups." actions={<button className="primary-button" onClick={()=>open()}><Plus size={15}/> Add address</button>}/>{toast&&<div className="orders-toast"><Check size={15}/>{toast}<button onClick={()=>setToast('')}><X size={14}/></button></div>}
