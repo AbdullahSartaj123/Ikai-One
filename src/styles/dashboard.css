@@ -133,3 +133,13 @@
 .ops-detail-grid small{color:#849087;font-size:10px;text-transform:uppercase;letter-spacing:.06em;font-weight:800}
 .ops-detail-grid b{color:#26372c;font-size:13px;overflow-wrap:anywhere}
 @media(max-width:700px){.ops-pagination{align-items:flex-start}.ops-pagination>span{width:100%}.ops-detail-grid{grid-template-columns:1fr}.ops-detail-grid>div:nth-child(odd){border-right:0}.ops-detail-grid>div:nth-last-child(2){border-bottom:1px solid #edf0eb}}
+
+
+/* Contextual navigation keeps sibling tools discoverable on every menu page */
+.ops-related-nav{display:flex;flex-direction:column;gap:9px;padding:12px 14px;background:#fff;border:1px solid #e7ece5;border-radius:12px;box-shadow:0 2px 6px #1b35250a}
+.ops-related-label{font-size:9px;font-weight:850;letter-spacing:.12em;color:#8a968b}
+.ops-related-nav>div{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.ops-related-nav a{display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid #e7ece5;border-radius:8px;background:#fff;color:#657268;font-size:11px;font-weight:700;text-decoration:none;transition:background .16s,border-color .16s,color .16s}
+.ops-related-nav a:hover,.ops-related-nav a.active{background:#f0f1ff;border-color:#d9dcff;color:#4659f5}
+.ops-related-nav a svg{opacity:.55}
+@media(max-width:700px){.ops-related-nav{padding:10px}.ops-related-nav>div{gap:6px}.ops-related-nav a{padding:7px 8px;font-size:10px}}
