@@ -17,12 +17,16 @@ npm run build
 
 ## Routes
 - `/` — IKAI One marketing landing page
+- `/blog` — IKAI One insights and blog listing (three editorial posts)
+- `/blog/ecommerce-shipping-playbook-2026` — 2026 e-commerce shipping playbook
+- `/blog/cod-cash-flow-without-spreadsheets` — COD cash-flow and reconciliation guide
+- `/blog/courier-performance-scorecard` — courier performance scorecard guide
 - `/login` — email or phone + password demo sign-in
 - `/signup` — company name, business email, phone, tax number, business type
 - `/verify-otp` — six-digit mock OTP verification
 - `/onboarding` — Company profile → Pickup address → Bank/KYC → Couriers → Done
 - `/app/dashboard` — protected seller dashboard
-- `/app/orders`, `/app/shipments`, `/app/returns`, `/app/ndr`, `/app/couriers`, `/app/pickup-addresses`, `/app/shipping-rules`, `/app/billing`, `/app/reports`, `/app/integrations`, `/app/support`, `/app/settings`
+- `/app/orders`, `/app/shipments`, `/app/returns`, `/app/ndr`, `/app/couriers`, `/app/rate-calculator`, `/app/pickup-addresses`, `/app/shipping-rules`, `/app/billing`, `/app/reports`, `/app/integrations`, `/app/support`, `/app/settings`
 
 ## Sample login accounts
 - Store owner: `demo@ikai.one` / `IkaiDemo123!`
