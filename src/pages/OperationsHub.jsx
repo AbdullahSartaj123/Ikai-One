@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { navGroups } from '../data/mockData.js'
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Activity, AlertTriangle, ArrowDownToLine, ArrowRight, ArrowUpRight, BellRing, Boxes, CalendarDays, Check, CheckCircle2, ChevronDown, CirclePlus, Clock3, Code, Download, ExternalLink, FileSpreadsheet, FileText, Filter, Globe2, Layers3, MapPin, MessageCircle, MoreHorizontal, Package, PackageMinus, Plus, RefreshCw, Route, Search, Settings2, ShieldCheck, ShoppingBag, Sparkles, Truck, Users, Wallet, X, Zap, Printer } from 'lucide-react'
 
@@ -91,6 +92,14 @@ function downloadCsv(filename,rows){
 }
 function ReportTooltip({active,payload,label}){if(!active||!payload?.length)return null;return <div className="chart-tooltip"><b>{label}</b>{payload.map(item=><div key={item.dataKey}><i style={{background:item.color}}/>{item.name||item.dataKey}: <strong>{Number(item.value).toLocaleString('en-PK')}</strong></div>)}</div>}
 export default function OperationsHub({slug}) {
+ const navContext=useMemo(()=>{
+  for(const group of navGroups) for(const item of group.items){
+   if(item.to==='/app/'+slug) return {group:group.title,parent:item,siblings:[item,...(item.children||[])]}
+   const child=(item.children||[]).find(entry=>entry.to==='/app/'+slug)
+   if(child) return {group:group.title,parent:item,siblings:[item,...(item.children||[])]}
+  }
+  return null
+ },[slug])
  const cfg=config[slug]||extraConfig[slug]||defaults, Icon=cfg.icon
  const [rows,setRows]=useState(()=>makeReportRows(cfg,slug)),[tab,setTab]=useState(cfg.tabs[0]),[query,setQuery]=useState(''),[modal,setModal]=useState(false),[form,setForm]=useState({}),[notice,setNotice]=useState(''),[menu,setMenu]=useState(null),[page,setPage]=useState(1),[pageSize,setPageSize]=useState(10),[selected,setSelected]=useState([]),[detail,setDetail]=useState(null)
  const [fromDate,setFromDate]=useState('2026-09-14'),[toDate,setToDate]=useState('2026-10-13'),[statusFilter,setStatusFilter]=useState('All statuses'),[regionFilter,setRegionFilter]=useState('All regions'),[segmentFilter,setSegmentFilter]=useState('All segments')
@@ -119,6 +128,7 @@ export default function OperationsHub({slug}) {
  function act(row){setRows(old=>old.map(r=>r.id===row.id?{...r,cells:r.cells.map((v,i)=>i===r.cells.length-1?'Reviewed':v)}:r));setMenu(null);setNotice('Record marked reviewed in this demo session.')}
  return <div className="page-stack ops-hub">
   <div className="page-heading"><div><div className="page-eyebrow"><span/> {cfg.eyebrow}</div><h1>{cfg.title}</h1><p>{cfg.subtitle}</p></div><div className="ops-heading-actions"><button className="outline-button" onClick={()=>{setNotice('Workspace refreshed using the current mock dataset.');}}><RefreshCw size={15}/> Refresh</button><button className="primary-button" onClick={()=>{setForm({});setModal(true)}}><Plus size={16}/> {cfg.action}</button></div></div>
+  {navContext&&<nav className="ops-related-nav" aria-label="Related workspace pages"><span className="ops-related-label">{navContext.group}</span><div>{navContext.siblings.map(item=><Link key={item.to} to={item.to} className={item.to==='/app/'+slug?'active':''}>{item.label}<ArrowRight size={12}/></Link>)}</div></nav>}
   <div className="generic-stats ops-stats">{cfg.stats.map(([label,value,note],i)=><div className="generic-stat" key={label}><span className={'generic-stat-icon gsi-'+i}><Icon size={18}/></span><small>{label}</small><b>{value}</b><span className="generic-stat-note">{note}</span></div>)}</div>
   <section className="panel ops-report-filters">
    <div className="ops-report-filter-heading"><div><span className="panel-eyebrow">REPORT PARAMETERS</span><h2>Filter your data</h2><p>Apply the same filters to charts, KPI summaries, tables and exports.</p></div><span className="ops-demo-label"><Activity size={13}/> MOCK DATA</span></div>
