@@ -17,8 +17,8 @@ npm run build
 
 ## Routes
 - `/` — IKAI One marketing landing page
-- `/login` — email or phone + password
-- `/signup` — company signup
+- `/login` — email or phone + password demo sign-in
+- `/signup` — company name, business email, phone, tax number, business type
 - `/verify-otp` — six-digit mock OTP verification
 - `/onboarding` — Company profile → Pickup address → Bank/KYC → Couriers → Done
 - `/app/dashboard` — protected seller dashboard
@@ -35,7 +35,7 @@ npm run build
 3. Complete the five onboarding steps.
 4. You will enter the protected dashboard. Use the user dropdown to sign out.
 
-Google sign-in and password reset are placeholders. No email or SMS is sent. Demo accounts and session details are stored in browser storage only; this is not production authentication. Do not enter real banking, CNIC, tax, or other sensitive information.
+Google sign-in and password reset are placeholders. No email or SMS is sent. Authentication is a frontend demo, not production security. The signup wizard keeps its in-progress form in the browser tab and does not persist bank, KYC, or pickup-address fields. After signing out, use one of the sample demo accounts. Do not enter real banking, CNIC, tax, or other sensitive information.
 
 ## Netlify
 Build command: `npm run build`; publish directory: `dist`; Node 20. SPA route fallback is configured in `netlify.toml`.
