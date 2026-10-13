@@ -1,4 +1,4 @@
-import React, { Component, Suspense, lazy } from 'react'
+import React, { Component, Suspense, lazy, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from 'react-router-dom'
 import { ArrowUpRight, Boxes } from 'lucide-react'
@@ -58,6 +58,10 @@ function ShipperEntry() {
   return <Link to="/login" className="shipper-entry"><Boxes size={17}/> Seller Central <ArrowUpRight size={15}/></Link>
 }
 function Root() {
+  useEffect(() => {
+    const root = document.getElementById('root')
+    if (root) root.dataset.appMounted = 'true'
+  }, [])
   return <AppErrorBoundary><AuthProvider><BrowserRouter><Suspense fallback={<LoadingScreen/>}><ShipperEntry/><Routes>
     <Route path="/" element={<App/>}/><Route path="/blog" element={<Blog/>}/><Route path="/blog/:slug" element={<Blog/>}/>
     <Route path="/track/:awb" element={<PublicTracking/>}/><Route path="/login" element={<Login/>}/>
