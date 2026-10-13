@@ -33,21 +33,43 @@ export const navGroups = [
   {label:'Dashboard',to:'/app/dashboard',icon:'LayoutDashboard'},
   {label:'Orders',to:'/app/orders',icon:'ShoppingCart',count:'24'},
   {label:'Shipments',to:'/app/shipments',icon:'Package'},
+  {label:'Manifests & Pickups',to:'/app/manifests',icon:'FileText'},
   {label:'Returns',to:'/app/returns',icon:'PackageMinus'},
-  {label:'NDR Management',to:'/app/ndr',icon:'AlertTriangle',count:'8'}
+  {label:'NDR Management',to:'/app/ndr',icon:'AlertTriangle',count:'8'},
+  {label:'Pickup Performance',to:'/app/pickup-performance',icon:'Activity'}
  ]},
  {title:'DELIVERY NETWORK',items:[
   {label:'Courier Partners',to:'/app/couriers',icon:'Truck'},
+  {label:'Courier Priority',to:'/app/courier-priority',icon:'ShieldCheck'},
   {label:'Rate Calculator',to:'/app/rate-calculator',icon:'Calculator'},
   {label:'Pickup Addresses',to:'/app/pickup-addresses',icon:'MapPin'},
-  {label:'Shipping Rules',to:'/app/shipping-rules',icon:'Route'}
+  {label:'Shipping Rules',to:'/app/shipping-rules',icon:'Route'},
+  {label:'Pincode & Zone Mapping',to:'/app/pincode-zones',icon:'Map'},
+  {label:'International Shipping',to:'/app/international',icon:'Globe'}
+ ]},
+ {title:'PRODUCTS & CHANNELS',items:[
+  {label:'Channels / Integrations',to:'/app/integrations',icon:'Plug'},
+  {label:'Products',to:'/app/products',icon:'ShoppingBag'},
+  {label:'Channel Products',to:'/app/channel-products',icon:'Boxes'},
+  {label:'Inventory Management',to:'/app/inventory',icon:'Layers'},
+  {label:'Manage Catalog',to:'/app/catalog',icon:'BookOpen'},
+  {label:'Warehouse & Fulfilment',to:'/app/warehouse',icon:'Warehouse'}
  ]},
  {title:'FINANCE & INSIGHTS',items:[
   {label:'Billing & Wallet',to:'/app/billing',icon:'Wallet'},
-  {label:'Reports & Analytics',to:'/app/reports',icon:'ChartNoAxesCombined'}
+  {label:'Reports & Analytics',to:'/app/reports',icon:'ChartNoAxesCombined'},
+  {label:'Scheduled Reports',to:'/app/scheduled-reports',icon:'CalendarClock'},
+  {label:'Tax Classes',to:'/app/tax-classes',icon:'FileText'}
  ]},
- {title:'CONFIGURATION',items:[
-  {label:'Channels / Integrations',to:'/app/integrations',icon:'Plug'},
+ {title:'TOOLS & CUSTOMER EXPERIENCE',items:[
+  {label:'Bulk Actions',to:'/app/bulk-actions',icon:'Zap'},
+  {label:'Branded Tracking Page',to:'/app/tracking-page',icon:'Globe'},
+  {label:'Post-Ship Experience',to:'/app/post-ship',icon:'Sparkles'},
+  {label:'Activity Logs',to:'/app/activity',icon:'Clock'}
+ ]},
+ {title:'DEVELOPER & CONFIGURATION',items:[
+  {label:'API & Developer Tools',to:'/app/api',icon:'Code'},
+  {label:'Courier Settings',to:'/app/courier-settings',icon:'Settings2'},
   {label:'Support',to:'/app/support',icon:'LifeBuoy'},
   {label:'Settings',to:'/app/settings',icon:'Settings'}
  ]}
