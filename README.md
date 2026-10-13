@@ -43,3 +43,16 @@ Google sign-in and password reset are placeholders. No email or SMS is sent. Aut
 
 ## Netlify
 Build command: `npm run build`; publish directory: `dist`; Node 20. SPA route fallback is configured in `netlify.toml`.
+
+
+## Expanded seller portal menu
+
+Additional frontend routes use local mock data and session-only interactions:
+- Dispatch: `/app/manifests`, `/app/pickup-performance`
+- Delivery tools: `/app/courier-priority`, `/app/pincode-zones`, `/app/international`
+- Catalog: `/app/products`, `/app/channel-products`, `/app/inventory`, `/app/catalog`, `/app/warehouse`
+- Finance: `/app/scheduled-reports`, `/app/tax-classes`
+- Operations: `/app/bulk-actions`, `/app/tracking-page`, `/app/post-ship`, `/app/activity`
+- Developer: `/app/api`, `/app/courier-settings`
+
+These additional pages are frontend-only. Add a backend and provider integrations before using them for real shipping, payments, inventory or customer notifications.
