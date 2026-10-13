@@ -5,7 +5,7 @@ import {
   Activity, ArrowDownRight, ArrowRight, ArrowUpRight, CalendarDays, Check, ChevronDown,
   CirclePlus, Download, Filter, Package, Plus, RefreshCw, Search, ShoppingCart, Truck,
   Wallet, AlertTriangle, Clock3, ArrowUp, Boxes, MapPin, MoreHorizontal, ChartNoAxesCombined,
-  Plug, Route, PackageMinus, LifeBuoy, Settings, CircleDollarSign, FileText, BellRing,
+  Plug, Route as RouteIcon, PackageMinus, LifeBuoy, Settings, CircleDollarSign, FileText, BellRing,
   CheckCircle2, PackageCheck, WalletCards, ShieldCheck, CalendarClock, MapPinned, X
 } from 'lucide-react'
 import DashboardLayout from '../layouts/DashboardLayout.jsx'
@@ -25,7 +25,7 @@ const pages = {
  ndr:{title:'NDR Management',subtitle:'Turn failed delivery attempts into clear next actions.',icon:AlertTriangle,stats:[['Needs action','8'],['Customer contacted','19'],['Resolved today','12']],description:'Sample non-delivery reports waiting for a follow-up or reattempt decision.'},
  couriers:{title:'Courier Partners',subtitle:'Your delivery partner workspace.',icon:Truck,stats:[['Connected partners','4'],['Active services','11'],['Serviceable cities','62']],description:'Courier connections are represented as mock entries until partner APIs are configured.'},
  'pickup-addresses':{title:'Pickup Addresses',subtitle:'Manage where your shipments begin.',icon:MapPin,stats:[['Saved addresses','3'],['Default address','Lahore'],['Pickup windows','2']],description:'Maintain ship-from locations for your warehouse and fulfilment points.'},
- 'shipping-rules':{title:'Shipping Rules',subtitle:'Define how orders should be routed.',icon:Route,stats:[['Active rules','6'],['Auto-assigned','78%'],['Needs review','2']],description:'Sample routing rules can later be connected to real carrier serviceability and pricing.'},
+ 'shipping-rules':{title:'Shipping Rules',subtitle:'Define how orders should be routed.',icon:RouteIcon,stats:[['Active rules','6'],['Auto-assigned','78%'],['Needs review','2']],description:'Sample routing rules can later be connected to real carrier serviceability and pricing.'},
  billing:{title:'Billing & Wallet',subtitle:'Keep shipping charges and COD remittances in view.',icon:Wallet,stats:[['Wallet balance','Rs 84,250'],['COD pending','Rs 284,650'],['Next settlement','15 Oct']],description:'These sample balances are illustrative and are not connected to a payment provider.'},
  reports:{title:'Reports & Analytics',subtitle:'Understand order volume and delivery performance.',icon:ChartNoAxesCombined,stats:[['Delivery rate','82.1%'],['First attempt','91.6%'],['Return rate','4.8%']],description:'Use the dashboard charts to preview a reporting workspace built around delivery KPIs.'},
  integrations:{title:'Channels / Integrations',subtitle:'Bring order channels and tools into one workspace.',icon:Plug,stats:[['Connected channels','2'],['Available apps','8'],['Sync status','Demo']],description:'Shopify and WooCommerce are sample cards. No store connection is active.'},
