@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Activity, AlertTriangle, ArrowLeftRight, Banknote, Bell, BellRing, BookOpen, Boxes, Building2, Calculator, CalendarCheck, CalendarClock, Check, ChevronDown, ChevronRight, CircleHelp, ClipboardList, Clock, Code, Download, FileText, FileUp, FileWarning, FolderTree, Gauge, Globe, History, LayoutDashboard, Layers, LifeBuoy, ListChecks, LocateFixed, LogOut, Map, MapPin, MapPinned, Menu, MessageCircle, MessageSquareText, Package, PackageCheck, PackageMinus, PackageOpen, PanelLeftClose, PanelLeftOpen, Plug, Receipt, RefreshCw, Route, Scale, ScrollText, Search, Settings, Settings2, ShieldAlert, ShieldCheck, ShoppingBag, ShoppingCart, SlidersHorizontal, Sparkles, Tags, Timer, Truck, Users, Wallet, Warehouse, Webhook, Workflow, X, Zap } from 'lucide-react'
+import { Activity, ChartNoAxesCombined, AlertTriangle, ArrowLeftRight, Banknote, Bell, BellRing, BookOpen, Boxes, Building2, Calculator, CalendarCheck, CalendarClock, Check, ChevronDown, ChevronRight, CircleHelp, ClipboardList, Clock, Code, Download, FileText, FileUp, FileWarning, FolderTree, Gauge, Globe, History, LayoutDashboard, Layers, LifeBuoy, ListChecks, LocateFixed, LogOut, Map, MapPin, MapPinned, Menu, MessageCircle, MessageSquareText, Package, PackageCheck, PackageMinus, PackageOpen, PanelLeftClose, PanelLeftOpen, Plug, Receipt, RefreshCw, Route, Scale, ScrollText, Search, Settings, Settings2, ShieldAlert, ShieldCheck, ShoppingBag, ShoppingCart, SlidersHorizontal, Sparkles, Tags, Timer, Truck, Users, Wallet, Warehouse, Webhook, Workflow, X, Zap } from 'lucide-react'
 import Logo from '../components/Logo.jsx'
 import { companies, navGroups } from '../data/mockData.js'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -11,6 +11,8 @@ export default function DashboardLayout(){
   const location=useLocation(),navigate=useNavigate(),{session,signOut}=useAuth()
   const title=navGroups.flatMap(group=>group.items).find(item=>item.to===location.pathname)?.label||'Dashboard'
   const matches=item=>item.label.toLowerCase().includes(search.toLowerCase())
+  const isExpanded=item=>Boolean(expandedMenus[item.to]||item.children?.some(child=>location.pathname===child.to||location.pathname.startsWith(child.to+'/')))
+  const matchesGroupItem=item=>matches(item)||(item.children||[]).some(matches)
   function logout(){signOut();navigate('/login',{replace:true})}
   const initials=(session?.name||'IK').split(/\s+/).map(part=>part[0]).join('').slice(0,2).toUpperCase()
   return <div className={'dashboard-shell'+(collapsed?' sidebar-collapsed':'')+(mobileOpen?' mobile-sidebar-open':'')}>
