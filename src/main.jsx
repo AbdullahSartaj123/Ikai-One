@@ -21,6 +21,7 @@ const PublicTracking = lazy(() => import('./pages/Shipments.jsx').then(module =>
 const ProtectedRoute = lazy(() => import('./components/ProtectedRoute.jsx'))
 const DashboardLayout = lazy(() => import('./layouts/DashboardLayout.jsx'))
 const Blog = lazy(() => import('./pages/Blog.jsx'))
+const PublicPages = lazy(() => import('./pages/PublicPages.jsx'))
 
 class AppErrorBoundary extends Component {
   constructor(props) {
@@ -63,7 +64,7 @@ function Root() {
     if (root) root.dataset.appMounted = 'true'
   }, [])
   return <AppErrorBoundary><AuthProvider><BrowserRouter><Suspense fallback={<LoadingScreen/>}><ShipperEntry/><Routes>
-    <Route path="/" element={<App/>}/><Route path="/blog" element={<Blog/>}/><Route path="/blog/:slug" element={<Blog/>}/>
+    <Route path="/" element={<App/>}/><Route path="/explore/:slug" element={<PublicPages/>}/><Route path="/pricing" element={<PublicPages/>}/><Route path="/track-order" element={<PublicPages/>}/><Route path="/investors" element={<PublicPages/>}/><Route path="/blog" element={<Blog/>}/><Route path="/blog/:slug" element={<Blog/>}/>
     <Route path="/track/:awb" element={<PublicTracking/>}/><Route path="/login" element={<Login/>}/>
     <Route path="/signup" element={<Signup/>}/>
     <Route path="/verify-otp" element={<VerifyOTP/>}/>
