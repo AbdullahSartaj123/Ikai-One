@@ -9,6 +9,8 @@ import VerifyOTP from './pages/VerifyOTP.jsx'
 import Onboarding from './pages/Onboarding.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
+import DashboardLayout from './layouts/DashboardLayout.jsx'
+import { DashboardHome } from './pages/Dashboard.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import './styles.css'
 import './styles/theme.css'
@@ -27,6 +29,7 @@ function Root() {
     <Route path="/signup" element={<Signup/>}/>
     <Route path="/verify-otp" element={<VerifyOTP/>}/>
     <Route path="/onboarding" element={<Onboarding/>}/>
+    <Route element={<ProtectedRoute/>}><Route path="/dashboard" element={<DashboardLayout/>}><Route index element={<DashboardHome/>}/></Route></Route>
     <Route path="/app" element={<ProtectedRoute/>}>
       <Route index element={<Navigate to="dashboard" replace/>}/>
       <Route path="*" element={<Dashboard/>}/>
