@@ -56,3 +56,10 @@ Additional frontend routes use local mock data and session-only interactions:
 - Developer: `/app/api`, `/app/courier-settings`
 
 These additional pages are frontend-only. Add a backend and provider integrations before using them for real shipping, payments, inventory or customer notifications.
+
+
+## Nested seller-central menus
+
+The sidebar now has expandable submenus for order imports and risk review; shipment tracking, labels and SLA monitoring; pickup requests and manifest history; reverse pickups and return rules; NDR rules and buyer follow-ups; courier serviceability, scorecards and claims; zone rates and surcharges; channel settings and sync history; product categories and package profiles; stock adjustments and fulfilment; revenue/courier/returns reports; import/export jobs; tracking events and notification templates; team activity; API/webhook logs; and team, security and notification settings.
+
+All submenu destinations are registered as React Router routes. The new pages use sample records and session-only actions; no carrier, marketplace, finance or messaging provider is connected. Netlify remains configured to build from GitHub with `npm run build`, publish `dist`, and route SPA paths to `index.html`.
