@@ -140,9 +140,9 @@ function Header() {
               {activeMenu===name&&<MegaMenu name={name} close={close}/>}
             </div>
           })}
-          <div className="mobile-nav-actions"><a className="nav-login" href="/login" onClick={close}>Log In</a><a className="button button-primary button-full" href="/signup" onClick={close}>Try for Free <ArrowUpRight size={16}/></a></div>
+          <div className="mobile-nav-actions"><a className="nav-login" href="/login" onClick={close}>Seller Central</a><a className="button button-primary button-full" href="/signup" onClick={close}>Try for Free <ArrowUpRight size={16}/></a></div>
         </nav>
-        <div className="nav-actions"><a className="nav-login" href="/login">Log In</a><a className="button button-primary nav-cta" href="/signup">Try for Free <ArrowUpRight size={15}/></a></div>
+        <div className="nav-actions"><a className="nav-login" href="/login">Seller Central</a><a className="button button-primary nav-cta" href="/signup">Try for Free <ArrowUpRight size={15}/></a></div>
         <button className="menu-toggle" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen}>{mobileOpen ? <X size={22}/> : <Menu size={22}/>}</button>
       </div>
       {activeMenu&&<button className="mega-backdrop" aria-label="Close navigation menu" onClick={close}/>}
@@ -310,7 +310,7 @@ function EarlyAccess({ notify }) {
 function Footer() {
   return <footer className="site-footer"><div className="container"><div className="footer-main">
     <div className="footer-brand-column"><Brand light/><p>The shipping workspace that brings your delivery operations into focus.</p><span className="footer-made"><i/> Built for the next move.</span></div>
-    <div className="footer-col"><b>EXPLORE</b><a href="#platform">Platform</a><a href="#solutions">Solutions</a><a href="#how-it-works">How it works</a><a href="/blog">Insights & Blog</a></div>
+    <div className="footer-col"><b>EXPLORE</b><a href="#platform">Platform</a><a href="#solutions">Solutions</a><a href="#how-it-works">How it works</a><a href="/blog">Insights & Blog</a><a href="/login">Seller Central</a></div>
     <div className="footer-col"><b>TOOLS</b><a href="#tracking">Track a parcel</a><a href="#calculator">Rate preview</a><a href="#get-started">Early access</a></div>
     <div className="footer-col footer-col-contact"><b>THE IKAI APPROACH</b><span>Clarity over complexity.</span><span>Connected by design.</span><a href="#top" className="back-top">Back to top ↑</a></div>
   </div><div className="footer-bottom"><span>© {new Date().getFullYear()} IKAI One. All rights reserved.</span><span className="footer-status"><i/> Frontend preview · Sample data</span><span>Built for commerce that keeps moving.</span></div></div></footer>
