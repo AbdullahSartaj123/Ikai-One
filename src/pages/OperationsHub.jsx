@@ -95,16 +95,16 @@ export default function OperationsHub({slug}) {
  const [rows,setRows]=useState(()=>makeReportRows(cfg,slug)),[tab,setTab]=useState(cfg.tabs[0]),[query,setQuery]=useState(''),[modal,setModal]=useState(false),[form,setForm]=useState({}),[notice,setNotice]=useState(''),[menu,setMenu]=useState(null),[page,setPage]=useState(1),[pageSize,setPageSize]=useState(10),[selected,setSelected]=useState([]),[detail,setDetail]=useState(null)
  const [fromDate,setFromDate]=useState('2026-09-14'),[toDate,setToDate]=useState('2026-10-13'),[statusFilter,setStatusFilter]=useState('All statuses'),[regionFilter,setRegionFilter]=useState('All regions'),[segmentFilter,setSegmentFilter]=useState('All segments')
  const statusOptions=useMemo(()=>[...new Set(rows.map(row=>String(row.cells.at(-1)||'Unknown')))].sort(),[rows])
- const pageCount=Math.max(1,Math.ceil(filtered.length/pageSize)),currentPage=Math.min(page,pageCount),visibleRows=filtered.slice((currentPage-1)*pageSize,currentPage*pageSize)
- const currentPageSelected=visibleRows.length>0&&visibleRows.every(row=>selected.includes(row.id))
- function togglePageSelection(){setSelected(old=>currentPageSelected?old.filter(id=>!visibleRows.some(row=>row.id===id)):[...new Set([...old,...visibleRows.map(row=>row.id)])])}
- function exportSelected(){const chosen=rows.filter(row=>selected.includes(row.id));downloadCsv(slug+'-selected-records.csv',[['Created date',...cfg.columns,'Region','Segment','Illustrative amount (PKR)'],...chosen.map(r=>[r.createdAt,...r.cells,r.region,r.segment,r.amount])]);setNotice('Exported '+chosen.length+' selected records.')}
  const filtered=useMemo(()=>rows.filter(row=>{
   const matchesQuery=row.cells.some(v=>String(v).toLowerCase().includes(query.toLowerCase()))
   const matchesTab=tab===cfg.tabs[0]||row.cells.some(v=>String(v).toLowerCase().includes(tab.replace(/^All /,'').replace(/ records$/,'').toLowerCase()))
   const status=String(row.cells.at(-1)||'Unknown')
   return matchesQuery&&matchesTab&&(statusFilter==='All statuses'||status===statusFilter)&&(regionFilter==='All regions'||row.region===regionFilter)&&(segmentFilter==='All segments'||row.segment===segmentFilter)&&(!fromDate||row.createdAt>=fromDate)&&(!toDate||row.createdAt<=toDate)
  }),[rows,query,tab,cfg.tabs,statusFilter,regionFilter,segmentFilter,fromDate,toDate])
+ const pageCount=Math.max(1,Math.ceil(filtered.length/pageSize)),currentPage=Math.min(page,pageCount),visibleRows=filtered.slice((currentPage-1)*pageSize,currentPage*pageSize)
+ const currentPageSelected=visibleRows.length>0&&visibleRows.every(row=>selected.includes(row.id))
+ function togglePageSelection(){setSelected(old=>currentPageSelected?old.filter(id=>!visibleRows.some(row=>row.id===id)):[...new Set([...old,...visibleRows.map(row=>row.id)])])}
+ function exportSelected(){const chosen=rows.filter(row=>selected.includes(row.id));downloadCsv(slug+'-selected-records.csv',[['Created date',...cfg.columns,'Region','Segment','Illustrative amount (PKR)'],...chosen.map(r=>[r.createdAt,...r.cells,r.region,r.segment,r.amount])]);setNotice('Exported '+chosen.length+' selected records.')}
  const reportSummary=useMemo(()=>{
   const active=filtered.filter(r=>/active|completed|delivered|ready|success|mapped/i.test(String(r.cells.at(-1)))).length
   const attention=filtered.filter(r=>/review|failed|error|pending|paused|open|restricted/i.test(String(r.cells.at(-1)))).length
