@@ -12,6 +12,7 @@ import { PublicTracking } from './pages/Shipments.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import DashboardLayout from './layouts/DashboardLayout.jsx'
 import { DashboardHome } from './pages/Dashboard.jsx'
+import Blog from './pages/Blog.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import './styles.css'
 import './styles/theme.css'
@@ -25,7 +26,7 @@ function ShipperEntry() {
 }
 function Root() {
   return <AuthProvider><BrowserRouter><ShipperEntry/><Routes>
-    <Route path="/" element={<App/>}/>
+    <Route path="/" element={<App/>}/><Route path="/blog" element={<Blog/>}/><Route path="/blog/:slug" element={<Blog/>}/>
     <Route path="/track/:awb" element={<PublicTracking/>}/><Route path="/login" element={<Login/>}/>
     <Route path="/signup" element={<Signup/>}/>
     <Route path="/verify-otp" element={<VerifyOTP/>}/>
