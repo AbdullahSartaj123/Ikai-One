@@ -1,19 +1,32 @@
 # IKAI One
 
-Original responsive landing page for IKAI One, a shipping and delivery operations workspace for ecommerce businesses.
+Responsive landing page plus a frontend-only shipper portal and dashboard.
 
 ## Run locally
 
-Install dependencies with npm install, then run npm run dev.
+```bash
+npm install
+npm run dev
+```
 
-## Production build
+## Build
 
-Run npm run build. Vite outputs the production site to dist.
+```bash
+npm run build
+```
+
+## Routes
+- `/` — IKAI One marketing landing page
+- `/login` — sample shipper login
+- `/app/dashboard` — seller dashboard
+- `/app/orders`, `/app/shipments`, `/app/returns`, `/app/ndr`, `/app/couriers`, `/app/pickup-addresses`, `/app/shipping-rules`, `/app/billing`, `/app/reports`, `/app/integrations`, `/app/support`, `/app/settings`
+
+## Sample login accounts
+- Store owner: `demo@ikai.one` / `IkaiDemo123!`
+- Operations manager: `ops@ikai.one` / `OpsDemo123!`
+- Finance viewer: `finance@ikai.one` / `Finance123!`
+
+Demo credentials only. The login uses sessionStorage and does not provide real authentication or backend security. Dashboard figures and courier entries are mock data.
 
 ## Netlify
-
-The included netlify.toml runs npm run build and publishes dist. Connect this GitHub repository and keep the Base directory at the repository root.
-
-## Frontend-only demo
-
-Includes an animated workspace preview, sample tracking lookup, sample domestic rate calculator, responsive navigation and early-access form. These use mock data only. No courier, tracking, signup or payment APIs are connected yet.
+Build command: `npm run build`; publish directory: `dist`; Node 20. SPA route fallback is configured in `netlify.toml`.

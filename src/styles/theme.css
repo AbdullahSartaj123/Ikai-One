@@ -1,0 +1,23 @@
+:root {
+  --ikai-ink: #182b25;
+  --ikai-ink-soft: #263c32;
+  --ikai-primary: #4c5df4;
+  --ikai-primary-hover: #3948d6;
+  --ikai-lime: #d5f56f;
+  --ikai-orange: #ff7955;
+  --ikai-paper: #f6f8f5;
+  --ikai-surface: #ffffff;
+  --ikai-border: #e5eae3;
+  --ikai-muted: #7b887e;
+  --ikai-success: #278453;
+  --ikai-warning: #c88724;
+  --ikai-danger: #cf5549;
+  --ikai-radius: 14px;
+  --ikai-shadow: 0 12px 34px rgba(24,43,37,.07);
+  --ikai-font-body: 'DM Sans', sans-serif;
+  --ikai-font-display: 'Manrope', sans-serif;
+}
+* { box-sizing: border-box; }
+body { font-family: var(--ikai-font-body); }
+button, input, select { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
