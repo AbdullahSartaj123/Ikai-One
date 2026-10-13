@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { Activity, AlertTriangle, Bell, Building2, ChartNoAxesCombined, Check, ChevronDown, CircleHelp, LayoutDashboard, LifeBuoy, LogOut, MapPin, Menu, Package, PackageMinus, PanelLeftClose, PanelLeftOpen, Plug, Route, Search, Settings, ShoppingCart, Sparkles, Truck, Wallet, X } from 'lucide-react'
+import { Activity, AlertTriangle, Bell, Building2, Calculator, ChartNoAxesCombined, Check, ChevronDown, CircleHelp, LayoutDashboard, LifeBuoy, LogOut, MapPin, Menu, Package, PackageMinus, PanelLeftClose, PanelLeftOpen, Plug, Route, Search, Settings, ShoppingCart, Sparkles, Truck, Wallet, X } from 'lucide-react'
 import Logo from '../components/Logo.jsx'
 import { companies, navGroups } from '../data/mockData.js'
 import { useAuth } from '../context/AuthContext.jsx'
-const navIcons={LayoutDashboard,ShoppingCart,Package,PackageMinus,AlertTriangle,Truck,MapPin,Route,Wallet,ChartNoAxesCombined,Plug,LifeBuoy,Settings}
+const navIcons={LayoutDashboard,ShoppingCart,Package,PackageMinus,AlertTriangle,Truck,MapPin,Route,Wallet,ChartNoAxesCombined,Plug,LifeBuoy,Settings,Calculator}
 function NavIcon({name}){const Icon=navIcons[name]||Activity;return <Icon size={18} strokeWidth={1.8}/>}
 export default function DashboardLayout(){
   const [collapsed,setCollapsed]=useState(false),[mobileOpen,setMobileOpen]=useState(false),[companyOpen,setCompanyOpen]=useState(false),[company,setCompany]=useState(companies[0]),[profileOpen,setProfileOpen]=useState(false),[notificationsOpen,setNotificationsOpen]=useState(false),[search,setSearch]=useState('')
