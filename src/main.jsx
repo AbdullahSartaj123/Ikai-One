@@ -22,7 +22,7 @@ import './styles/auth.css'
 function ShipperEntry() {
   const location = useLocation()
   if (location.pathname !== '/') return null
-  return <Link to="/login" className="shipper-entry"><Boxes size={17}/> Shipper Login <ArrowUpRight size={15}/></Link>
+  return <Link to="/login" className="shipper-entry"><Boxes size={17}/> Seller Central <ArrowUpRight size={15}/></Link>
 }
 function Root() {
   return <AuthProvider><BrowserRouter><ShipperEntry/><Routes>
