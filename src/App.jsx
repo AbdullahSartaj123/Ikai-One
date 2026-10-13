@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   Activity, ArrowRight, ArrowUpRight, BarChart3, Box, Boxes, Check, CheckCircle2,
   ChevronDown, CircleDollarSign, Clock3, Globe2, MapPin, Menu, MessageCircle,
@@ -88,25 +89,27 @@ const megaMenus = {
     promo:{title:'Customer Stories',text:'Discover how sellers make their shipping operations simpler.',link:'Read stories',icon:'UsersRound'}
   }
 }
+const visitorSlug = value => String(value).toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')
+const visitorPath = title => '/explore/' + visitorSlug(title)
 const menuIconMap = { PackageCheck, Truck, Zap, Boxes, Globe2, Ship: Truck, Package: Box, Sparkles, ShieldCheck, Network: PlugZap, WalletCards, ChartNoAxesCombined: BarChart3, BrainCircuit: Sparkles, Mic: MessageCircle, MapPin, MapPinned: MapPin, Code2: PlugZap, Printer: PackageCheck, MessageSquare: MessageCircle, Store: Box, Grid2X2: Boxes, Gift: Sparkles, PackageOpen: Boxes, Handshake: Globe2, Calculator: CircleDollarSign, Scale: Activity, Wrench: Zap, GraduationCap: ShieldCheck, PenLine: MessageCircle, BookOpen: Boxes, BookText: Boxes, PlaySquare: Zap, MessageCircleQuestion: MessageCircle, UsersRound: Boxes }
 function MegaItem({ item, onChoose, feature = false }) {
   const [title, description, iconName] = item
   const Icon = menuIconMap[iconName] || ArrowUpRight
-  return <a href={title === 'Track Order' ? '#tracking' : title === 'Shipping Rate Calculator' ? '#calculator' : '#platform'} className={feature ? 'mega-feature' : 'mega-item'} onClick={onChoose}>
+  return <Link to={visitorPath(title)} className={feature ? 'mega-feature' : 'mega-item'} onClick={onChoose}>
     <span className="mega-item-icon"><Icon size={feature ? 19 : 18}/></span>
     <span className="mega-item-copy"><b>{title}</b>{description && <small>{description}</small>}</span>
-  </a>
+  </Link>
 }
 function MegaMenu({ name, close }) {
   const menu = megaMenus[name]
   if (!menu) return null
   if (name === 'Products') return <div className={'mega-menu '+menu.className} role="region" aria-label="Products menu">
     <div className="products-main">{menu.columns.map(column=><section className="mega-column" key={column.title}><h3>{column.title}</h3>{column.items.map(item=><MegaItem key={item[0]} item={item} onChoose={close}/>)}</section>)}</div>
-    <aside className="products-side"><h3>{menu.side.title}</h3>{menu.side.items.map(item=><a key={item} href="#platform" onClick={close}>{item}</a>)}</aside>
+    <aside className="products-side"><h3>{menu.side.title}</h3>{menu.side.items.map(item=><Link key={item} to={visitorPath(item)} onClick={close}>{item}</Link>)}</aside>
   </div>
   if (name === 'Platform') return <div className={'mega-menu '+menu.className} role="region" aria-label="Platform menu">
     <div className="platform-menu-main"><h3>{menu.featureTitle}</h3><div className="platform-feature-grid">{menu.features.map(item=><MegaItem key={item[0]} item={item} feature onChoose={close}/>)}</div></div>
-    <aside className="mega-promo"><div className="promo-art"><Sparkles size={28}/><span>IKAI</span></div><div><b>{menu.promo.title}</b><p>{menu.promo.text}</p><a href="#get-started" onClick={close}>{menu.promo.link} <ArrowUpRight size={14}/></a></div></aside>
+    <aside className="mega-promo"><div className="promo-art"><Sparkles size={28}/><span>IKAI</span></div><div><b>{menu.promo.title}</b><p>{menu.promo.text}</p><Link to={visitorPath(menu.promo.title)} onClick={close}>{menu.promo.link} <ArrowUpRight size={14}/></Link></div></aside>
   </div>
   return <div className={'mega-menu '+menu.className} role="region" aria-label={name+' menu'}>
     <div className="mega-columns">{menu.columns.map(column=><section className="mega-column" key={column.title}><h3>{column.title}</h3>{column.items.map(item=><MegaItem key={item[0]} item={item} onChoose={close}/>)}</section>)}</div>
@@ -132,9 +135,9 @@ function Header() {
         <nav className={'main-nav mega-main-nav' + (mobileOpen ? ' nav-open' : '')} aria-label="Main navigation">
           {['Products','Platform','Pricing','Partners','Track Order','Resources','Investors'].map(name => {
             const hasMenu = Boolean(megaMenus[name])
-            if(name === 'Pricing') return <a href="#calculator" key={name} onClick={close}>Pricing</a>
-            if(name === 'Track Order') return <a href="#tracking" key={name} onClick={close}>{name}</a>
-            if(name === 'Investors') return <a href="#about" key={name} onClick={close}>{name}</a>
+            if(name === 'Pricing') return <Link to="/pricing" key={name} onClick={close}>Pricing</Link>
+            if(name === 'Track Order') return <Link to="/track-order" key={name} onClick={close}>{name}</Link>
+            if(name === 'Investors') return <Link to="/investors" key={name} onClick={close}>{name}</Link>
             return <div className={'mega-nav-item'+(activeMenu===name?' menu-active':'')} key={name}>
               <button type="button" aria-expanded={activeMenu===name} onClick={() => toggle(name)} onMouseEnter={() => {if(window.matchMedia('(hover: hover) and (pointer: fine)').matches)setActiveMenu(name)}}>{name}<ChevronDown size={14}/></button>
               {activeMenu===name&&<MegaMenu name={name} close={close}/>}
