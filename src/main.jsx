@@ -8,6 +8,7 @@ import Signup from './pages/Signup.jsx'
 import VerifyOTP from './pages/VerifyOTP.jsx'
 import Onboarding from './pages/Onboarding.jsx'
 import Dashboard from './pages/Dashboard.jsx'
+import { PublicTracking } from './pages/Shipments.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import DashboardLayout from './layouts/DashboardLayout.jsx'
 import { DashboardHome } from './pages/Dashboard.jsx'
@@ -25,7 +26,7 @@ function ShipperEntry() {
 function Root() {
   return <AuthProvider><BrowserRouter><ShipperEntry/><Routes>
     <Route path="/" element={<App/>}/>
-    <Route path="/login" element={<Login/>}/>
+    <Route path="/track/:awb" element={<PublicTracking/>}/><Route path="/login" element={<Login/>}/>
     <Route path="/signup" element={<Signup/>}/>
     <Route path="/verify-otp" element={<VerifyOTP/>}/>
     <Route path="/onboarding" element={<Onboarding/>}/>
