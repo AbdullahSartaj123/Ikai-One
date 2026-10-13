@@ -64,7 +64,7 @@ export const navGroups = [
   {label:'Courier Priority',to:'/app/courier-priority',icon:'ShieldCheck'},
   {label:'Rate Calculator',to:'/app/rate-calculator',icon:'Calculator',children:[
    {label:'Zone Rate Cards',to:'/app/zone-rate-cards',icon:'Map'},
-   {label:'Surcharges & Fees',to:'/app/surcharges',icon:'BadgeIndianRupee'}
+   {label:'Surcharges & Fees',to:'/app/surcharges',icon:'Wallet'}
   ]},
   {label:'Pickup Addresses',to:'/app/pickup-addresses',icon:'MapPin'},
   {label:'Shipping Rules',to:'/app/shipping-rules',icon:'Route'},
