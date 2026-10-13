@@ -90,7 +90,7 @@ const megaMenus = {
   }
 }
 const visitorSlug = value => String(value).toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')
-const visitorPath = title => '/explore/' + visitorSlug(title)
+const visitorPath = title => title === 'Blog' ? '/blog' : title === 'Refer & Earn' ? '/explore/refer-earn' : '/explore/' + visitorSlug(title)
 const menuIconMap = { PackageCheck, Truck, Zap, Boxes, Globe2, Ship: Truck, Package: Box, Sparkles, ShieldCheck, Network: PlugZap, WalletCards, ChartNoAxesCombined: BarChart3, BrainCircuit: Sparkles, Mic: MessageCircle, MapPin, MapPinned: MapPin, Code2: PlugZap, Printer: PackageCheck, MessageSquare: MessageCircle, Store: Box, Grid2X2: Boxes, Gift: Sparkles, PackageOpen: Boxes, Handshake: Globe2, Calculator: CircleDollarSign, Scale: Activity, Wrench: Zap, GraduationCap: ShieldCheck, PenLine: MessageCircle, BookOpen: Boxes, BookText: Boxes, PlaySquare: Zap, MessageCircleQuestion: MessageCircle, UsersRound: Boxes }
 function MegaItem({ item, onChoose, feature = false }) {
   const [title, description, iconName] = item
