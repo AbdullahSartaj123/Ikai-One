@@ -251,3 +251,37 @@
 .feature-workspace-disclaimer svg{flex-shrink:0;margin-top:1px;color:#6d7d70}
 @media(max-width:800px){.feature-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.feature-knowledge-grid{grid-template-columns:1fr 1fr}.feature-workspace-head{align-items:flex-start;flex-direction:column}.feature-inline-tool{align-items:stretch;flex-direction:column}.feature-inline-tool input{max-width:none}.feature-workspace-tools{align-items:flex-start;flex-direction:column}.feature-workspace-tools .domestic-search{width:min(100%,350px)}}
 @media(max-width:560px){.feature-workspace{padding:15px;margin:20px 0}.feature-metrics{gap:8px}.feature-metrics article{padding:11px}.feature-metrics b{font-size:16px}.feature-knowledge-grid{grid-template-columns:1fr}.feature-next-step{align-items:stretch;flex-direction:column}.feature-next-step>.domestic-btn{align-self:flex-start}.feature-next-step form{grid-template-columns:1fr}.feature-next-step form button{grid-column:auto}.feature-code-panel{padding:11px}.feature-code-panel>div{align-items:flex-start;flex-direction:column}}
+
+
+/* Domestic Shipping redesign — polished logistics operations console. */
+.domestic-page{max-width:1360px;padding-top:26px;padding-bottom:64px}
+.domestic-page .domestic-topline{margin-bottom:20px}
+.domestic-page .domestic-heading{position:relative;isolation:isolate;align-items:center;min-height:230px;margin-bottom:22px;padding:32px 34px;border:1px solid #e0e7ff;border-radius:20px;background:radial-gradient(ellipse at 88% 8%,#e9edff 0,transparent 36%),linear-gradient(115deg,#f9faff 0%,#f5f7ff 58%,#eef2ff 100%);overflow:hidden}
+.domestic-page .domestic-heading:after{position:absolute;z-index:-1;right:6%;bottom:-96px;width:300px;height:300px;border:1px solid #d9e0ff;border-radius:50%;box-shadow:0 0 0 32px #e7ebff75,0 0 0 64px #e7ebff45;content:''}
+.domestic-page .domestic-heading>div:first-child{max-width:650px}
+.domestic-page .domestic-heading h1{margin:13px 0 11px;font-size:clamp(36px,4vw,53px);letter-spacing:-.06em}
+.domestic-page .domestic-heading p{max-width:580px;font-size:13px;line-height:1.75}
+.domestic-page .domestic-heading-actions{position:relative;z-index:1}
+.domestic-page .domestic-btn{min-height:44px;padding:0 17px;border-radius:8px}
+.domestic-page .domestic-btn-primary{background:#4659f5;border-color:#4659f5;box-shadow:0 5px 14px #4659f526}
+.domestic-page .domestic-kpi-grid{gap:12px;margin-bottom:22px}
+.domestic-page .domestic-kpi-grid>article{padding:17px 18px;border-color:#e4e9f0;border-radius:12px;box-shadow:0 2px 9px #24364a05;transition:transform .18s,border-color .18s,box-shadow .18s}
+.domestic-page .domestic-kpi-grid>article:hover{transform:translateY(-2px);border-color:#d3dafd;box-shadow:0 8px 22px #24364a0b}
+.domestic-page .domestic-kpi-icon{width:34px;height:34px;margin-bottom:12px;border-radius:9px}
+.domestic-page .domestic-kpi-grid strong{font-size:27px}
+.domestic-page .domestic-workspace,.domestic-page .domestic-courier-section,.domestic-page .domestic-bottom-grid>article{border-color:#e2e7ed;border-radius:13px;box-shadow:0 2px 12px #172c4006}
+.domestic-page .domestic-section-head{padding:20px 22px}
+.domestic-page .domestic-section-head h2{font-size:20px}
+.domestic-page .domestic-toolbar{background:#fcfcfd}
+.domestic-page .domestic-tabs button{font-size:10px}
+.domestic-page .domestic-table th{padding-top:14px;padding-bottom:14px;background:#f7f8fa;color:#7c8796}
+.domestic-page .domestic-table td{padding-top:15px;padding-bottom:15px;font-size:10px}
+.domestic-page .domestic-table tbody tr:hover td{background:#f8f9ff}
+.domestic-page .domestic-courier-grid>article{border-color:#e6eaf0;background:linear-gradient(145deg,#fff,#fcfcfd);transition:border-color .18s,transform .18s}
+.domestic-page .domestic-courier-grid>article:hover{transform:translateY(-1px);border-color:#cfd6ff}
+.domestic-page .domestic-courier-price button{padding:6px 8px;border:1px solid #e1e5ff;border-radius:6px;background:#f7f8ff}
+.domestic-page .domestic-bottom-grid>article{padding:20px}
+.domestic-page .domestic-disclaimer{border-color:#e4e8ef;background:#f7f8fa}
+.domestic-page .domestic-demo-badge{background:#fff}
+@media(max-width:950px){.domestic-page .domestic-heading{min-height:auto;padding:26px}.domestic-page .domestic-heading:after{right:-90px}.domestic-page .domestic-heading-actions{align-self:flex-start}}
+@media(max-width:620px){.domestic-page{padding-top:18px}.domestic-page .domestic-heading{padding:22px 18px;border-radius:15px}.domestic-page .domestic-heading h1{font-size:39px}.domestic-page .domestic-heading-actions{flex-wrap:wrap}.domestic-page .domestic-heading-actions .domestic-btn{min-height:42px}.domestic-page .domestic-section-head{padding:17px 15px}}
