@@ -143,3 +143,26 @@
 .ops-related-nav a:hover,.ops-related-nav a.active{background:#f0f1ff;border-color:#d9dcff;color:#4659f5}
 .ops-related-nav a svg{opacity:.55}
 @media(max-width:700px){.ops-related-nav{padding:10px}.ops-related-nav>div{gap:6px}.ops-related-nav a{padding:7px 8px;font-size:10px}}
+
+/* Sidebar flyouts: open while the pointer is on the parent or submenu, then close on exit. */
+.sidebar-nav-item.has-submenu{position:relative}
+.sidebar-nav-item.has-submenu>.sidebar-submenu{display:none;flex-direction:column;gap:3px;margin:2px 0 7px 27px;padding:5px 0 5px 10px;border-left:1px solid #e6ebe4}
+.sidebar-nav-item.has-submenu:hover>.sidebar-submenu,
+.sidebar-nav-item.has-submenu:focus-within>.sidebar-submenu{display:flex}
+.sidebar-parent-row{display:flex;align-items:center;gap:2px}
+.sidebar-parent-row>.sidebar-link{flex:1;min-width:0}
+.sidebar-submenu-toggle{display:grid;place-items:center;flex:0 0 26px;width:26px;height:28px;border:0;border-radius:7px;background:transparent;color:#9aa59b;cursor:pointer}
+.sidebar-submenu-toggle:hover,.sidebar-submenu-toggle.expanded{background:#f3f5f1;color:#4659f5}
+.sidebar-submenu-toggle svg{transition:transform .18s}
+.sidebar-submenu-toggle.expanded svg{transform:rotate(90deg)}
+.sidebar-sub-link{display:flex;align-items:center;gap:9px;min-height:33px;padding:6px 9px;border-radius:7px;color:#7b897e;font-size:10px;text-decoration:none;transition:background .16s,color .16s}
+.sidebar-sub-link svg{flex-shrink:0;opacity:.8}
+.sidebar-sub-link:hover,.sidebar-sub-link.active{background:#f0f1ff;color:#4659f5}
+@media(min-width:761px){
+ .sidebar-nav-item.has-submenu>.sidebar-submenu{margin-left:27px}
+ .sidebar-collapsed .sidebar-nav-item.has-submenu>.sidebar-submenu{display:none!important}
+}
+@media(max-width:760px){
+ .sidebar-nav-item.has-submenu.submenu-open>.sidebar-submenu{display:flex}
+ .sidebar-nav-item.has-submenu>.sidebar-submenu{margin-left:20px}
+}
