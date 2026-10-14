@@ -74,3 +74,15 @@
 .ikai-logo-mark{color:#4263eb!important;background:#eef2f7!important}
 .logo-light .ikai-logo-type{color:#cbd5e1!important}
 .logo-light .ikai-logo-mark{color:#60a5fa!important;background:#273449!important}
+
+
+/* Service availability: keep Domestic and Cargo Shipping active, soften upcoming services. */
+.mega-item-disabled{position:relative;opacity:.48;filter:blur(.35px) grayscale(.25);cursor:not-allowed;pointer-events:none}
+.mega-item-disabled .mega-item-copy b{color:#87918a}
+.coming-soon-label{align-self:center;flex-shrink:0;padding:4px 6px;border:1px solid #e1e7df;border-radius:5px;background:#f7f9f6;color:#879187;font-size:8px;font-weight:800;white-space:nowrap}
+.products-side-disabled{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;color:#9aa49c;font-size:11px;opacity:.7;cursor:not-allowed}
+.products-side-disabled small{font-size:8px;font-weight:800;color:#9aa49c;white-space:nowrap}
+.launch-announcement{display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;padding:12px 20px;background:#eef2ff;border-bottom:1px solid #dce4ff;color:#475569;font-size:12px;text-align:center}
+.launch-announcement strong{color:#334155;font-weight:800}
+.launch-announcement-dot{width:8px;height:8px;flex-shrink:0;border-radius:50%;background:#4263eb;box-shadow:0 0 0 4px #4263eb1a}
+@media(max-width:600px){.launch-announcement{gap:6px;padding:11px 15px;font-size:11px}}
