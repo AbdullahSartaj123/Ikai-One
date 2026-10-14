@@ -76,12 +76,6 @@
 .logo-light .ikai-logo-mark{color:#60a5fa!important;background:#273449!important}
 
 
-/* Keep every product menu item in place; upcoming services are visually softened and inactive. */
-.mega-item-disabled{position:relative;opacity:.45;filter:blur(.45px) grayscale(.3);cursor:not-allowed}
-.mega-item-disabled .mega-item-copy b{color:#87918a}
-.mega-item-disabled:hover{opacity:.45}
-.products-side-disabled{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;color:#9aa49c;font-size:11px;opacity:.48;filter:blur(.45px) grayscale(.3);cursor:not-allowed;pointer-events:auto}
-.products-side-disabled:hover{color:#9aa49c}
 .launch-announcement{display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;padding:12px 20px;background:#eef2ff;border-bottom:1px solid #dce4ff;color:#475569;font-size:12px;text-align:center}
 .launch-announcement strong{color:#334155;font-weight:800}
 .launch-announcement-dot{width:8px;height:8px;flex-shrink:0;border-radius:50%;background:#4263eb;box-shadow:0 0 0 4px #4263eb1a}
