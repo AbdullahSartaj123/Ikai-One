@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { Header as MainHeader, Footer as MainFooter } from '../App.jsx'
 import { ArrowRight, ArrowUpRight, BadgeCheck, BarChart3, Boxes, Calculator, Check, ChevronRight, CircleHelp, Clock3, Globe2, Mail, MapPin, PackageCheck, Search, ShieldCheck, Sparkles, Truck, WalletCards, Plus, Download, Filter, CalendarDays, Banknote, ClipboardList, CircleCheck, AlertCircle, X, Printer, ArrowUpDown, ChevronDown } from 'lucide-react'
 
 const titleFromSlug = slug => String(slug||'').split('-').map(w=>w==='api'?'API':w==='cod'?'COD':w==='ai'?'AI':w.charAt(0).toUpperCase()+w.slice(1)).join(' ')
@@ -66,8 +67,8 @@ const tools = [
  {label:'Volumetric Weight Calculator',slug:'volumetric-weight-calculator',kind:'volume'}
 ]
 function Brand(){return <Link to="/" className="public-brand"><span className="public-brand-mark"><Boxes size={21}/></span><span>ikai<span>.</span>one</span></Link>}
-function PublicHeader(){return <header className="public-header"><div className="public-header-inner"><Brand/><nav aria-label="Visitor navigation"><div className="public-nav-group"><Link to="/#top">Home</Link><Link to="/#platform">Platform</Link><Link to="/pricing">Pricing</Link><Link to="/#solutions">Solutions</Link><Link to="/#about">About</Link><Link to="/#resources">Resources</Link></div><div className="public-nav-actions"><Link className="public-login" to="/login">Login</Link><Link className="public-signup" to="/signup">Get started <ArrowUpRight size={15}/></Link></div></nav></div></header>}
-function PublicFooter(){return <footer className="public-footer"><div className="public-footer-top"><Brand/><p>Shipping operations, brought together.</p><div className="public-footer-actions"><Link to="/signup">Get started <ArrowRight size={14}/></Link><Link to="/login">Sign in</Link></div></div><div className="public-footer-bottom"><span>© {new Date().getFullYear()} IKAI One</span><span>Illustrative information · Features may depend on availability</span><Link to="/#top">Back to home ↑</Link></div></footer>}
+function PublicHeader(){return <MainHeader/>}
+function PublicFooter(){return <MainFooter/>}
 
 const domesticSeed = [
  {id:'IK-248601',order:'ORD-10942',customer:'Ayesha Khan',city:'Karachi',pincode:'75500',courier:'BlueEx',payment:'COD',amount:2450,status:'In transit',date:'14 Oct, 10:42 AM'},
