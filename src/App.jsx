@@ -339,5 +339,5 @@ export default function App() {
     nodes.forEach(node=>observer.observe(node))
     return()=>observer.disconnect()
   },[])
-  return <><main id="top"><div className="launch-announcement" role="status"><span className="launch-announcement-dot"/><strong>More services are on the way.</strong><span>Additional IKAI services will be launching soon.</span></div><Hero/><SignalStrip/><PlatformSection/><NetworkSection/><HowItWorks/><TrackingSection/><CalculatorSection/><SolutionSection/><EarlyAccess notify={setToast}/></main><Footer/><Toast message={toast} onClose={()=>setToast('')}/>
+  return <><main id="top"><div className="launch-announcement" role="status"><span className="launch-announcement-dot"/><strong>More services are on the way.</strong><span>Additional IKAI services will be launching soon.</span></div><Hero/><SignalStrip/><PlatformSection/><NetworkSection/><HowItWorks/><TrackingSection/><CalculatorSection/><SolutionSection/><EarlyAccess notify={setToast}/></main><Footer/><Toast message={toast} onClose={()=>setToast('')}/></>
 }
