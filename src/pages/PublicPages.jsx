@@ -182,7 +182,7 @@ function FeatureWorkspace({slug,title}){
  const [expanded,setExpanded]=useState(-1)
  const [enquiryOpen,setEnquiryOpen]=useState(false)
  const rows=profile?.rows||[]
- const visibleRows=rows.filter(row=>row.join(' ').toLowerCase().includes(search.toLowerCase()))
+ const visibleRows=rows.filter(row=>{const text=row.join(' ').toLowerCase();if(!text.includes(search.toLowerCase()))return false;if(activeTab==='Needs review')return /review|pending|exception|to do|draft|awaiting|reschedule|not connected/i.test(text);if(activeTab==='In progress')return /transit|progress|active|ready|connected|delivered|matched|confirmed/i.test(text);return true})
  const isFaq=profile?.kind==='faq'
  const faqs=[['Are these live courier rates?','No. Any sample rates or operational figures on this prototype are illustrative and are not a live quote.'],['Can I book a courier from this page?','Not yet. Live booking requires a backend service and an authorised courier integration.'],['Can I track a real parcel here?','This prototype can demonstrate a tracking workflow, but real tracking events require a carrier or tracking API connection.'],['Is COD settlement connected?','No. COD balances and reconciliation states are sample records until settlement data is integrated.'],['How do I get started?','Use the Get started action to explore the current signup flow, or contact the IKAI One team about your workflow.']]
  if(!profile)return null
