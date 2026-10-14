@@ -116,7 +116,7 @@ function MegaMenu({ name, close }) {
     {menu.promo&&<aside className="mega-promo"><div className="promo-art"><Sparkles size={28}/><span>IKAI</span></div><div><b>{menu.promo.title}</b><p>{menu.promo.text}</p><a href="#get-started" onClick={close}>{menu.promo.link} <ArrowUpRight size={14}/></a></div></aside>}
   </div>
 }
-function Header() {
+export function Header() {
   const [activeMenu, setActiveMenu] = useState('')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -309,11 +309,11 @@ function EarlyAccess({ notify }) {
   </div></div></section>
 }
 
-function Footer() {
+export function Footer() {
   return <footer className="site-footer"><div className="container"><div className="footer-main">
     <div className="footer-brand-column"><Brand light/><p>The shipping workspace that brings your delivery operations into focus.</p><span className="footer-made"><i/> Built for the next move.</span></div>
-    <div className="footer-col"><b>EXPLORE</b><a href="#platform">Platform</a><a href="#solutions">Solutions</a><a href="#how-it-works">How it works</a><a href="/blog">Insights & Blog</a><a href="/login">Seller Central</a></div>
-    <div className="footer-col"><b>TOOLS</b><a href="#tracking">Track a parcel</a><a href="#calculator">Rate preview</a><a href="#get-started">Early access</a></div>
+    <div className="footer-col"><b>EXPLORE</b><a href="/explore/all-features">Platform</a><a href="/explore/domestic-shipping">Solutions</a><a href="/explore/cargo-shipping">How it works</a><a href="/blog">Insights & Blog</a><a href="/login">Seller Central</a></div>
+    <div className="footer-col"><b>TOOLS</b><a href="/track-order">Track a parcel</a><a href="/explore/shipping-rate-calculator">Rate preview</a><a href="/signup">Get started</a></div>
     <div className="footer-col footer-col-contact"><b>THE IKAI APPROACH</b><span>Clarity over complexity.</span><span>Connected by design.</span><a href="#top" className="back-top">Back to top ↑</a></div>
   </div><div className="footer-bottom"><span>© {new Date().getFullYear()} IKAI One. All rights reserved.</span><span className="footer-status"><i/> Frontend preview · Sample data</span><span>Built for commerce that keeps moving.</span></div></div></footer>
 }
