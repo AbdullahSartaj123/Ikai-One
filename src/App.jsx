@@ -333,5 +333,5 @@ export default function App() {
     nodes.forEach(node=>observer.observe(node))
     return()=>observer.disconnect()
   },[])
-  return <><Header/><main><Hero/><SignalStrip/><PlatformSection/><NetworkSection/><HowItWorks/><TrackingSection/><CalculatorSection/><SolutionSection/><EarlyAccess notify={setToast}/></main><Footer/><Toast message={toast} onClose={()=>setToast('')}/></>
+  return <><main id="top"><Hero/><SignalStrip/><PlatformSection/><NetworkSection/><HowItWorks/><TrackingSection/><CalculatorSection/><SolutionSection/><EarlyAccess notify={setToast}/></main><Footer/><Toast message={toast} onClose={()=>setToast('')}/>
 }
