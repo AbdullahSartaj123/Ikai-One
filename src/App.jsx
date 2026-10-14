@@ -128,7 +128,6 @@ function Header() {
   const close = () => { setActiveMenu(''); setMobileOpen(false) }
   const toggle = name => setActiveMenu(current => current === name ? '' : name)
   return <>
-    <div className="announcement"><Sparkles size={13}/><span>Shipping operations, brought together.</span><a href="#platform">Meet your new workspace <ArrowRight size={13}/></a></div>
     <header className={'site-header mega-site-header' + (scrolled ? ' header-scrolled' : '')} onKeyDown={event => { if(event.key === 'Escape') close() }}>
       <div className="nav-shell">
         <Brand/>
