@@ -95,17 +95,23 @@ const menuIconMap = { PackageCheck, Truck, Zap, Boxes, Globe2, Ship: Truck, Pack
 function MegaItem({ item, onChoose, feature = false }) {
   const [title, description, iconName] = item
   const Icon = menuIconMap[iconName] || ArrowUpRight
-  return <Link to={visitorPath(title)} className={feature ? 'mega-feature' : 'mega-item'} onClick={onChoose}>
+  const available = title === 'Domestic Shipping' || title === 'Cargo Shipping'
+  const className = (feature ? 'mega-feature' : 'mega-item') + (available ? '' : ' mega-item-disabled')
+  const contents = <>
     <span className="mega-item-icon"><Icon size={feature ? 19 : 18}/></span>
     <span className="mega-item-copy"><b>{title}</b>{description && <small>{description}</small>}</span>
-  </Link>
+    {!available && <span className="coming-soon-label">Coming soon</span>}
+  </>
+  return available
+    ? <Link to={visitorPath(title)} className={className} onClick={onChoose}>{contents}</Link>
+    : <div className={className} aria-disabled="true" title="This service will be launched soon">{contents}</div>
 }
 function MegaMenu({ name, close }) {
   const menu = megaMenus[name]
   if (!menu) return null
   if (name === 'Products') return <div className={'mega-menu '+menu.className} role="region" aria-label="Products menu">
     <div className="products-main">{menu.columns.map(column=><section className="mega-column" key={column.title}><h3>{column.title}</h3>{column.items.map(item=><MegaItem key={item[0]} item={item} onChoose={close}/>)}</section>)}</div>
-    <aside className="products-side"><h3>{menu.side.title}</h3>{menu.side.items.map(item=><Link key={item} to={visitorPath(item)} onClick={close}>{item}</Link>)}</aside>
+    <aside className="products-side"><h3>{menu.side.title}</h3>{menu.side.items.map(item=><span key={item} className="products-side-disabled" aria-disabled="true">{item}<small>Coming soon</small></span>)}</aside>
   </div>
   if (name === 'Platform') return <div className={'mega-menu '+menu.className} role="region" aria-label="Platform menu">
     <div className="platform-menu-main"><h3>{menu.featureTitle}</h3><div className="platform-feature-grid">{menu.features.map(item=><MegaItem key={item[0]} item={item} feature onChoose={close}/>)}</div></div>
@@ -333,5 +339,5 @@ export default function App() {
     nodes.forEach(node=>observer.observe(node))
     return()=>observer.disconnect()
   },[])
-  return <><main id="top"><Hero/><SignalStrip/><PlatformSection/><NetworkSection/><HowItWorks/><TrackingSection/><CalculatorSection/><SolutionSection/><EarlyAccess notify={setToast}/></main><Footer/><Toast message={toast} onClose={()=>setToast('')}/>
+  return <><main id="top"><div className="launch-announcement" role="status"><span className="launch-announcement-dot"/><strong>More services are on the way.</strong><span>Additional IKAI services will be launching soon.</span></div><Hero/><SignalStrip/><PlatformSection/><NetworkSection/><HowItWorks/><TrackingSection/><CalculatorSection/><SolutionSection/><EarlyAccess notify={setToast}/></main><Footer/><Toast message={toast} onClose={()=>setToast('')}/>
 }
