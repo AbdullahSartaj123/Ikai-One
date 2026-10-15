@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ThemeToggle } from '../components/UI.jsx'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Activity, ChartNoAxesCombined, AlertTriangle, ArrowLeftRight, Banknote, Bell, BellRing, BookOpen, Boxes, Building2, Calculator, CalendarCheck, CalendarClock, Check, ChevronDown, ChevronRight, CircleHelp, ClipboardList, Clock, Code, Download, FileText, FileUp, FileWarning, FolderTree, Gauge, Globe, History, LayoutDashboard, Layers, LifeBuoy, ListChecks, LocateFixed, LogOut, Map, MapPin, MapPinned, Menu, MessageCircle, MessageSquareText, Package, PackageCheck, PackageMinus, PackageOpen, PanelLeftClose, PanelLeftOpen, Plug, Receipt, RefreshCw, Route, Scale, ScrollText, Search, Settings, Settings2, ShieldAlert, ShieldCheck, ShoppingBag, ShoppingCart, SlidersHorizontal, Sparkles, Tags, Timer, Truck, Users, Wallet, Warehouse, Webhook, Workflow, X, Zap } from 'lucide-react'
 import Logo from '../components/Logo.jsx'
@@ -40,7 +41,7 @@ export default function DashboardLayout(){
             <NavLink to="/app/ndr" onClick={() => setNotificationsOpen(false)}>View all activity <span>→</span></NavLink>
           </div>}
         </div>
-        <button className="icon-button help-top" onClick={() => navigate('/app/support')} aria-label="Help centre"><CircleHelp size={18}/></button>
+        <ThemeToggle compact/><button className="icon-button help-top" onClick={() => navigate('/app/support')} aria-label="Help centre"><CircleHelp size={18}/></button>
         <div className="topbar-divider"/>
         <button className="topbar-profile" onClick={() => setProfileOpen(v => !v)}><span className="user-avatar">{initials}</span><span><b>{session?.name || 'Shipper account'}</b><small>{session?.role || 'Admin'}</small></span><ChevronDown size={14}/></button>
         {profileOpen && <div className="top-profile-pop"><b>{session?.email || session?.phone}</b><button onClick={logout}><LogOut size={15}/> Sign out</button></div>}
