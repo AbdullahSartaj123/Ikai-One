@@ -29,11 +29,15 @@ export function StatCard({ label, value, trend, change, icon: Icon, note, classN
   return <article className={`ui-stat-card ${className}`.trim()}><div className="ui-stat-top"><span>{label}</span>{Icon && <span className="ui-stat-icon"><Icon size={17}/></span>}</div><div className="ui-stat-value">{value}</div><div className="ui-stat-foot">{change != null && <span className={`ui-trend ${positive ? 'is-up' : 'is-down'}`}>{positive ? <ArrowUp size={13}/> : <ArrowDown size={13}/>} {change}</span>}{note && <span>{note}</span>}</div></article>
 }
 export function Badge({ tone='neutral', children, dot=false, className='' }) { return <span className={`ui-badge ui-badge-${tone} ${className}`.trim()}>{dot && <i aria-hidden="true"/>}{children}</span> }
-export const StatusBadge = ({ status, ...props }) => {
-  const value=String(status||'').toLowerCase()
-  const tone=/deliver|success|complete|paid|active/.test(value) ? 'success' : /delay|pending|review|pickup/.test(value) ? 'warning' : /fail|lost|damage|cancel|ndr|return/.test(value) ? 'danger' : /transit|process|out for/.test(value) ? 'info' : 'neutral'
-  return <Badge tone={tone} dot {...props}>{status}</Badge>
+export function statusTone(status) {
+  const value=String(status||'').trim().toLowerCase()
+  if (/deliver|success|complete|paid|active/.test(value)) return 'success'
+  if (/delay|pending|review|pickup|attempted/.test(value)) return 'warning'
+  if (/fail|lost|damage|cancel|ndr|return|undeliver/.test(value)) return 'danger'
+  if (/transit|process|out for|picked up/.test(value)) return 'info'
+  return 'neutral'
 }
+export const StatusBadge = ({ status, ...props }) => <Badge tone={statusTone(status)} dot {...props}>{status}</Badge>
 
 export function Table({ columns=[], rows=[], loading=false, emptyTitle='Nothing here yet', emptyMessage='When records are available, they will appear here.', emptyAction, rowKey='id', onRowClick, className='' }) {
   const [sort, setSort] = useState({ key: '', direction: 'asc' })
