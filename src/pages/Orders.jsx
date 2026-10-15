@@ -20,10 +20,8 @@ const fmtMoney = amount => 'Rs ' + Number(amount || 0).toLocaleString('en-PK')
 const fmtDate = value => new Date(value).toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' })
 const fmtDateTime = value => new Date(value).toLocaleString('en-PK', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
 function IconButton({ children, label, onClick, className = '' }) { return <button type="button" className={'orders-icon-button '+className} aria-label={label} title={label} onClick={onClick}>{children}</button> }
-function StatusPill({ status }) {
-  const tone = status === 'Delivered' ? 'success' : ['In Transit','Pickup Scheduled'].includes(status) ? 'info' : status === 'RTO' || status === 'Cancelled' ? 'danger' : status === 'Ready to Ship' ? 'warning' : 'neutral'
-  return <span className={'orders-status status-'+tone}><i/>{status}</span>
-}
+function StatusPill({ status }) { return <StatusBadge status={status}/> }
+
 function OrdersList() {
   const navigate = useNavigate()
   const [activeTab,setActiveTab] = useState('All')
