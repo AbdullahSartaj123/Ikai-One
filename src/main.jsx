@@ -7,6 +7,7 @@ import './styles.css'
 import './styles/theme.css'
 import './styles/dashboard.css'
 import './styles/auth.css'
+import './styles/ui.css'
 
 // Keep route modules in separate chunks so an issue in a dashboard-only page
 // cannot prevent the public landing page from starting.
@@ -22,6 +23,7 @@ const ProtectedRoute = lazy(() => import('./components/ProtectedRoute.jsx'))
 const DashboardLayout = lazy(() => import('./layouts/DashboardLayout.jsx'))
 const Blog = lazy(() => import('./pages/Blog.jsx'))
 const PublicPages = lazy(() => import('./pages/PublicPages.jsx'))
+const NotFound = lazy(() => import('./pages/NotFound.jsx'))
 
 class AppErrorBoundary extends Component {
   constructor(props) {
@@ -33,24 +35,18 @@ class AppErrorBoundary extends Component {
   }
   render() {
     if (this.state.error) {
-      return <main style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: '32px', background: '#f7f8f5', color: '#192824', fontFamily: 'system-ui, sans-serif' }}>
-        <section style={{ width: 'min(560px, 100%)', padding: '28px', border: '1px solid #e3e9e2', borderRadius: '16px', background: '#fff', boxShadow: '0 16px 50px rgba(20,40,30,.08)' }}>
-          <h1 style={{ marginTop: 0 }}>IKAI One could not load this page</h1>
-          <p style={{ lineHeight: 1.6 }}>A frontend error was caught instead of leaving a blank screen. Refresh the page to try again.</p>
-          <pre style={{ overflowWrap: 'anywhere', whiteSpace: 'pre-wrap', padding: '12px', borderRadius: '8px', background: '#f7f8f5', color: '#8c3028', fontSize: '12px' }}>{String(this.state.error?.message || this.state.error)}</pre>
-          <button type="button" onClick={() => window.location.reload()} style={{ padding: '11px 16px', border: 0, borderRadius: '8px', background: '#4659f5', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>Reload app</button>
-        </section>
-      </main>
+      return <main className="error-boundary-page"><section className="error-boundary-card"><span className="ui-eyebrow">IKAI ONE · RECOVERY</span><h1>We hit an unexpected error.</h1><p>The page could not finish loading. Refresh to try again, or return to the dashboard.</p><div className="error-boundary-actions"><button className="ui-button ui-button-primary" type="button" onClick={() => window.location.reload()}>Reload app</button><a className="ui-button ui-button-secondary" href="/">Go to home</a></div></section></main>
     }
     return this.props.children
   }
 }
 
 function LoadingScreen() {
-  return <div role="status" aria-live="polite" style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: '#f7f8f5', color: '#53645b', fontFamily: 'system-ui, sans-serif' }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px' }}><span style={{ width: '18px', height: '18px', border: '2px solid #d9e2d6', borderTopColor: '#4659f5', borderRadius: '50%', animation: 'ikai-spin .8s linear infinite' }} /> Loading IKAI One…</div>
-    <style>{'@keyframes ikai-spin { to { transform: rotate(360deg) } }'}</style>
-  </div>
+  return <main className="app-loading" role="status" aria-live="polite" aria-label="Loading IKAI One">
+    <div className="app-loading-brand"><Boxes size={22}/><span>IKAI<span>One</span></span></div>
+    <div className="ui-skeleton ui-loading-bar"/>
+    <p>Preparing your workspace…</p>
+  </main>
 }
 
 function ShipperEntry() {
@@ -74,7 +70,7 @@ function Root() {
       <Route index element={<Navigate to="dashboard" replace/>}/>
       <Route path="*" element={<Dashboard/>}/>
     </Route>
-    <Route path="*" element={<Navigate to="/" replace/>}/>
+    <Route path="*" element={<NotFound/>}/>
   </Routes></Suspense></BrowserRouter></AuthProvider></AppErrorBoundary>
 }
 createRoot(document.getElementById('root')).render(<React.StrictMode><Root/></React.StrictMode>)
