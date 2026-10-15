@@ -1,23 +1,71 @@
+/* IKAI One design tokens — 8px spacing scale, semantic surfaces and type scale. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 :root {
-  --ikai-ink: #182b25;
-  --ikai-ink-soft: #263c32;
-  --ikai-primary: #4c5df4;
-  --ikai-primary-hover: #3948d6;
-  --ikai-lime: #d5f56f;
-  --ikai-orange: #ff7955;
-  --ikai-paper: #f6f8f5;
-  --ikai-surface: #ffffff;
-  --ikai-border: #e5eae3;
-  --ikai-muted: #7b887e;
-  --ikai-success: #278453;
-  --ikai-warning: #c88724;
-  --ikai-danger: #cf5549;
-  --ikai-radius: 14px;
-  --ikai-shadow: 0 12px 34px rgba(24,43,37,.07);
-  --ikai-font-body: 'DM Sans', sans-serif;
-  --ikai-font-display: 'Manrope', sans-serif;
+  color-scheme: light;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --ikai-font-body: var(--font-sans);
+  --ikai-font-display: var(--font-sans);
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+  --space-12: 48px; --space-16: 64px;
+  --radius-sm: 6px; --radius-md: 8px; --radius-lg: 12px; --radius-xl: 16px;
+  --shadow-sm: 0 1px 2px rgb(16 24 40 / .04);
+  --shadow-md: 0 4px 14px rgb(16 24 40 / .07);
+  --shadow-lg: 0 16px 40px rgb(16 24 40 / .12);
+  --text-xs: 12px; --text-sm: 13px; --text-md: 14px; --text-lg: 16px;
+  --text-xl: 20px; --text-2xl: 24px; --text-3xl: 30px; --text-4xl: 38px;
+  --weight-regular: 400; --weight-medium: 500; --weight-semibold: 600; --weight-bold: 700; --weight-extrabold: 800;
+  --color-bg: #f6f8f7; --color-surface: #ffffff; --color-surface-muted: #f1f4f3;
+  --color-text: #182b25; --color-text-muted: #65746c; --color-text-subtle: #7e8b84;
+  --color-border: #dfe6e2; --color-border-strong: #cbd6d0;
+  --color-brand: #4659f5; --color-brand-hover: #3445d5; --color-brand-soft: #eef0ff;
+  --color-success: #217a4b; --color-success-bg: #e8f6ed;
+  --color-warning: #8a5800; --color-warning-bg: #fff3d8;
+  --color-danger: #b42318; --color-danger-bg: #feeceb;
+  --color-info: #175cd3; --color-info-bg: #eaf2ff;
+  --ikai-ink: var(--color-text); --ikai-ink-soft: #263c32; --ikai-primary: var(--color-brand);
+  --ikai-primary-hover: var(--color-brand-hover); --ikai-lime: #d5f56f; --ikai-orange: #ff7955;
+  --ikai-paper: var(--color-bg); --ikai-surface: var(--color-surface); --ikai-border: var(--color-border);
+  --ikai-muted: var(--color-text-subtle); --ikai-success: var(--color-success); --ikai-warning: #c88724;
+  --ikai-danger: var(--color-danger); --ikai-radius: var(--radius-lg); --ikai-shadow: var(--shadow-md);
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-bg: #111816; --color-surface: #18221e; --color-surface-muted: #202c26;
+  --color-text: #eef5f0; --color-text-muted: #c0cec5; --color-text-subtle: #9aaca0;
+  --color-border: #34443a; --color-border-strong: #4a5c50;
+  --color-brand: #a6b0ff; --color-brand-hover: #c0c7ff; --color-brand-soft: #292f4b;
+  --color-success: #86d6a5; --color-success-bg: #173d2a;
+  --color-warning: #ffd27a; --color-warning-bg: #493718;
+  --color-danger: #ffaaa3; --color-danger-bg: #4a211f;
+  --color-info: #9fc3ff; --color-info-bg: #1d3351;
+  --ikai-paper: var(--color-bg); --ikai-surface: var(--color-surface); --ikai-border: var(--color-border);
+  --ikai-ink: var(--color-text); --ikai-muted: var(--color-text-subtle);
 }
 * { box-sizing: border-box; }
-body { font-family: var(--ikai-font-body); }
-button, input, select { font: inherit; }
-button, a { -webkit-tap-highlight-color: transparent; }
+html { font-family: var(--font-sans); }
+body, button, input, select, textarea { font-family: var(--font-sans); }
+body { color: var(--color-text); background: var(--color-bg); }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+:where(button,a,input,select,textarea,[tabindex]):focus-visible { outline: 3px solid color-mix(in srgb, var(--color-brand) 72%, transparent); outline-offset: 3px; }
+::selection { background: var(--color-brand-soft); color: var(--color-text); }
+:where(button,a,input,select,textarea) { transition-duration: 180ms; }
+:where(input,select,textarea) { accent-color: var(--color-brand); }
+.ui-surface { color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+.dashboard-shell { background: var(--color-bg); color: var(--color-text); }
+.dashboard-sidebar, .dashboard-topbar, .company-menu, .top-popover, .top-profile-pop, .profile-popover { background: var(--color-surface); border-color: var(--color-border); color: var(--color-text); }
+.dashboard-content { color: var(--color-text); }
+.dashboard-shell :is(.breadcrumbs strong,.user-info b,.topbar-profile b,.popover-heading b,.company-menu b,.workspace-details b) { color: var(--color-text); }
+.dashboard-shell :is(.workspace-switcher,.global-search,.sidebar-search,.sidebar-collapse,.mobile-close) { color: var(--color-text-muted); background: var(--color-surface-muted); border-color: var(--color-border); }
+.dashboard-shell :is(.workspace-switcher small,.user-info small,.topbar-profile small,.breadcrumbs span) { color: var(--color-text-subtle); }
+.dashboard-shell :is(.sidebar-link,.sidebar-sub-link) { color: var(--color-text-muted); }
+.dashboard-shell .sidebar-link:hover { background: var(--color-surface-muted); color: var(--color-text); }
+.dashboard-shell .sidebar-link.active { color: var(--color-brand); background: var(--color-brand-soft); border-color: var(--color-border); }
+.dashboard-shell .dashboard-footer { color: var(--color-text-subtle); border-color: var(--color-border); }
+:root[data-theme='dark'] .dashboard-shell :is(.help-card,.company-menu button,.global-search kbd,.sidebar-search kbd,.top-popover,.profile-popover,.top-profile-pop,.notification-item,.popover-heading) { background: var(--color-surface); border-color: var(--color-border); color: var(--color-text); }
+:root[data-theme='dark'] .dashboard-shell :is(.help-card p,.notification-item small,.notification-item time,.sidebar-search input,.global-search input) { color: var(--color-text-muted); }
+:root[data-theme='dark'] .dashboard-shell :is(.dashboard-page,.dashboard-panel,.panel-card,.stat-card,.table-wrap,.chart-card,.data-card) { background: var(--color-surface); border-color: var(--color-border); color: var(--color-text); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
