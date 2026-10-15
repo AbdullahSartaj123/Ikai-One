@@ -10,5 +10,5 @@ const tones = {
 }
 export function statusTone(status) { return tones[String(status || '').trim().toLowerCase()] || 'neutral' }
 export default function StatusBadge({ status, className = '' }) {
-  return <span className={`status-badge status-${statusTone(status)} ${className}`.trim()}><i aria-hidden="true"/>{status}</span>
+  return <span role="status" className={`status-badge status-${statusTone(status)} ${className}`.trim()}><i aria-hidden="true"/>{status}</span>
 }
