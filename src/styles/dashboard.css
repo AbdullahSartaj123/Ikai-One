@@ -215,7 +215,7 @@
 .dashboard-shell .dashboard-alerts-side .attention-item b{font-size:12px;color:var(--color-text,#182b25)}
 .dashboard-shell .dashboard-alerts-side .attention-item small{font-size:11px;line-height:1.45;color:var(--color-text-muted,#65746c)}
 .dashboard-shell .dashboard-alerts-side .attention-item a{font-size:11px;font-weight:650;color:var(--color-brand,#4659f5)}
-.dashboard-shell .dashboard-alerts-grid{display:none}
+.dashboard-shell .dashboard-alerts-grid{display:grid;grid-template-columns:minmax(0,1fr)}
 .dashboard-shell .dashboard-kpi-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:16px}
 .dashboard-shell .dashboard-kpi-grid>*{min-width:0}
 .dashboard-shell .dashboard-home-page .dashboard-filter-bar{border:1px solid var(--color-border,#dfe6e2);border-radius:10px;background:var(--color-surface,#fff);padding:10px 14px}
