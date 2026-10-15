@@ -66,7 +66,7 @@ const tools = [
  {label:'Shipping Rate Calculator',slug:'shipping-rate-calculator',kind:'rate'},
  {label:'Volumetric Weight Calculator',slug:'volumetric-weight-calculator',kind:'volume'}
 ]
-function Brand(){return <Link to="/" className="public-brand"><span className="public-brand-mark"><Boxes size={21}/></span><span>ikai<span>.</span>one</span></Link>}
+function Brand(){return <Link to="/" className="public-brand"><span className="public-brand-mark"><svg viewBox="0 0 40 40" fill="none" aria-hidden="true" focusable="false"><path d="M8 5.5H32V10H8zM8 13.5H32V18H8z" fill="currentColor"/><path d="M8 23L20 34L32 23" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/><path d="M8 38H32" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/></svg></span><span>ikai<span>.</span>one</span></Link>}
 function PublicHeader(){return <MainHeader/>}
 function PublicFooter(){return <MainFooter/>}
 
