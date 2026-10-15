@@ -387,3 +387,12 @@
  .mega-site-header .mobile-nav-actions .button-primary{flex:1;min-height:40px;font-size:11px}
 }
 @media(prefers-reduced-motion:reduce){.site-header.mega-site-header,.mega-site-header *{transition:none!important}}
+
+
+/* IKAI mark: transparent, minimal three-part shipping glyph */
+.brand-symbol{color:var(--ink);background:transparent!important}
+.brand-symbol svg{width:100%;height:100%;display:block}
+.public-brand-mark{display:grid;place-items:center;background:transparent!important;color:#4659f5!important;border-radius:0!important}
+.public-brand-mark svg{display:block;width:25px;height:25px}
+.brand-light .brand-symbol{color:#d5f56f;background:transparent!important}
+:root[data-theme='dark'] .site-header .brand-symbol{color:var(--color-text)}
