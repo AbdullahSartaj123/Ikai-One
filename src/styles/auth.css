@@ -91,3 +91,63 @@
  .login-right .auth-panel-footer{position:static;margin-top:24px}
 }
 @media(prefers-reduced-motion:reduce){.login-page *{animation:none!important;transition:none!important}}
+
+
+/* Sign-in refinement: alignment, hierarchy and calmer controls */
+.login-right{align-items:stretch;background:#fff}
+.login-form-wrap{width:min(100%,420px);margin:auto}
+.login-form-wrap .back-home{display:flex;width:max-content;align-items:center;gap:7px;margin:0 0 22px;color:#6c7b71;font-size:11px;font-weight:600}
+.login-form-wrap .login-form-kicker{display:block;width:max-content;margin:0 0 10px;color:#4c5df4;font-size:9px;line-height:1.4;letter-spacing:.13em;font-weight:800}
+.login-form-wrap h2{margin:0 0 7px;color:#172a23;font-size:32px;line-height:1.12;letter-spacing:-.045em}
+.login-form-wrap .login-subtitle{margin:0;color:#718076;font-size:12px;line-height:1.6}
+.login-form.login-form{margin-top:20px;gap:8px}
+.login-form.login-form>label{margin-top:4px;color:#526258;font-size:9px;letter-spacing:.07em}
+.login-form .login-input{min-height:43px;padding:0 12px;background:#fbfcfb;border-color:#dce5de;border-radius:9px}
+.login-form .login-input:focus-within{border-color:#8795ff;box-shadow:0 0 0 3px #4c5df414}
+.login-form .login-input input{font-size:12px;color:#26382d}
+.login-form-options{margin:2px 0 5px}
+.login-form-options>span,.login-form-options>a{font-size:10px}
+.login-form .login-submit,.login-right .login-demo-entry{min-height:42px;font-size:11px;font-weight:700;box-shadow:none}
+.login-form .login-submit{margin-top:2px}
+.login-right .login-demo-entry{margin-top:8px;border:1px solid #dce3ff;background:#f5f6ff;color:#3948d6}
+.login-right .login-demo-entry:hover{background:#eceeff}
+.login-right .auth-google{min-height:40px;margin-top:9px;border-color:#dce5de;background:#fff;font-size:11px}
+.login-right .auth-divider{margin:15px 0 7px}
+.login-right .auth-divider>span{color:#5f6f64;font-size:9px}
+.login-right .auth-divider>small{font-size:9px}
+.login-right .sample-login{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.login-right .sample-account{align-items:flex-start;min-height:56px;padding:7px;border-color:#e1e8e2;background:#fff}
+.login-right .sample-account:hover,.login-right .sample-account.selected{border-color:#c9d0ff;background:#f8f8ff}
+.login-right .sample-account-icon{width:26px;height:26px;flex:0 0 26px}
+.login-right .sample-account b{font-size:9px;line-height:1.35;color:#34483a}
+.login-right .sample-account small{font-size:8px;line-height:1.35;overflow-wrap:anywhere}
+.login-right .sample-select{display:none}
+.login-right .demo-warning{margin-top:9px;padding:8px 10px;background:#f8faf7}
+.login-right .demo-warning p{font-size:9px;line-height:1.5}
+.login-right .auth-switch{margin-top:11px;font-size:10px}
+@media(max-height:820px) and (min-width:761px){
+.login-right{padding-top:16px;padding-bottom:28px}
+.login-form-wrap .back-home{margin-bottom:13px}
+.login-form-wrap .login-form-kicker{margin-bottom:7px}
+.login-form-wrap h2{font-size:29px}
+.login-form.login-form{margin-top:13px;gap:6px}
+.login-form.login-form>label{margin-top:3px}
+.login-form .login-input{min-height:38px}
+.login-form .login-input input{min-height:36px}
+.login-form .login-submit,.login-right .login-demo-entry{min-height:37px}
+.login-right .auth-google{min-height:35px;margin-top:6px}
+.login-right .auth-divider{margin:10px 0 5px}
+.login-right .sample-account{min-height:49px;padding:6px}
+.login-right .demo-warning{display:none}
+.login-right .auth-switch{margin-top:7px}
+}
+@media(max-width:760px){
+.login-form-wrap .back-home{margin-bottom:18px}
+.login-form-wrap .login-form-kicker{margin-bottom:9px}
+.login-form-wrap h2{font-size:30px}
+.login-form.login-form{margin-top:18px;gap:8px}
+.login-form .login-input{min-height:44px}
+.login-form .login-input input{min-height:42px}
+.login-form .login-submit,.login-right .login-demo-entry{min-height:44px}
+.login-right .sample-account{min-height:56px}
+}
