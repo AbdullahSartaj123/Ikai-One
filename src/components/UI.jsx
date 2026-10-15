@@ -86,3 +86,11 @@ export function ThemeToggle({ compact=false }) {
   useEffect(()=>{document.documentElement.dataset.theme=dark?'dark':'light';window.localStorage.setItem('ikai-theme',dark?'dark':'light')},[dark])
   return <button type="button" className={`ui-theme-toggle ${compact?'is-compact':''}`} onClick={()=>setDark(v=>!v)} aria-label={dark?'Switch to light mode':'Switch to dark mode'} aria-pressed={dark} title={dark?'Switch to light mode':'Switch to dark mode'}>{dark?<Sun size={17}/>:<Moon size={17}/>}<span>{dark?'Light mode':'Dark mode'}</span></button>
 }
+
+export const formatNumber = (value, locale='en-PK') => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(Number(value) || 0)
+export const formatCurrency = (value, currency='PKR', locale='en-PK') => new Intl.NumberFormat(locale, { style:'currency', currency, maximumFractionDigits: 2 }).format(Number(value) || 0)
+export const formatDate = (value, options={ day:'2-digit', month:'short', year:'numeric' }, locale='en-PK') => {
+  if (!value) return '—'
+  const date = value instanceof Date ? value : new Date(value)
+  return Number.isNaN(date.getTime()) ? '—' : new Intl.DateTimeFormat(locale, options).format(date)
+}
