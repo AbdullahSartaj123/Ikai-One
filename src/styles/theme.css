@@ -81,3 +81,14 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 :root[data-theme='dark'] .dashboard-shell :is(input,select,textarea) { background:var(--color-surface); color:var(--color-text); border-color:var(--color-border); }
 :root[data-theme='dark'] .dashboard-shell :is(.sidebar-link.active,.nav-count) { background:var(--color-brand-soft); color:var(--color-brand); border-color:var(--color-border); }
 :root[data-theme='dark'] .dashboard-shell :is(.panel,.panel-header,.table-container,.chart-panel,.metric-card,.dashboard-card,.table-card,.content-card) { background:var(--color-surface); color:var(--color-text); border-color:var(--color-border); }
+
+/* Public-site surfaces follow the same theme when the shared toggle is used. */
+:root[data-theme='dark'] .site-header { background:rgb(24 34 30 / .94); border-color:var(--color-border); }
+:root[data-theme='dark'] .site-header .brand, :root[data-theme='dark'] .site-header .main-nav a, :root[data-theme='dark'] .site-header .main-nav button { color:var(--color-text); }
+:root[data-theme='dark'] .site-header .ui-theme-toggle { color:var(--color-text); }
+:root[data-theme='dark'] :is(.how-section,.tracking-section,.calculator-section,.features-section,.solutions-section,.faq-section,.pricing-section,.blog-section,.explore-section) { background:var(--color-bg); color:var(--color-text); }
+:root[data-theme='dark'] :is(.feature-card,.tracking-card,.quote-panel,.faq-item,.pricing-card,.blog-card,.solution-card) { background:var(--color-surface); border-color:var(--color-border); color:var(--color-text); }
+:root[data-theme='dark'] :is(.feature-card h3,.tracking-brand b,.tracking-result-head h3,.quote-panel-head b,.quote-option-details b,.quote-option strong,.section-title,.step-card h3) { color:var(--color-text); }
+:root[data-theme='dark'] :is(.feature-card p,.tracking-copy>p,.step-card p,.quote-panel-head small,.quote-option-details small,.tracking-brand small) { color:var(--color-text-muted); }
+:root[data-theme='dark'] :is(.mega-menu,.mega-menu-panel,.mega-backdrop) { border-color:var(--color-border); }
+@media(max-width:767px){.site-header .ui-theme-toggle.is-compact{width:34px;min-width:34px;height:34px}.site-header .nav-actions{gap:8px}}
