@@ -31,10 +31,10 @@ export function StatCard({ label, value, trend, change, icon: Icon, note, classN
 export function Badge({ tone='neutral', children, dot=false, className='' }) { return <span className={`ui-badge ui-badge-${tone} ${className}`.trim()}>{dot && <i aria-hidden="true"/>}{children}</span> }
 export function statusTone(status) {
   const value=String(status||'').trim().toLowerCase()
-  if (/deliver|success|complete|paid|active/.test(value)) return 'success'
-  if (/delay|pending|review|pickup|attempted/.test(value)) return 'warning'
-  if (/fail|lost|damage|cancel|ndr|return|undeliver/.test(value)) return 'danger'
-  if (/transit|process|out for|picked up/.test(value)) return 'info'
+  if (/rto|lost|damage|cancel|ndr|return|undeliver|fail/.test(value)) return 'danger'
+  if (/delay|pending|review|attempted|ready to ship/.test(value)) return 'warning'
+  if (/in transit|out for delivery|pickup scheduled|picked up|processing|shipment created/.test(value)) return 'info'
+  if (/delivered|success|complete|paid|active/.test(value)) return 'success'
   return 'neutral'
 }
 export const StatusBadge = ({ status, ...props }) => <Badge tone={statusTone(status)} dot {...props}>{status}</Badge>
