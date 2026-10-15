@@ -311,12 +311,15 @@ function EarlyAccess({ notify }) {
 }
 
 export function Footer() {
-  return <footer className="site-footer"><div className="container"><div className="footer-main">
-    <div className="footer-brand-column"><Brand light/><p>The shipping workspace that brings your delivery operations into focus.</p><span className="footer-made"><i/> Built for the next move.</span></div>
-    <div className="footer-col"><b>EXPLORE</b><a href="/explore/all-features">Platform</a><a href="/explore/domestic-shipping">Solutions</a><a href="/explore/cargo-shipping">How it works</a><a href="/blog">Insights & Blog</a><a href="/login">Seller Central</a></div>
-    <div className="footer-col"><b>TOOLS</b><a href="/track-order">Track a parcel</a><a href="/explore/shipping-rate-calculator">Rate preview</a><a href="/signup">Get started</a></div>
-    <div className="footer-col footer-col-contact"><b>THE IKAI APPROACH</b><span>Clarity over complexity.</span><span>Connected by design.</span><a href="#top" className="back-top">Back to top ↑</a></div>
-  </div><div className="footer-bottom"><span>© {new Date().getFullYear()} IKAI One. All rights reserved.</span><span className="footer-status"><i/> Frontend preview · Sample data</span><span>Built for commerce that keeps moving.</span></div></div></footer>
+  return <footer className="site-footer"><div className="container">
+    <div className="footer-main">
+      <div className="footer-brand-column"><Brand light/><p>One clear view of every delivery.</p><span className="footer-made"><i/> Built for better shipping.</span></div>
+      <nav className="footer-col" aria-label="Explore IKAI One"><b>EXPLORE</b><a href="/explore/all-features">Platform</a><a href="/explore/domestic-shipping">Shipping solutions</a><a href="/blog">Insights</a></nav>
+      <nav className="footer-col" aria-label="Shipping tools"><b>QUICK LINKS</b><a href="/track-order">Track a parcel</a><a href="/explore/shipping-rate-calculator">Rate calculator</a><a href="/login">Seller login</a></nav>
+      <div className="footer-col footer-col-contact"><b>GET STARTED</b><span>Bring your shipping into focus.</span><a href="/signup" className="footer-start-link">Create your workspace <ArrowRight size={13}/></a></div>
+    </div>
+    <div className="footer-bottom"><span>© {new Date().getFullYear()} IKAI One. All rights reserved.</span><span className="footer-status"><i/> Platform preview · Sample data</span><a href="#top" className="footer-back-top">Back to top ↑</a></div>
+  </div></footer>
 }
 
 function Toast({message,onClose}) {
