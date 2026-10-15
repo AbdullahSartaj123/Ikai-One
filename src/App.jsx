@@ -143,9 +143,9 @@ export function Header() {
               {activeMenu===name&&<MegaMenu name={name} close={close}/>}
             </div>
           })}
-          <div className="mobile-nav-actions"><a className="button button-quiet nav-login-cta" href="/login" onClick={close}>Login to Dashboard <ArrowRight size={15}/></a><a className="button button-primary button-full" href="/signup" onClick={close}>Try for Free <ArrowUpRight size={16}/></a></div>
+          <div className="mobile-nav-actions"><a className="button button-quiet nav-login-cta" href="/login" onClick={close}>Sign in <ArrowRight size={15}/></a><a className="button button-primary button-full" href="/signup" onClick={close}>Get started <ArrowUpRight size={16}/></a></div>
         </nav>
-        <div className="nav-actions"><ThemeToggle compact/><a className="button button-quiet nav-login-cta" href="/login">Login <ArrowRight size={15}/></a><a className="button button-primary nav-cta" href="/signup">Try for Free <ArrowUpRight size={15}/></a></div>
+        <div className="nav-actions"><ThemeToggle compact/><a className="button button-quiet nav-login-cta" href="/login">Sign in <ArrowRight size={15}/></a><a className="button button-primary nav-cta" href="/signup">Get started <ArrowUpRight size={15}/></a></div>
         <button className="menu-toggle" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen}>{mobileOpen ? <X size={22}/> : <Menu size={22}/>}</button>
       </div>
       {activeMenu&&<button className="mega-backdrop" aria-label="Close navigation menu" onClick={close}/>}
