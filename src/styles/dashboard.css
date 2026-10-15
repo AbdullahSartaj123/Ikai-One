@@ -236,3 +236,40 @@
 @media(max-width:900px){.dashboard-shell .dashboard-content{padding:20px}.dashboard-shell .dashboard-analytics-grid,.dashboard-shell .dashboard-third-row{grid-template-columns:1fr}.dashboard-shell .dashboard-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){.dashboard-shell .dashboard-content{padding:16px}.dashboard-shell .dashboard-topbar{padding:0 16px}.dashboard-shell .dashboard-footer{padding:12px 16px}.dashboard-shell .page-heading{align-items:flex-start;flex-direction:column}.dashboard-shell .heading-actions{width:100%;flex-wrap:wrap}.dashboard-shell .heading-actions>*{flex:1}.dashboard-shell .dashboard-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.dashboard-shell .dashboard-home-page .dashboard-filter-bar{align-items:flex-start;flex-wrap:wrap;gap:8px}.dashboard-shell .dashboard-home-page .date-range-options{max-width:100%;overflow:auto}.dashboard-shell .dashboard-home-page .dashboard-recent-orders .table-scroll{overflow:visible}.dashboard-shell .dashboard-home-page .dashboard-recent-orders .shipment-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}.dashboard-shell .dashboard-home-page .dashboard-recent-orders .shipment-table,.dashboard-shell .dashboard-home-page .dashboard-recent-orders .shipment-table tbody{display:block;width:100%}.dashboard-shell .dashboard-home-page .dashboard-recent-orders .shipment-table tbody tr{display:grid;margin:10px;border:1px solid var(--color-border);border-radius:10px;overflow:hidden;background:var(--color-surface)}.dashboard-shell .dashboard-home-page .dashboard-recent-orders .shipment-table tbody td{display:flex;align-items:center;justify-content:space-between;gap:12px;height:auto;min-height:40px;padding:9px 12px}.dashboard-shell .dashboard-home-page .dashboard-recent-orders .shipment-table tbody td:before{content:attr(data-label);font-size:10px;color:var(--color-text-muted);font-weight:700}.dashboard-shell .dashboard-home-page .dashboard-recent-orders .shipment-table tbody td:nth-child(1):before{content:'Order'}.dashboard-shell .dashboard-home-page .dashboard-recent-orders .shipment-table tbody td:nth-child(2):before{content:'Customer'}.dashboard-shell .dashboard-home-page .dashboard-recent-orders .shipment-table tbody td:nth-child(3):before{content:'Destination'}.dashboard-shell .dashboard-home-page .dashboard-recent-orders .shipment-table tbody td:nth-child(4):before{content:'Courier'}.dashboard-shell .dashboard-home-page .dashboard-recent-orders .shipment-table tbody td:nth-child(5):before{content:'COD amount'}.dashboard-shell .dashboard-home-page .dashboard-recent-orders .shipment-table tbody td:nth-child(6):before{content:'Status'}.dashboard-shell .dashboard-home-page .dashboard-recent-orders .shipment-table tbody td:last-child:before{content:'Actions'}.dashboard-shell .dashboard-home-page .dashboard-recent-orders .shipment-table tbody td small{color:var(--color-text-muted)}}
 @media(prefers-reduced-motion:reduce){.dashboard-shell *{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+
+/* Compact, professional dashboard chrome */
+.dashboard-shell{--side-width:224px}
+.dashboard-shell.sidebar-collapsed{--side-width:64px}
+.dashboard-shell .sidebar-brand{height:60px;padding:0 14px}
+.dashboard-shell .ikai-logo-mark{width:29px;height:29px;border-radius:8px}
+.dashboard-shell .ikai-logo-type{font-size:21px}
+.dashboard-shell .sidebar-collapse{width:27px;height:27px}
+.dashboard-shell .workspace-switcher{margin:10px 10px 8px;padding:8px;gap:8px;border-radius:9px}
+.dashboard-shell .workspace-avatar{width:30px;height:30px}
+.dashboard-shell .sidebar-scroll{padding:0 9px 10px}
+.dashboard-shell .sidebar-search{margin:2px 1px 12px;padding:7px 9px}
+.dashboard-shell .nav-group{margin-bottom:13px}
+.dashboard-shell .nav-group-title{margin-bottom:5px;padding:0 9px;font-size:8px}
+.dashboard-shell .sidebar-link{min-height:34px;gap:9px;padding:0 9px;margin:1px 0;border-radius:8px}
+.dashboard-shell .sidebar-link svg,.dashboard-shell .sidebar-sub-link svg{width:16px;height:16px}
+.dashboard-shell .sidebar-link-label{font-size:11px;font-weight:550}
+.dashboard-shell .sidebar-sub-link{min-height:30px;font-size:10px}
+.dashboard-shell .sidebar-bottom{padding:8px 10px 10px}
+.dashboard-shell .sidebar-user{min-height:44px;padding:6px 7px;gap:8px;border-radius:9px}
+.dashboard-shell .sidebar-user .user-avatar{width:29px;height:29px}
+.dashboard-shell .sidebar-user .user-info b{font-size:11px}
+.dashboard-shell .sidebar-user .user-info small{font-size:10px}
+.dashboard-shell .dashboard-topbar{height:58px;min-height:58px;padding:0 20px}
+.dashboard-shell .global-search{height:32px}
+.dashboard-shell .topbar-actions{gap:8px}
+.dashboard-shell .topbar-actions .icon-button{width:32px;height:32px}
+.dashboard-shell .topbar-profile{gap:8px;padding:4px 7px}
+.dashboard-shell .topbar-profile .user-avatar{width:29px;height:29px}
+.dashboard-shell .dashboard-content{padding-top:20px}
+@media(max-width:760px){
+ .dashboard-shell .sidebar-brand{height:58px}
+ .dashboard-shell .dashboard-topbar{height:56px;min-height:56px;padding:0 14px}
+ .dashboard-shell .dashboard-content{padding-top:16px}
+ .dashboard-shell .sidebar-bottom{padding:8px}
+}
