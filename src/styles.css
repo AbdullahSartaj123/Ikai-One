@@ -459,3 +459,15 @@
 @media(prefers-reduced-motion:reduce){
   .ikai-logo-mark svg,.ikai-logo-mark .logo-motion-route,.ikai-logo-mark .logo-motion-bars,.ikai-logo-mark .logo-motion-base{animation:none!important}
 }
+
+
+/* Public-site header logo uses its own mark, so mirror the route-strike animation here too. */
+@media(prefers-reduced-motion:no-preference){
+  .public-brand-mark .public-logo-motion{animation:ikai-logo-lift 2.4s cubic-bezier(.45,0,.25,1) infinite}
+  .public-brand-mark .logo-motion-route{transform-box:fill-box;transform-origin:center;animation:ikai-route-strike 2.4s cubic-bezier(.45,0,.25,1) infinite}
+  .public-brand-mark .logo-motion-bars{transform-box:fill-box;transform-origin:center;animation:ikai-bars-impact 2.4s ease-in-out infinite}
+  .public-brand-mark .logo-motion-base{transform-box:fill-box;transform-origin:center;animation:ikai-base-pulse 2.4s ease-in-out infinite}
+}
+@media(prefers-reduced-motion:reduce){
+  .public-brand-mark .public-logo-motion,.public-brand-mark .public-logo-motion path{animation:none!important}
+}
