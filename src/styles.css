@@ -471,3 +471,9 @@
 @media(prefers-reduced-motion:reduce){
   .public-brand-mark .public-logo-motion,.public-brand-mark .public-logo-motion path{animation:none!important}
 }
+
+
+/* Flip the symbol (not the wordmark) consistently across public pages and the app. */
+.ikai-logo-mark{transform:rotate(180deg)}
+.ikai-logo:hover .ikai-logo-mark,.ikai-logo:focus-visible .ikai-logo-mark{transform:translateY(-1px) rotate(180deg)}
+.public-brand-mark{transform:rotate(180deg)}
