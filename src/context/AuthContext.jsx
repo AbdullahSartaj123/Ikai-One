@@ -1,67 +1,162 @@
-import { createContext, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { apiRequest } from '../lib/api.js'
 
 const AuthContext = createContext(null)
-const SESSION_KEY = 'ikai-demo-session'
+const SESSION_KEY = 'ikai-auth-session'
 const PENDING_KEY = 'ikai-pending-signup'
-const DEMO_ACCOUNTS = [
-  { name: 'Abdullah Demo', email: 'demo@ikai.one', password: 'IkaiDemo123!', company: 'IKAI One Commerce', role: 'Store owner' },
-  { name: 'Alex Operations', email: 'ops@ikai.one', password: 'OpsDemo123!', company: 'IKAI One Commerce', role: 'Operations manager' },
-  { name: 'Sam Finance', email: 'finance@ikai.one', password: 'Finance123!', company: 'IKAI One Commerce', role: 'Finance viewer' },
-]
-function readJson(key, fallback = null) {
-  try { return JSON.parse(window.sessionStorage.getItem(key) || 'null') ?? fallback } catch { return fallback }
+
+function readSession() {
+  try {
+    const value = JSON.parse(window.sessionStorage.getItem(SESSION_KEY) || 'null')
+    return value?.token && value?.user ? value : null
+  } catch {
+    return null
+  }
 }
+
+function saveSession(value) {
+  window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(value))
+}
+
 export function AuthProvider({ children }) {
-  const [session, setSession] = useState(() => readJson(SESSION_KEY))
-  const [pendingSignup, setPendingSignup] = useState(() => readJson(PENDING_KEY))
+  const [session, setSession] = useState(() => readSession())
+  const [pendingSignup, setPendingSignup] = useState(() => {
+    try { return JSON.parse(window.sessionStorage.getItem(PENDING_KEY) || 'null') } catch { return null }
+  })
+  const [authLoading, setAuthLoading] = useState(true)
   const [authMessage, setAuthMessage] = useState('')
-  function signIn(identifier, password) {
-    const key = String(identifier || '').trim().toLowerCase()
-    const user = DEMO_ACCOUNTS.find(account => account.email.toLowerCase() === key && account.password === password)
-    if (!user) return { ok: false, message: 'Those details did not match a demo account. Try one of the sample accounts below.' }
-    const next = { name: user.name, email: user.email, phone: '', company: user.company, role: user.role }
-    window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(next))
-    setSession(next); setAuthMessage('')
-    return { ok: true, user: next }
-  }
-  function signOut() {
-    window.sessionStorage.removeItem(SESSION_KEY)
-    setSession(null)
-  }
-  function beginSignup(details) {
-    const pending = { ...details, createdAt: new Date().toISOString(), otpVerified: false }
-    window.sessionStorage.setItem(PENDING_KEY, JSON.stringify(pending))
-    setPendingSignup(pending); setAuthMessage('')
-  }
-  function verifyOtp(code) {
-    if (!pendingSignup) return { ok: false, message: 'Your signup session has expired. Please start again.' }
-    if (String(code) !== '123456') return { ok: false, message: 'That code is not correct. For this demo, use 123456.' }
-    const verified = { ...pendingSignup, otpVerified: true }
-    window.sessionStorage.setItem(PENDING_KEY, JSON.stringify(verified))
-    setPendingSignup(verified)
-    return { ok: true }
-  }
-  function completeOnboarding(profile) {
-    if (!pendingSignup?.otpVerified) return { ok: false, message: 'Verify your email or phone before continuing.' }
-    // Keep only non-sensitive session details. Bank, KYC and pickup fields are not persisted.
-    const next = {
-      name: pendingSignup.contactName || profile.companyName || 'Shipper admin',
-      email: pendingSignup.email,
-      phone: pendingSignup.phone,
-      company: profile.companyName || pendingSignup.companyName,
-      role: 'Company admin',
+
+  useEffect(() => {
+    const stored = readSession()
+    if (!stored?.token) {
+      setAuthLoading(false)
+      return
     }
-    window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(next))
+    let active = true
+    apiRequest('/api/auth/me', { token: stored.token })
+      .then(({ user }) => {
+        if (!active) return
+        const next = { token: stored.token, user }
+        saveSession(next)
+        setSession(next)
+      })
+      .catch(() => {
+        if (!active) return
+        window.sessionStorage.removeItem(SESSION_KEY)
+        setSession(null)
+      })
+      .finally(() => { if (active) setAuthLoading(false) })
+    return () => { active = false }
+  }, [])
+
+  const signIn = useCallback(async (email, password) => {
+    const result = await apiRequest('/api/auth/login', {
+      method: 'POST',
+      body: { email: String(email || '').trim().toLowerCase(), password },
+    })
+    const next = { token: result.token, user: result.user }
+    saveSession(next)
     window.sessionStorage.removeItem(PENDING_KEY)
-    setPendingSignup(null); setSession(next)
-    return { ok: true, user: next }
-  }
-  const value = useMemo(() => ({ session, isAuthenticated: Boolean(session), pendingSignup, authMessage, setAuthMessage, signIn, signOut, beginSignup, verifyOtp, completeOnboarding }), [session, pendingSignup, authMessage])
+    setPendingSignup(null)
+    setSession(next)
+    setAuthMessage('')
+    return { ok: true, user: next.user }
+  }, [])
+
+  const signOut = useCallback(() => {
+    const token = session?.token
+    if (token) apiRequest('/api/auth/logout', { method: 'POST', token }).catch(() => {})
+    window.sessionStorage.removeItem(SESSION_KEY)
+    window.sessionStorage.removeItem(PENDING_KEY)
+    setSession(null)
+    setPendingSignup(null)
+    setAuthMessage('')
+  }, [session?.token])
+
+  const beginSignup = useCallback(async (details) => {
+    const result = await apiRequest('/api/auth/register', {
+      method: 'POST',
+      body: {
+        fullName: details.fullName,
+        companyName: details.companyName,
+        email: String(details.email || '').trim().toLowerCase(),
+        password: details.password,
+        businessType: details.businessType,
+      },
+    })
+    const pending = {
+      fullName: details.fullName,
+      companyName: details.companyName,
+      email: String(details.email || '').trim().toLowerCase(),
+      phone: details.phone || '',
+      businessType: details.businessType || 'E-commerce / Online store',
+      emailSent: result.emailSent,
+      createdAt: new Date().toISOString(),
+    }
+    window.sessionStorage.setItem(PENDING_KEY, JSON.stringify(pending))
+    setPendingSignup(pending)
+    setAuthMessage(result.message || '')
+    return result
+  }, [])
+
+  const verifyEmail = useCallback(async (token) => {
+    const result = await apiRequest('/api/auth/verify-email', {
+      method: 'POST',
+      body: { token },
+    })
+    const next = { token: result.token, user: result.user }
+    saveSession(next)
+    window.sessionStorage.removeItem(PENDING_KEY)
+    setPendingSignup(null)
+    setSession(next)
+    setAuthMessage('')
+    return result
+  }, [])
+
+  const resendVerification = useCallback(async (email) => apiRequest('/api/auth/resend-verification', {
+    method: 'POST',
+    body: { email: String(email || '').trim().toLowerCase() },
+  }), [])
+
+  const requestPasswordReset = useCallback(async (email) => apiRequest('/api/auth/forgot-password', {
+    method: 'POST',
+    body: { email: String(email || '').trim().toLowerCase() },
+  }), [])
+
+  const resetPassword = useCallback(async (token, password) => apiRequest('/api/auth/reset-password', {
+    method: 'POST',
+    body: { token, password },
+  }), [])
+
+  const completeOnboarding = useCallback(() => {
+    window.sessionStorage.removeItem(PENDING_KEY)
+    setPendingSignup(null)
+    return { ok: true, user: session?.user }
+  }, [session?.user])
+
+  const value = useMemo(() => ({
+    session,
+    user: session?.user || null,
+    isAuthenticated: Boolean(session?.token && session?.user),
+    authLoading,
+    pendingSignup,
+    authMessage,
+    setAuthMessage,
+    signIn,
+    signOut,
+    beginSignup,
+    verifyEmail,
+    resendVerification,
+    requestPasswordReset,
+    resetPassword,
+    completeOnboarding,
+  }), [session, authLoading, pendingSignup, authMessage, signIn, signOut, beginSignup, verifyEmail, resendVerification, requestPasswordReset, resetPassword, completeOnboarding])
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
+
 export function useAuth() {
   const context = useContext(AuthContext)
   if (!context) throw new Error('useAuth must be used within an AuthProvider')
   return context
 }
-export { DEMO_ACCOUNTS }
