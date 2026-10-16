@@ -1,36 +1,36 @@
-import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Building2, Check, CheckCircle2, Circle, MapPin, ShieldCheck, Truck, Wallet } from 'lucide-react'
+import { ArrowRight, Building2, CheckCircle2, ShieldCheck } from 'lucide-react'
 import Logo from '../components/Logo.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
-const steps=[{title:'Company profile',subtitle:'Confirm your business details.',icon:Building2},{title:'Pickup address',subtitle:'Tell couriers where to collect parcels.',icon:MapPin},{title:'Bank / KYC details',subtitle:'Add settlement and verification details.',icon:Wallet},{title:'Choose courier partners',subtitle:'Select carriers you want to explore.',icon:Truck},{title:'Done',subtitle:'Your workspace is ready.',icon:CheckCircle2}]
-const courierOptions=[{id:'postex',name:'PostEx',detail:'COD-focused shipping',color:'orange'},{id:'tcs',name:'TCS',detail:'Nationwide express',color:'blue'},{id:'leopards',name:'Leopards Courier',detail:'E-commerce deliveries',color:'purple'},{id:'mnp',name:'M&P Express',detail:'Parcel and logistics network',color:'green'},{id:'trax',name:'Trax',detail:'E-commerce fulfilment',color:'lime'}]
-export default function Onboarding(){
-  const {pendingSignup,completeOnboarding}=useAuth(),navigate=useNavigate()
-  const [step,setStep]=useState(0),[error,setError]=useState('')
-  const [form,setForm]=useState(()=>({companyName:pendingSignup?.companyName||'',email:pendingSignup?.email||'',phone:pendingSignup?.phone||'',gstNumber:pendingSignup?.gstNumber||'',businessType:pendingSignup?.businessType||'E-commerce / Online store',warehouseName:'Main warehouse',addressLine:'',city:'Lahore',province:'Punjab',postalCode:'',accountTitle:pendingSignup?.companyName||'',bankName:'',accountNumber:'',iban:'',taxId:pendingSignup?.gstNumber||'',courierPartners:['postex','tcs']}))
-  function update(field,value){setForm(old=>({...old,[field]:value}));setError('')}
-  function toggleCourier(id){setForm(old=>({...old,courierPartners:old.courierPartners.includes(id)?old.courierPartners.filter(v=>v!==id):[...old.courierPartners,id]}))}
-  function next(){
-    if(step===0&&!form.companyName.trim()){setError('Enter your company or store name.');return}
-    if(step===1&&(!form.addressLine.trim()||!form.city.trim())){setError('Enter your pickup address and city.');return}
-    if(step===2&&(!form.accountTitle.trim()||!form.bankName.trim()||!form.accountNumber.trim())){setError('Add an account title, bank name and account number to continue.');return}
-    if(step===3&&!form.courierPartners.length){setError('Choose at least one courier partner.');return}
-    setError('');setStep(v=>v+1)
+
+export default function Onboarding() {
+  const { user, completeOnboarding, isAuthenticated } = useAuth()
+  const navigate = useNavigate()
+
+  function finish() {
+    completeOnboarding()
+    navigate('/app/dashboard', { replace: true })
   }
-  function back(){setError('');setStep(v=>Math.max(0,v-1))}
-  function finish(){const result=completeOnboarding(form);if(!result.ok){setError(result.message);return}navigate('/app/dashboard',{replace:true})}
-  if(!pendingSignup?.otpVerified)return <div className="auth-simple-page"><header className="auth-simple-header"><Link to="/"><Logo/></Link></header><main className="auth-card"><div className="auth-card-icon"><ShieldCheck size={22}/></div><h1>Verify your account first</h1><p className="auth-subtitle">The onboarding wizard opens after OTP verification.</p><Link className="auth-primary auth-link-button" to="/signup">Start signup <ArrowRight size={17}/></Link></main></div>
+
+  if (!isAuthenticated) return <div className="auth-simple-page">
+    <header className="auth-simple-header"><Link to="/"><Logo/></Link></header>
+    <main className="auth-card"><div className="auth-card-icon"><ShieldCheck size={22}/></div><h1>Sign in to continue</h1><p className="auth-subtitle">Verify your email and sign in before opening a company workspace.</p><Link className="auth-primary auth-link-button" to="/login">Go to sign in <ArrowRight size={17}/></Link></main>
+  </div>
+
   return <div className="onboarding-page">
-    <header className="onboarding-header"><Link to="/"><Logo/></Link><div><span>ACCOUNT SETUP</span><b>Step {step+1} of {steps.length}</b></div><button className="onboarding-save" type="button" onClick={()=>setError('Progress is held in this browser session while you complete the wizard.')}>Save progress</button></header>
-    <div className="onboarding-progress-wrap"><div className="onboarding-progress-label"><span>Set up your shipping workspace</span><b>{Math.round(step/(steps.length-1)*100)}% complete</b></div><div className="onboarding-progress"><span style={{width:step/(steps.length-1)*100+'%'}}/></div><div className="onboarding-step-list">{steps.map((item,index)=>{const Icon=item.icon;return <div className={'onboarding-step'+(index===step?' current':'')+(index<step?' complete':'')} key={item.title}><span className="onboarding-step-icon">{index<step?<Check size={16}/>:<Icon size={16}/>}</span><span className="onboarding-step-text"><b>{item.title}</b><small>{item.subtitle}</small></span></div>})}</div></div>
-    <main className="onboarding-main"><div className="onboarding-heading"><span className="auth-form-eyebrow">LET’S GET YOU READY</span><h1>{steps[step].title}</h1><p>{steps[step].subtitle}</p></div><section className="onboarding-card">
-      {step===0&&<div className="onboarding-fields"><div className="auth-field-grid"><div><label>COMPANY / STORE NAME</label><div className="auth-input"><Building2 size={17}/><input value={form.companyName} onChange={e=>update('companyName',e.target.value)} required/></div></div><div><label>BUSINESS TYPE</label><div className="auth-input auth-select-wrap"><Building2 size={17}/><select value={form.businessType} onChange={e=>update('businessType',e.target.value)}>{['E-commerce / Online store','Retail & wholesale','Marketplace seller','Manufacturer / Brand','Courier / Logistics','Other'].map(type=><option key={type}>{type}</option>)}</select></div></div></div><div className="auth-field-grid"><div><label>BUSINESS EMAIL</label><div className="auth-input"><span className="field-prefix">@</span><input value={form.email} readOnly/></div></div><div><label>PHONE NUMBER</label><div className="auth-input"><span className="field-prefix">#</span><input value={form.phone} readOnly/></div></div></div><div><label>GST / TAX REGISTRATION <span className="optional-label">OPTIONAL</span></label><input className="auth-plain-input" value={form.gstNumber} onChange={e=>update('gstNumber',e.target.value)} placeholder="Enter tax registration number"/></div></div>}
-      {step===1&&<div className="onboarding-fields"><div><label>WAREHOUSE / PICKUP LABEL</label><input className="auth-plain-input" value={form.warehouseName} onChange={e=>update('warehouseName',e.target.value)} placeholder="Main warehouse"/></div><div><label>STREET ADDRESS</label><textarea className="auth-plain-input auth-textarea" value={form.addressLine} onChange={e=>update('addressLine',e.target.value)} placeholder="House / unit, street, area" rows={3}/></div><div className="auth-field-grid"><div><label>CITY</label><input className="auth-plain-input" value={form.city} onChange={e=>update('city',e.target.value)}/></div><div><label>PROVINCE</label><select className="auth-plain-input" value={form.province} onChange={e=>update('province',e.target.value)}>{['Punjab','Sindh','Khyber Pakhtunkhwa','Balochistan','Islamabad Capital Territory','Gilgit-Baltistan','Azad Jammu and Kashmir'].map(p=><option key={p}>{p}</option>)}</select></div></div><div><label>POSTAL CODE <span className="optional-label">OPTIONAL</span></label><input className="auth-plain-input" value={form.postalCode} onChange={e=>update('postalCode',e.target.value)} placeholder="e.g. 54000"/></div></div>}
-      {step===2&&<div className="onboarding-fields"><div className="auth-secure-note"><ShieldCheck size={18}/><span>Demo KYC only. Do not enter sensitive real banking details in this prototype.</span></div><div><label>ACCOUNT TITLE</label><input className="auth-plain-input" value={form.accountTitle} onChange={e=>update('accountTitle',e.target.value)} placeholder="Name on account"/></div><div className="auth-field-grid"><div><label>BANK NAME</label><input className="auth-plain-input" value={form.bankName} onChange={e=>update('bankName',e.target.value)} placeholder="Bank name"/></div><div><label>ACCOUNT NUMBER</label><input className="auth-plain-input" value={form.accountNumber} onChange={e=>update('accountNumber',e.target.value)} placeholder="Demo account number"/></div></div><div><label>IBAN <span className="optional-label">OPTIONAL</span></label><input className="auth-plain-input" value={form.iban} onChange={e=>update('iban',e.target.value)} placeholder="PK00 XXXX 0000 0000 0000 0000"/></div><div><label>CNIC / TAX ID <span className="optional-label">OPTIONAL</span></label><input className="auth-plain-input" value={form.taxId} onChange={e=>update('taxId',e.target.value)} placeholder="Demo identifier only"/></div></div>}
-      {step===3&&<div className="courier-choice-grid">{courierOptions.map(c=><button type="button" key={c.id} className={'courier-choice '+(form.courierPartners.includes(c.id)?'chosen':'')} onClick={()=>toggleCourier(c.id)}><span className={'courier-choice-mark '+c.color}>{form.courierPartners.includes(c.id)?<Check size={16}/>:<Truck size={17}/>}</span><span><b>{c.name}</b><small>{c.detail}</small></span><span className="courier-choice-check">{form.courierPartners.includes(c.id)?<CheckCircle2 size={17}/>:<Circle size={17}/>}</span></button>)}</div>}
-      {step===4&&<div className="onboarding-done"><span><CheckCircle2 size={35}/></span><h2>You’re ready to ship smarter.</h2><p>Your IKAI One workspace is configured with your company profile and demo preferences. No courier accounts have been connected.</p><div className="onboarding-summary"><div><Building2 size={17}/><span><small>COMPANY</small><b>{form.companyName}</b></span></div><div><MapPin size={17}/><span><small>PICKUP CITY</small><b>{form.city}</b></span></div><div><Truck size={17}/><span><small>SELECTED COURIERS</small><b>{form.courierPartners.length} demo partners</b></span></div></div></div>}
-      {error&&<p className="auth-error" role="alert">{error}</p>}<div className="onboarding-actions">{step>0&&step<4&&<button type="button" className="auth-secondary" onClick={back}><ArrowLeft size={16}/> Back</button>}{step<4?<button type="button" className="auth-primary" onClick={next}>Continue <ArrowRight size={17}/></button>:<button type="button" className="auth-primary" onClick={finish}>Go to dashboard <ArrowRight size={17}/></button>}</div>
-    </section><p className="onboarding-disclaimer"><ShieldCheck size={14}/> Frontend-only preview. Use fictional information only.</p></main>
+    <header className="onboarding-header"><Link to="/"><Logo/></Link><div><span>SECURE WORKSPACE</span><b>Account setup</b></div><Link className="onboarding-save" to="/login">Sign out</Link></header>
+    <main className="onboarding-main">
+      <div className="onboarding-heading"><span className="auth-form-eyebrow">WELCOME TO IKAI ONE</span><h1>Your workspace is ready.</h1><p>Your account and company workspace have been created. You can continue to the seller dashboard.</p></div>
+      <section className="onboarding-card">
+        <div className="onboarding-done"><span><CheckCircle2 size={35}/></span><h2>Welcome, {user?.name || 'workspace owner'}.</h2><p>Your email is verified and your company workspace is ready for the next setup phase.</p>
+          <div className="onboarding-summary">
+            <div><Building2 size={17}/><span><small>COMPANY WORKSPACE</small><b>{user?.organizationName || 'Your organization'}</b></span></div>
+            <div><ShieldCheck size={17}/><span><small>ACCOUNT</small><b>{user?.email}</b></span></div>
+          </div>
+        </div>
+        <div className="auth-secure-note"><ShieldCheck size={18}/><span>For your protection, this setup does not collect bank account, IBAN, CNIC, or KYC details. Those workflows will be added with dedicated security controls.</span></div>
+        <div className="onboarding-actions"><button type="button" className="auth-primary" onClick={finish}>Open seller dashboard <ArrowRight size={17}/></button></div>
+      </section>
+    </main>
   </div>
 }
