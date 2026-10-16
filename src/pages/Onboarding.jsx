@@ -4,7 +4,7 @@ import Logo from '../components/Logo.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 
 export default function Onboarding() {
-  const { user, completeOnboarding, isAuthenticated } = useAuth()
+  const { user, completeOnboarding, isAuthenticated, signOut } = useAuth()
   const navigate = useNavigate()
 
   function finish() {
@@ -18,7 +18,7 @@ export default function Onboarding() {
   </div>
 
   return <div className="onboarding-page">
-    <header className="onboarding-header"><Link to="/"><Logo/></Link><div><span>SECURE WORKSPACE</span><b>Account setup</b></div><Link className="onboarding-save" to="/login">Sign out</Link></header>
+    <header className="onboarding-header"><Link to="/"><Logo/></Link><div><span>SECURE WORKSPACE</span><b>Account setup</b></div><button className="onboarding-save" type="button" onClick={() => { signOut(); navigate("/login", { replace: true }) }}>Sign out</button></header>
     <main className="onboarding-main">
       <div className="onboarding-heading"><span className="auth-form-eyebrow">WELCOME TO IKAI ONE</span><h1>Your workspace is ready.</h1><p>Your account and company workspace have been created. You can continue to the seller dashboard.</p></div>
       <section className="onboarding-card">
