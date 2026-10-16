@@ -35,7 +35,7 @@ class AppErrorBoundary extends Component {
   }
   render() {
     if (this.state.error) {
-      return <main className="error-boundary-page"><section className="error-boundary-card"><span className="ui-eyebrow">IKAI ONE · RECOVERY</span><h1>We hit an unexpected error.</h1><p>The page could not finish loading. Refresh to try again, or return to the dashboard.</p><div className="error-boundary-actions"><button className="ui-button ui-button-primary" type="button" onClick={() => window.location.reload()}>Reload app</button><a className="ui-button ui-button-secondary" href="/">Go to home</a></div></section></main>
+      return <main className="error-boundary-page"><section className="error-boundary-card"><span className="ui-eyebrow">IKAI ONE · RECOVERY</span><h1>We hit an unexpected error.</h1><p>The page could not finish loading. The technical detail below can help us fix it.</p><pre className="error-boundary-detail" style={{whiteSpace:'pre-wrap',overflowWrap:'anywhere',fontSize:12,padding:12,background:'#f3f5f4',borderRadius:8,color:'#8b3028'}}>{String(this.state.error?.message || this.state.error || 'Unknown application error')}</pre><div className="error-boundary-actions"><button className="ui-button ui-button-primary" type="button" onClick={() => window.location.reload()}>Reload app</button><a className="ui-button ui-button-secondary" href="/">Go to home</a></div></section></main>
     }
     return this.props.children
   }
