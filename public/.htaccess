@@ -1,5 +1,11 @@
-# Keep the app entry document fresh so mobile browsers never pin an old
-# HTML file that references JavaScript chunks from a previous deployment.
+# React Router SPA fallback: serve the app entry for client-side routes on refresh.
+RewriteEngine On
+RewriteBase /
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [L]
+
+# Keep HTML fresh so browsers do not reuse an old entry file after deployments.
 <IfModule mod_headers.c>
   <FilesMatch "^(index\.html|.*\.html)$">
     Header set Cache-Control "no-cache, no-store, must-revalidate"
