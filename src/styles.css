@@ -396,3 +396,24 @@
 .public-brand-mark svg{display:block;width:25px;height:25px}
 .brand-light .brand-symbol{color:#d5f56f;background:transparent!important}
 :root[data-theme='dark'] .site-header .brand-symbol{color:var(--color-text)}
+
+
+/* IKAI One motion identity — subtle, premium logistics movement */
+.ikai-logo{display:inline-flex;align-items:center;gap:10px;isolation:isolate}
+.ikai-logo-mark{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:38px;height:38px;border-radius:11px;transition:background-color .25s ease,box-shadow .25s ease,transform .25s ease;overflow:hidden}
+.ikai-logo-mark svg{display:block;width:26px;height:26px;overflow:visible}
+.ikai-logo-mark .logo-motion-bars{transform-origin:center;transition:transform .28s ease}
+.ikai-logo-mark .logo-motion-route{stroke-dasharray:42;stroke-dashoffset:0;transition:stroke-dashoffset .45s ease,transform .35s ease;transform-origin:center}
+.ikai-logo-mark .logo-motion-base{transform-origin:center;transition:transform .28s ease}
+.ikai-logo:hover .ikai-logo-mark,.ikai-logo:focus-visible .ikai-logo-mark{transform:translateY(-1px);box-shadow:0 5px 14px #4263eb20}
+.ikai-logo:hover .logo-motion-bars,.ikai-logo:focus-visible .logo-motion-bars{transform:translateY(-1.5px)}
+.ikai-logo:hover .logo-motion-route,.ikai-logo:focus-visible .logo-motion-route{stroke-dashoffset:-8;transform:translateY(1px)}
+.ikai-logo:hover .logo-motion-base,.ikai-logo:focus-visible .logo-motion-base{transform:scaleX(.9)}
+.ikai-logo-type{letter-spacing:-.045em}
+@media(prefers-reduced-motion:no-preference){
+ .ikai-logo-mark svg{animation:ikai-logistics-arrive 5s ease-in-out infinite}
+ @keyframes ikai-logistics-arrive{0%,82%,100%{transform:translateX(0)}88%{transform:translateX(1px)}94%{transform:translateX(-1px)}}
+}
+@media(prefers-reduced-motion:reduce){
+ .ikai-logo-mark,.ikai-logo-mark svg,.ikai-logo-mark path{animation:none!important;transition:none!important}
+}
