@@ -9,8 +9,6 @@ const ALLOWED_ORIGINS = new Set([
   "http://127.0.0.1:5173",
 ]);
 const PASSWORD_ITERATIONS = 310000;
-const SESSION_DAYS = 7;
-const TOKEN_MINUTES = 30;
 
 function headersFor(request) {
   const origin = request.headers.get("Origin");
@@ -262,7 +260,10 @@ async function register(request, env, sql) {
     `;
   } catch (error) {
     console.error("Account registration failed:", error?.message || "unknown error");
-    return json(request, { error: "We could not create this account. If this email is already registered, sign in or request a password reset." }, 409);
+    if (error?.code === "23505") {
+      return json(request, { error: "An account with this email already exists. Sign in or request a password reset." }, 409);
+    }
+    return json(request, { error: "Account creation is temporarily unavailable. Confirm the authentication migration has been applied, then try again." }, 503);
   }
 
   const user = userFromRow(rows[0]);
