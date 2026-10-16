@@ -1,0 +1,32 @@
+name: Phase 1 authentication checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [phase-1/production-auth]
+
+permissions:
+  contents: read
+
+jobs:
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npm run build
+
+  worker-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - working-directory: cloudflare-api
+        run: npm install
+      - run: node --check cloudflare-api/src/index.js
