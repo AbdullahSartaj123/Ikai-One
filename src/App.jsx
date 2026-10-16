@@ -38,7 +38,7 @@ const solutions = [
 ]
 
 function Brand({ light = false }) {
-  return <a className={'brand' + (light ? ' brand-light' : '')} href="#top" aria-label="IKAI One home">
+  return <a className={'brand' + (light ? ' brand-light' : '')} href="/" aria-label="IKAI One home" title="Go to homepage">
     <span className="brand-symbol"><svg viewBox="0 0 40 40" fill="none" aria-hidden="true" focusable="false"><path d="M8 5.5H32V10H8zM8 13.5H32V18H8z" fill="currentColor"/><path d="M8 23L20 34L32 23" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/><path d="M8 38H32" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/></svg></span>
     <span className="brand-word">ikai<span>.</span><b>one</b></span>
   </a>
