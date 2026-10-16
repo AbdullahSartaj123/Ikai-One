@@ -1,6 +1,6 @@
 # IKAI One
 
-Responsive landing page, frontend-only shipper portal, mock authentication, and five-step onboarding wizard.
+Ikai.One courier-aggregator SaaS frontend (React + Vite), Cloudflare Workers API, and Neon PostgreSQL. Phase 1 introduces server-backed authentication, email verification, password recovery, and organization-scoped API access.
 
 ## Run locally
 
@@ -28,18 +28,23 @@ npm run build
 - `/app/dashboard` — protected seller dashboard
 - `/app/orders`, `/app/shipments`, `/app/returns`, `/app/ndr`, `/app/couriers`, `/app/rate-calculator`, `/app/pickup-addresses`, `/app/shipping-rules`, `/app/billing`, `/app/reports`, `/app/integrations`, `/app/support`, `/app/settings`
 
-## Sample login accounts
-- Store owner: `demo@ikai.one` / `IkaiDemo123!`
-- Operations manager: `ops@ikai.one` / `OpsDemo123!`
-- Finance viewer: `finance@ikai.one` / `Finance123!`
+## Phase 1 authentication
 
-## Mock signup flow
-1. Create an account at `/signup`.
-2. Use demo OTP `123456` on `/verify-otp`.
-3. Complete the five onboarding steps.
-4. You will enter the protected dashboard. Use the user dropdown to sign out.
+- `/signup` creates a real organization and owner account through the API.
+- `/verify-otp` handles a one-time email verification link. Links expire after 30 minutes and are single-use.
+- `/login` requires a verified email and a valid password.
+- `/verify-otp?mode=reset` requests a password reset; reset links are single-use and expire after 30 minutes.
+- Authenticated browser sessions are short-lived bearer tokens held in `sessionStorage`; the API validates every session against PostgreSQL.
+- `GET /api/shipments` derives `organization_id` from the authenticated session. Clients cannot select another tenant by passing an organization ID.
 
-Google sign-in and password reset are placeholders. No email or SMS is sent. Authentication is a frontend demo, not production security. The signup wizard keeps its in-progress form in the browser tab and does not persist bank, KYC, or pickup-address fields. After signing out, use one of the sample demo accounts. Do not enter real banking, CNIC, tax, or other sensitive information.
+### Required one-time setup
+
+1. Run `cloudflare-api/migrations/0001_authentication.sql` in the Neon SQL Editor.
+2. In Cloudflare Worker settings, configure secrets/variables: `RESEND_API_KEY` (secret), `EMAIL_FROM` (verified sender, e.g. `Ikai.One <no-reply@your-verified-domain>`), and `APP_URL` = `https://ikai.one`. Keep `DATABASE_URL` as a secret. Do not put secrets in Vite environment variables or frontend code.
+3. Verify the sender domain with Resend before expecting verification/reset email delivery.
+4. The Worker is deployed by `.github/workflows/deploy-cloudflare-worker.yml` after the changes are merged to `main`; the frontend deploys through `.github/workflows/deploy.yml`.
+
+Registration is intentionally unavailable until the email service is configured. Existing demo credentials are removed. Do not collect bank account, IBAN, CNIC, or KYC data until those workflows have dedicated security controls.
 
 ## Netlify
 Build command: `npm run build`; publish directory: `dist`; Node 20. SPA route fallback is configured in `netlify.toml`.
