@@ -56,6 +56,15 @@ function ShipperEntry() {
 }
 function Root() {
   useEffect(() => {
+    // Remove the stray InfinityFree-style ?i=1 query from the visible URL
+    // without reloading the page or disturbing any other query parameters.
+    const url = new URL(window.location.href)
+    if (url.searchParams.get('i') === '1') {
+      url.searchParams.delete('i')
+      const cleanUrl = url.pathname + (url.search ? url.search : '') + url.hash
+      window.history.replaceState(window.history.state, '', cleanUrl)
+    }
+
     const root = document.getElementById('root')
     if (root) root.dataset.appMounted = 'true'
   }, [])
