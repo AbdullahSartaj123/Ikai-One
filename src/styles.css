@@ -506,3 +506,39 @@
 .blog-site .ikai-logo-link .ikai-logo-mark{background:transparent!important;color:#34445d!important}
 .blog-site .ikai-logo-link .ikai-logo-type,.blog-site .ikai-logo-link .ikai-logo-type>b{color:#243247!important}
 .blog-site .ikai-logo-link .ikai-logo-type>span{color:#4659f5!important}
+
+
+/* Definitive header logo override: static mark and all-blue wordmark. */
+.site-header .brand-symbol,
+.site-header .brand-symbol svg,
+.site-header .brand-symbol svg *,
+.site-header .ikai-logo-mark,
+.site-header .ikai-logo-mark svg,
+.site-header .ikai-logo-mark svg *{
+  animation:none!important;
+  animation-name:none!important;
+  transition:none!important;
+  transform:none!important;
+}
+.site-header .brand-word,
+.site-header .brand-word *,
+.site-header .ikai-logo-type,
+.site-header .ikai-logo-type *,
+.site-header .ikai-logo-link{
+  color:#4659F5!important;
+}
+.site-header .brand-symbol,
+.site-header .ikai-logo-mark{
+  color:#4659F5!important;
+  background:transparent!important;
+}
+@media (prefers-reduced-motion: no-preference){
+  .site-header .brand-symbol svg,
+  .site-header .brand-symbol svg *,
+  .site-header .ikai-logo-mark svg,
+  .site-header .ikai-logo-mark svg *{
+    animation:none!important;
+    transition:none!important;
+    transform:none!important;
+  }
+}
