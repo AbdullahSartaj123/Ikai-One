@@ -417,3 +417,45 @@
 @media(prefers-reduced-motion:reduce){
  .ikai-logo-mark,.ikai-logo-mark svg,.ikai-logo-mark path{animation:none!important;transition:none!important}
 }
+
+
+/* Courier route motion: the chevron travels up to strike and pass through the two route bars */
+@media(prefers-reduced-motion:no-preference){
+  .ikai-logo-mark svg{animation:ikai-logo-lift 2.4s cubic-bezier(.45,0,.25,1) infinite}
+  .ikai-logo-mark .logo-motion-route{
+    transform-box:fill-box;
+    transform-origin:center;
+    animation:ikai-route-strike 2.4s cubic-bezier(.45,0,.25,1) infinite;
+  }
+  .ikai-logo-mark .logo-motion-bars{
+    transform-box:fill-box;
+    transform-origin:center;
+    animation:ikai-bars-impact 2.4s ease-in-out infinite;
+  }
+  .ikai-logo-mark .logo-motion-base{animation:ikai-base-pulse 2.4s ease-in-out infinite}
+  @keyframes ikai-logo-lift{
+    0%,100%{transform:translateY(1px)}
+    24%,42%{transform:translateY(-2px)}
+    55%{transform:translateY(1px)}
+  }
+  @keyframes ikai-route-strike{
+    0%,12%,100%{transform:translateY(0);stroke-dashoffset:0}
+    28%{transform:translateY(-7px);stroke-dashoffset:-5}
+    38%{transform:translateY(-4px);stroke-dashoffset:-12}
+    50%,62%{transform:translateY(0);stroke-dashoffset:0}
+  }
+  @keyframes ikai-bars-impact{
+    0%,23%,100%{transform:translateY(0) scaleX(1)}
+    30%{transform:translateY(-1px) scaleX(.88)}
+    38%{transform:translateY(1px) scaleX(1.04)}
+    46%{transform:translateY(0) scaleX(1)}
+  }
+  @keyframes ikai-base-pulse{
+    0%,42%,100%{transform:scaleX(1)}
+    52%{transform:scaleX(.82)}
+    62%{transform:scaleX(1)}
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .ikai-logo-mark svg,.ikai-logo-mark .logo-motion-route,.ikai-logo-mark .logo-motion-bars,.ikai-logo-mark .logo-motion-base{animation:none!important}
+}
