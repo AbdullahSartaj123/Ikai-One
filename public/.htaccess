@@ -1,0 +1,16 @@
+# Keep the app entry document fresh so mobile browsers never pin an old
+# HTML file that references JavaScript chunks from a previous deployment.
+<IfModule mod_headers.c>
+  <FilesMatch "^(index\.html|.*\.html)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+</IfModule>
+
+# Vite emits content-hashed JS/CSS assets, so those files can be cached safely.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|mjs|css|svg|png|jpg|jpeg|webp|woff2?)$">
+    Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
+</IfModule>
