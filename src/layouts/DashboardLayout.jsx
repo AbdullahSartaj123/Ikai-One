@@ -46,6 +46,6 @@ export default function DashboardLayout(){
         <button className="topbar-profile" onClick={() => setProfileOpen(v => !v)}><span className="user-avatar">{initials}</span><span><b>{user?.name || 'Shipper account'}</b><small>{user?.role || 'Admin'}</small></span><ChevronDown size={14}/></button>
         {profileOpen && <div className="top-profile-pop"><b>{user?.email || user?.phone}</b><button onClick={logout}><LogOut size={15}/> Sign out</button></div>}
       </div>
-    </header><main className="dashboard-content"><Outlet context={{company,session}}/></main><footer className="dashboard-footer"><span>© {new Date().getFullYear()} IKAI One</span><span><i/> Live account · Shipment modules still use sample data</span><NavLink to="/app/support">Help & support</NavLink></footer></div>
+    </header><main className="dashboard-content"><Outlet context={{company,user}}/></main><footer className="dashboard-footer"><span>© {new Date().getFullYear()} IKAI One</span><span><i/> Live account · Shipment modules still use sample data</span><NavLink to="/app/support">Help & support</NavLink></footer></div>
   </div>
 }
