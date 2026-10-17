@@ -547,7 +547,7 @@ export default {
       }
     }
 
-    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments" || url.pathname === "/api/testing/verify-email") {
+    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments" || url.pathname === "/api/testing/verify-email" || url.pathname === "/api/testing/check-password-reset") {
       if (!env.DATABASE_URL) return json(request, { error: "Database is not configured." }, 503);
       let sql;
       try {
@@ -579,6 +579,45 @@ export default {
           `;
           return json(request, { message: "Testing account email verified." });
         }
+        if (url.pathname === "/api/testing/check-password-reset" && request.method === "POST") {
+          if (env.ENABLE_TEST_HELPERS !== "true" || env.DISABLE_EMAIL !== "true" || !env.TEST_HELPER_SECRET) {
+            return json(request, { error: "Endpoint not found." }, 404);
+          }
+          if (request.headers.get("X-Testing-Verification-Secret") !== env.TEST_HELPER_SECRET) {
+            return json(request, { error: "Not found." }, 404);
+          }
+          const body = await readJson(request);
+          const email = validEmail(body.email);
+          const newPassword = body.newPassword;
+          if (!email || !validPassword(newPassword)) return json(request, { error: "Provide a valid email and a password between 12 and 128 characters." }, 400);
+          const rows = await sql`
+            SELECT ai.user_id
+            FROM ikai.auth_identities ai
+            WHERE lower(ai.email) = ${email} AND ai.email_verified_at IS NOT NULL
+            LIMIT 1
+          `;
+          if (!rows[0]) return json(request, { error: "No verified account found for that email." }, 404);
+          const token = newToken();
+          const tokenHash = await sha256(token);
+          await sql`
+            INSERT INTO ikai.auth_tokens (user_id, token_hash, purpose, expires_at)
+            VALUES (${rows[0].user_id}::uuid, ${tokenHash}, 'password_reset', now() + interval '30 minutes')
+          `;
+          const resetRequest = () => new Request("https://testing.invalid/api/auth/reset-password", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token, password: newPassword }),
+          });
+          const firstReset = await resetPassword(resetRequest(), env, sql);
+          const firstResetBody = await firstReset.json();
+          const reusedReset = await resetPassword(resetRequest(), env, sql);
+          return json(request, {
+            firstResetStatus: firstReset.status,
+            firstResetMessage: firstResetBody.message || null,
+            reuseStatus: reusedReset.status,
+          });
+        }
+
         if (url.pathname === "/api/auth/register" && request.method === "POST") return await register(request, env, sql);
         if (url.pathname === "/api/auth/login" && request.method === "POST") return await login(request, env, sql);
         if (url.pathname === "/api/auth/verify-email" && request.method === "POST") return await verifyEmail(request, env, sql);
