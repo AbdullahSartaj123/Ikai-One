@@ -42,49 +42,89 @@ function Brand({ light = false }) {
 }
 
 const megaMenus = {
-  Products: {
+  Shipping: {
     className: 'products-mega',
     columns: [
-      { title: 'SHIPPING', items: [
-        ['Domestic Shipping','Shipping across Pakistan','PackageCheck'],['Cargo Shipping','Nationwide B2B & bulk shipping','Truck'],['Quick','Speedy local deliveries at low costs','Zap'],['Fulfillment','Warehousing, packaging & shipping services','Boxes']
+      { title: 'CORE SHIPPING', items: [
+        ['Domestic Shipping','Parcel delivery across Pakistan','PackageCheck'],
+        ['Cargo Shipping','B2B, cartons and bulk consignments','Truck'],
+        ['Local Delivery','Coordinate city-level deliveries','Zap'],
+        ['Fulfillment & Warehousing','Prepare, pack and dispatch orders','Boxes']
       ]},
-      { title: 'CROSS-BORDER', items: [
-        ['ShipX','International shipping to 220+ countries','Globe2'],['CargoX','Cross-border B2B & bulk shipping','Truck'],['OceanX','Seamless FCL & LCL ocean freight','Ship'],['Connect','Send personal packages worldwide','Package']
-      ]},
-      { title: 'GROWTH & MARKETING', items: [
-        ['fastr by IKAI','AI-native pre-order and growth tools','Sparkles'],['Promise','Delivery estimates and trust signals','ShieldCheck'],['ONDC','Marketplace network integrations','Network']
-      ]},
-      { title: 'FINANCIAL SERVICES', items: [
-        ['Capital','Financial services support','WalletCards'],['Credit Score','Credit score for free','ChartNoAxesCombined']
-      ]},
-      { title: 'AI ENABLED PRODUCTS', items: [
-        ['Sense','Turn data into power with APIs','BrainCircuit'],['Trends','Consumer behaviour and commerce analytics','ChartNoAxesCombined'],['Voice AI','Build voice into customer workflows','Mic']
+      { title: 'SHIPMENT WORKFLOWS', items: [
+        ['Multi-Courier Shipping','Manage shipping across delivery partners','Route'],
+        ['Shipment Tracking','Follow shipment milestones and exceptions','MapPin'],
+        ['Returns & Reverse Logistics','Coordinate returns and reattempts','RefreshCcw'],
+        ['COD & Reconciliation','Follow cash collection and remittance','WalletCards']
       ]}
-    ],
-    side: { title: 'VALUE ADDED SERVICES', items: ['Delivery Boost','Dark Stores','Delight Tracking','Instant COD','Instant Pick Up','IKAI Prime','Omni','Packaging','Co-Pilot','Returns Management'] }
+    ]
   },
   Platform: {
     className: 'platform-mega',
-    featureTitle: 'FEATURES',
-    features: [
-      ['Cash on Delivery','WalletCards'],['Serviceable Pincodes','MapPin'],['API Integration','Code2'],['Multiple Pickup Locations','MapPinned'],['Print Shipping Labels','Printer'],['Email SMS Notification','MessageSquare'],['Amazon Self-Ship','Store'],['All Features','Grid2X2']
+    columns: [
+      { title: 'OPERATIONS', items: [
+        ['Order Management','Bring orders into one organised workflow','Boxes'],
+        ['Courier Comparison','Review available delivery options','Route'],
+        ['Shipping Labels','Prepare shipment labels and details','PackageCheck'],
+        ['Pickup Management','Organise pickup addresses and requests','MapPin']
+      ]},
+      { title: 'CONTROL & VISIBILITY', items: [
+        ['Tracking & Exceptions','See shipment progress and delivery issues','Activity'],
+        ['COD Management','Keep COD status and follow-ups visible','WalletCards'],
+        ['Returns Management','Manage failed deliveries and reverse flows','RefreshCcw'],
+        ['Analytics & Reporting','Review operations and performance trends','BarChart3']
+      ]}
     ],
-    promo: { title: 'Refer & Earn', text: 'Invite sellers to IKAI One and unlock rewards as the network grows.', link: 'Learn more', icon: 'Gift' }
+    promo: { title: 'One operational view', text: 'Bring shipping activity, exceptions and follow-ups into a clearer workflow.', link: 'Explore the platform', icon: 'Sparkles' }
+  },
+  Solutions: {
+    className: 'solutions-mega',
+    columns: [
+      { title: 'BY BUSINESS', items: [
+        ['Ecommerce Sellers','Manage daily orders and dispatch','Box'],
+        ['Social Commerce','Organise orders from social selling channels','MessageCircle'],
+        ['Growing Brands','Build repeatable shipping workflows as volume grows','BarChart3'],
+        ['Enterprise Operations','Coordinate teams, locations and performance','Activity']
+      ]},
+      { title: 'BY OPERATION', items: [
+        ['Multi-Location Shipping','Manage dispatch from multiple locations','MapPin'],
+        ['High-Volume Dispatch','Keep larger daily shipping workloads organised','Boxes'],
+        ['B2B & Bulk Shipments','Coordinate business consignments','Truck'],
+        ['Courier Partners','Explore delivery network collaboration','PlugZap']
+      ]}
+    ]
   },
   Partners: {
     className: 'partners-mega',
     columns: [
-      {title:'INTEGRATIONS',items:[['Courier Integration','Connect multiple courier partners and automate shipping','PackageOpen'],['Channel Integration','Connect your online store and order management system','Network']]},
-      {title:'PARTNER PROGRAM',items:[['Become a Partner','Collaborate with IKAI One and unlock new growth opportunities','Handshake']]}
+      { title: 'NETWORK PARTNERS', items: [
+        ['Courier Integration','Connect delivery partners to shipping workflows','Truck'],
+        ['Channel Integration','Connect order sources and ecommerce systems','PlugZap'],
+        ['Technology Partners','Explore technology and integration collaboration','Globe2']
+      ]},
+      { title: 'WORK WITH IKAI', items: [
+        ['Become a Partner','Discuss a partnership with IKAI One','Handshake'],
+        ['Partner Enquiry','Share your organisation and collaboration needs','MessageCircle']
+      ]}
     ]
   },
   Resources: {
     className: 'resources-mega',
     columns: [
-      {title:'PRODUCT HELP',items:[['Shipping Rate Calculator','Estimate delivery costs before you ship','Calculator'],['Volumetric Weight Calculator','Calculate chargeable parcel weight','Scale'],['Free eCommerce Tools','Useful tools for online sellers','Wrench'],['Knowledge Base','Guides for day-to-day shipping','GraduationCap'],['Developers','API docs and integration guides','Code2']]},
-      {title:'LEARN',items:[['Blog','Ideas for ecommerce and operations','PenLine'],['Ebook','Practical guides for growing teams','BookOpen'],['Encyclopedia','Shipping terms made simple','BookText'],['Videos and Podcast','Watch, listen and learn','PlaySquare'],['FAQs','Answers to common questions','MessageCircleQuestion']]}
+      { title: 'TOOLS & SUPPORT', items: [
+        ['Shipping Rate Calculator','Estimate shipping costs for planning','Calculator'],
+        ['Volumetric Weight Calculator','Understand chargeable parcel weight','Scale'],
+        ['FAQs','Find answers to common shipping questions','MessageCircleQuestion'],
+        ['Knowledge Base','Read practical shipping and operations guides','GraduationCap']
+      ]},
+      { title: 'LEARN & BUILD', items: [
+        ['Blog','Insights for ecommerce and logistics teams','PenLine'],
+        ['Shipping Guides','Learn shipping basics and workflows','BookOpen'],
+        ['Developers & API','Explore integration documentation','Code2'],
+        ['Contact Support','Find the right next step for your question','MessageCircle']
+      ]}
     ],
-    promo:{title:'Customer Stories',text:'Discover how sellers make their shipping operations simpler.',link:'Read stories',icon:'UsersRound'}
+    promo: { title: 'Need a clearer shipping workflow?', text: 'Explore the core IKAI One capabilities for everyday shipping operations.', link: 'Get started', icon: 'Sparkles' }
   }
 }
 const visitorSlug = value => String(value).toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')
@@ -101,17 +141,12 @@ function MegaItem({ item, onChoose, feature = false }) {
 function MegaMenu({ name, close }) {
   const menu = megaMenus[name]
   if (!menu) return null
-  if (name === 'Products') return <div className={'mega-menu '+menu.className} role="region" aria-label="Products menu">
-    <div className="products-main">{menu.columns.map(column=><section className="mega-column" key={column.title}><h3>{column.title}</h3>{column.items.map(item=><MegaItem key={item[0]} item={item} onChoose={close}/>)}</section>)}</div>
-    <aside className="products-side"><h3>{menu.side.title}</h3>{menu.side.items.map(item=><Link key={item} to={visitorPath(item)} onClick={close}>{item}</Link>)}</aside>
-  </div>
-  if (name === 'Platform') return <div className={'mega-menu '+menu.className} role="region" aria-label="Platform menu">
-    <div className="platform-menu-main"><h3>{menu.featureTitle}</h3><div className="platform-feature-grid">{menu.features.map(item=><MegaItem key={item[0]} item={item} feature onChoose={close}/>)}</div></div>
-    <aside className="mega-promo"><div className="promo-art"><Sparkles size={28}/><span>IKAI</span></div><div><b>{menu.promo.title}</b><p>{menu.promo.text}</p><Link to={visitorPath(menu.promo.title)} onClick={close}>{menu.promo.link} <ArrowUpRight size={14}/></Link></div></aside>
-  </div>
-  return <div className={'mega-menu '+menu.className} role="region" aria-label={name+' menu'}>
-    <div className="mega-columns">{menu.columns.map(column=><section className="mega-column" key={column.title}><h3>{column.title}</h3>{column.items.map(item=><MegaItem key={item[0]} item={item} onChoose={close}/>)}</section>)}</div>
-    {menu.promo&&<aside className="mega-promo"><div className="promo-art"><Sparkles size={28}/><span>IKAI</span></div><div><b>{menu.promo.title}</b><p>{menu.promo.text}</p><a href="#get-started" onClick={close}>{menu.promo.link} <ArrowUpRight size={14}/></a></div></aside>}
+  return <div className={'mega-menu ' + menu.className} role="region" aria-label={name + ' menu'}>
+    <div className="mega-columns">{menu.columns.map(column => <section className="mega-column" key={column.title}>
+      <h3>{column.title}</h3>
+      {column.items.map(item => <MegaItem key={item[0]} item={item} onChoose={close}/>)}
+    </section>)}</div>
+    {menu.promo && <aside className="mega-promo"><div className="promo-art"><Sparkles size={28}/><span>IKAI</span></div><div><b>{menu.promo.title}</b><p>{menu.promo.text}</p><Link to={menu.promo.link === 'Get started' ? '/signup' : visitorPath(menu.promo.title)} onClick={close}>{menu.promo.link} <ArrowUpRight size={14}/></Link></div></aside>}
   </div>
 }
 export function Header() {
@@ -370,11 +405,11 @@ export function Header() {
       <div className="nav-shell">
         <Brand/>
         <nav className={'main-nav mega-main-nav' + (mobileOpen ? ' nav-open' : '')} aria-label="Main navigation">
-          {['Products','Platform','Pricing','Partners','Track Order','Resources','Investors'].map(name => {
+          {['Shipping','Platform','Solutions','Partners','Resources','Pricing','Track Order'].map(name => {
             const hasMenu = Boolean(megaMenus[name])
             if(name === 'Pricing') return <Link to="/pricing" key={name} onClick={close}>Pricing</Link>
             if(name === 'Track Order') return <Link to="/track-order" key={name} onClick={close}>{name}</Link>
-            if(name === 'Investors') return <Link to="/investors" key={name} onClick={close}>{name}</Link>
+            
             return <div className={'mega-nav-item'+(activeMenu===name?' menu-active':'')} key={name}>
               <button type="button" aria-expanded={activeMenu===name} onClick={() => toggle(name)} onMouseEnter={() => {if(window.matchMedia('(hover: hover) and (pointer: fine)').matches)setActiveMenu(name)}}>{name}<ChevronDown size={14}/></button>
               {activeMenu===name&&<MegaMenu name={name} close={close}/>}
