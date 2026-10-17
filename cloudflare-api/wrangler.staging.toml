@@ -1,0 +1,10 @@
+name = "ikai-one-api-staging"
+main = "cookie-wrapper.js"
+compatibility_date = "2026-10-15"
+workers_dev = true
+
+# Staging-only defaults. Do not copy these values into the production Worker.
+[vars]
+APP_URL = "http://localhost:5173"
+DISABLE_EMAIL = "true"
+ENABLE_TEST_HELPERS = "true"
