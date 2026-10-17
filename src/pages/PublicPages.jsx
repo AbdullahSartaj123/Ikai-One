@@ -66,7 +66,7 @@ const tools = [
  {label:'Shipping Rate Calculator',slug:'shipping-rate-calculator',kind:'rate'},
  {label:'Volumetric Weight Calculator',slug:'volumetric-weight-calculator',kind:'volume'}
 ]
-function Brand(){return <Link to="/" className="public-brand"><span className="public-brand-mark"><svg className="public-logo-motion" viewBox="0 0 40 40" fill="none" aria-hidden="true" focusable="false"><path className="logo-motion-bars" d="M8 5.5H32V10H8zM8 13.5H32V18H8z" fill="currentColor"/><path className="logo-motion-route" d="M8 30L20 20L32 30" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/><path className="logo-motion-base" d="M8 38H32" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/></svg></span><span>ikai<span>.</span>one</span></Link>}
+function Brand(){return <Link to="/" className="public-brand"><span className="public-brand-mark"><svg className="public-logo-motion" viewBox="0 0 40 40" fill="none" aria-hidden="true" focusable="false"><path className="logo-motion-bars" d="M8 5.5H32V10H8zM8 13.5H32V18H8z" fill="currentColor"/><path className="logo-motion-route" d="M8 30L20 20L32 30" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/><path className="logo-motion-base" d="M8 38H32" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/></svg></span><span className="public-brand-word"><span className="public-brand-name">ikai</span><span className="public-brand-dot">.</span><span className="public-brand-one">one</span></span></Link>}
 function PublicHeader(){return <MainHeader/>}
 function PublicFooter(){return <MainFooter/>}
 
