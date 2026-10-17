@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { ThemeToggle } from './components/UI.jsx'
 import Logo from './components/Logo.jsx'
 import {
@@ -38,8 +38,8 @@ const solutions = [
   { icon: BarChart3, tag: 'TEAMS & ENTERPRISE', title: 'Operations teams', text: 'Bring performance, exceptions and cash visibility into one practical operating view.' }
 ]
 
-function Brand({ light = false }) {
-  return <Logo className={light ? 'brand-light' : ''} />
+function Brand({ light = false, animated = false }) {
+  return <Logo className={light ? 'brand-light' : ''} animated={animated} />
 }
 
 const megaMenus = {
@@ -116,6 +116,7 @@ function MegaMenu({ name, close }) {
   </div>
 }
 export function Header() {
+  const location = useLocation()
   const [activeMenu, setActiveMenu] = useState('')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -129,7 +130,7 @@ export function Header() {
   return <>
     <header className={'site-header mega-site-header' + (scrolled ? ' header-scrolled' : '')} onKeyDown={event => { if(event.key === 'Escape') close() }}>
       <div className="nav-shell">
-        <Brand/>
+        <Brand animated={location.pathname === '/'}/>
         <nav className={'main-nav mega-main-nav' + (mobileOpen ? ' nav-open' : '')} aria-label="Main navigation">
           {['Products','Platform','Pricing','Partners','Track Order','Resources','Investors'].map(name => {
             const hasMenu = Boolean(megaMenus[name])
