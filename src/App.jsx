@@ -146,7 +146,7 @@ export function Header() {
         <div className="nav-actions"><ThemeToggle compact/><a className="button button-quiet nav-login-cta" href="/login">Sign in <ArrowRight size={15}/></a><a className="button button-primary nav-cta" href="/signup">Get started <ArrowUpRight size={15}/></a></div>
         <button className="menu-toggle" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen}>{mobileOpen ? <X size={22}/> : <Menu size={22}/>}</button>
       </div>
-      {activeMenu&&<button className="mega-backdrop" aria-label="Close navigation menu" onClick={close}/>}
+      {activeMenu&&<button className="mega-backdrop" aria-label="Close navigation menu" onClick={close} onMouseEnter={() => { if(window.matchMedia('(hover: hover) and (pointer: fine)').matches) close() }}/>}
     </header>
   </>
 }
