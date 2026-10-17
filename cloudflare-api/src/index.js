@@ -530,13 +530,38 @@ export default {
       }
     }
 
-    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments") {
+    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments" || url.pathname === "/api/testing/verify-email") {
       if (!env.DATABASE_URL) return json(request, { error: "Database is not configured." }, 503);
       let sql;
       try {
         sql = neon(env.DATABASE_URL);
         const rateLimitError = await applyAuthRateLimit(request, url.pathname, sql);
         if (rateLimitError) return json(request, rateLimitError, 429);
+        if (url.pathname === "/api/testing/verify-email" && request.method === "POST") {
+          if (env.ENABLE_TEST_HELPERS !== "true" || !env.TEST_HELPER_SECRET) {
+            return json(request, { error: "Endpoint not found." }, 404);
+          }
+          if (request.headers.get("X-Testing-Verification-Secret") !== env.TEST_HELPER_SECRET) {
+            return json(request, { error: "Not found." }, 404);
+          }
+          const body = await readJson(request);
+          const email = validEmail(body.email);
+          if (!email) return json(request, { error: "Enter a valid email address." }, 400);
+          const rows = await sql`
+            UPDATE ikai.auth_identities ai
+            SET email_verified_at = COALESCE(ai.email_verified_at, now()), updated_at = now()
+            FROM ikai.users u
+            WHERE u.id = ai.user_id AND lower(ai.email) = ${email}
+            RETURNING ai.user_id
+          `;
+          if (!rows[0]) return json(request, { error: "No account found for that email." }, 404);
+          await sql`
+            UPDATE ikai.auth_tokens
+            SET consumed_at = COALESCE(consumed_at, now())
+            WHERE user_id = ${rows[0].user_id} AND purpose = 'verify_email' AND consumed_at IS NULL
+          `;
+          return json(request, { message: "Testing account email verified." });
+        }
         if (url.pathname === "/api/auth/register" && request.method === "POST") return await register(request, env, sql);
         if (url.pathname === "/api/auth/login" && request.method === "POST") return await login(request, env, sql);
         if (url.pathname === "/api/auth/verify-email" && request.method === "POST") return await verifyEmail(request, env, sql);
