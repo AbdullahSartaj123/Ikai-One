@@ -256,7 +256,7 @@ export function Header() {
           display: flex !important; flex-direction: column !important; align-items: stretch !important;
           gap: 5px !important; padding: 17px 16px max(22px, env(safe-area-inset-bottom)) !important;
           max-height: calc(100dvh - 64px) !important; overflow-x: hidden !important; overflow-y: auto !important;
-          overscroll-behavior: contain !important; scrollbar-width: thin;
+          overscroll-behavior: contain !important; scrollbar-width: none !important; -ms-overflow-style: none !important;
           background: rgba(255,255,255,.985) !important;
           border: 1px solid #e5eae4 !important; border-top: 0 !important;
           border-radius: 0 0 20px 20px !important;
@@ -264,6 +264,8 @@ export function Header() {
           backdrop-filter: blur(20px) !important; -webkit-backdrop-filter: blur(20px) !important;
           animation: ikai-mobile-nav-in .2s ease-out both !important;
         }
+        .mega-site-header .main-nav.nav-open::-webkit-scrollbar,
+        .mega-site-header .main-nav.nav-open *::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }
         @keyframes ikai-mobile-nav-in {
           from { opacity: 0; transform: translateY(-7px); }
           to { opacity: 1; transform: translateY(0); }
