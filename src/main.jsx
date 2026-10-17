@@ -56,6 +56,11 @@ function ShipperEntry() {
 }
 function Root() {
   useEffect(() => {
+    // Keep the application permanently in its supported light appearance.
+    document.documentElement.dataset.theme = 'light'
+    document.documentElement.style.colorScheme = 'light'
+    window.localStorage.removeItem('ikai-theme')
+
     // Remove the stray InfinityFree-style ?i=1 query from the visible URL
     // without reloading the page or disturbing any other query parameters.
     const url = new URL(window.location.href)
