@@ -1,10 +1,9 @@
-const DEFAULT_API_BASE_URL = 'https://ikai-one-api.abdullah-sartaj-ahmad.workers.dev'
+const DEFAULT_API_BASE_URL = 'https://api.ikai.one'
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/+$/, '')
 
-export async function apiRequest(path, { token, method = 'GET', body, signal } = {}) {
+export async function apiRequest(path, { method = 'GET', body, signal } = {}) {
   const headers = { Accept: 'application/json' }
   if (body !== undefined) headers['Content-Type'] = 'application/json'
-  if (token) headers.Authorization = `Bearer ${token}`
 
   let response
   try {
@@ -14,6 +13,7 @@ export async function apiRequest(path, { token, method = 'GET', body, signal } =
       body: body === undefined ? undefined : JSON.stringify(body),
       signal,
       cache: 'no-store',
+      credentials: 'include',
     })
   } catch {
     throw new Error('Unable to reach Ikai.One services. Check your connection and try again.')
