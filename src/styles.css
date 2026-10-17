@@ -361,8 +361,6 @@
 .mega-site-header .mega-nav-item>button{gap:5px;padding:10px 0}
 .mega-site-header .mega-nav-item>button svg{width:13px;height:13px;color:#87938b}
 .mega-site-header .nav-actions{gap:10px}
-.mega-site-header .ui-theme-toggle.is-compact{width:34px;height:34px;border-color:transparent;background:transparent;color:#536259}
-.mega-site-header .ui-theme-toggle.is-compact:hover{background:#f0f3f1;color:#26372e}
 .mega-site-header .nav-login-cta{min-height:37px;padding:0 12px;border:1px solid #e1e7e2;border-radius:9px;background:#fff;color:#36483e;font-family:var(--font-sans);font-size:11px;font-weight:600;box-shadow:none}
 .mega-site-header .nav-login-cta:hover{background:#f7f9f7;border-color:#cfd9d2;transform:none}
 .mega-site-header .nav-cta{min-height:38px;padding:0 15px;border-radius:9px;background:#4659f5;color:#fff;font-family:var(--font-sans);font-size:11px;font-weight:650;box-shadow:0 3px 8px rgba(70,89,245,.16)}
@@ -395,7 +393,6 @@
 .public-brand-mark{display:grid;place-items:center;background:transparent!important;color:#4659f5!important;border-radius:0!important}
 .public-brand-mark svg{display:block;width:25px;height:25px}
 .brand-light .brand-symbol{color:#d5f56f;background:transparent!important}
-:root[data-theme='dark'] .site-header .brand-symbol{color:var(--color-text)}
 
 
 /* IKAI One motion identity — subtle, premium logistics movement */
