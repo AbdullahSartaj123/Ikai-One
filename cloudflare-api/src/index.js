@@ -200,10 +200,42 @@ async function authenticate(request, env) {
 }
 
 async function readJson(request) {
-  const length = Number(request.headers.get("Content-Length") || 0);
-  if (length > 20000) throw new Error("Request body is too large.");
+  const maxBytes = 20000;
+  const lengthHeader = request.headers.get("Content-Length");
+  if (lengthHeader && Number(lengthHeader) > maxBytes) {
+    throw new Error("Request body is too large.");
+  }
+
+  // Enforce the limit while reading too; Content-Length may be absent.
+  const reader = request.body?.getReader();
+  if (!reader) throw new Error("Request body must be valid JSON.");
+
+  const chunks = [];
+  let totalBytes = 0;
   try {
-    return await request.json();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > maxBytes) {
+        await reader.cancel();
+        throw new Error("Request body is too large.");
+      }
+      chunks.push(value);
+    }
+  } catch (error) {
+    if (error?.message === "Request body is too large.") throw error;
+    throw new Error("Request body must be valid JSON.");
+  }
+
+  const body = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  try {
+    return JSON.parse(new TextDecoder().decode(body));
   } catch {
     throw new Error("Request body must be valid JSON.");
   }
