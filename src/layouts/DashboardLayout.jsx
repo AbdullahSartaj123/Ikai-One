@@ -20,7 +20,7 @@ export default function DashboardLayout(){
   const initials=(user?.name||'IK').split(/\s+/).map(part=>part[0]).join('').slice(0,2).toUpperCase()
   return <div className={'dashboard-shell'+(collapsed?' sidebar-collapsed':'')+(mobileOpen?' mobile-sidebar-open':'')}>
     {mobileOpen&&<button className="mobile-scrim" aria-label="Close menu" onClick={()=>setMobileOpen(false)}/>}
-    <aside className="dashboard-sidebar"><div className="sidebar-brand"><Logo/><button className="sidebar-collapse" onClick={()=>setCollapsed(v=>!v)} aria-label={collapsed?'Expand sidebar':'Collapse sidebar'}>{collapsed?<PanelLeftOpen size={18}/>:<PanelLeftClose size={18}/>}</button><button className="mobile-close" onClick={()=>setMobileOpen(false)} aria-label="Close navigation"><X size={20}/></button></div>
+    <aside className="dashboard-sidebar"><div className="sidebar-brand"><Logo/><button className="mobile-close" onClick={()=>setMobileOpen(false)} aria-label="Close navigation"><X size={20}/></button></div>
       <button className="workspace-switcher" onClick={()=>setCompanyOpen(v=>!v)}><span className="workspace-avatar">{company.initials}</span><span className="workspace-details"><b>{company.name}</b><small>{company.plan}</small></span><ChevronDown size={15}/></button>
       {companyOpen&&<div className="company-menu">{companies.map(c=><button key={c.id} onClick={()=>{setCompany(c);setCompanyOpen(false)}}><span className="workspace-avatar">{c.initials}</span><span><b>{c.name}</b><small>{c.plan}</small></span>{c.id===company.id&&<Check size={15}/>}</button>)}</div>}
       <div className="sidebar-scroll"><div className="sidebar-search"><Search size={15}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Filter menu..."/><kbd>⌘ K</kbd></div>
