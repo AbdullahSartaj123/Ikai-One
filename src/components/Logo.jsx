@@ -9,6 +9,6 @@ export default function Logo({compact=false,light=false,className=''}) {
     <path d="M8 38H32" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
    </svg>
   </span>
-  {!compact&&<span className="brand-word ikai-logo-type">ikai<span>.</span><b>one</b></span>}
+  {!compact&&<span className="brand-word ikai-logo-type"><span className="ikai-word">ikai</span><span className="ikai-dot">.</span><b className="ikai-one">one</b></span>}
  </Link>
 }
