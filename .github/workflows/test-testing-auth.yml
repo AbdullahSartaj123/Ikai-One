@@ -135,6 +135,22 @@ jobs:
           const afterLogout = await request('/api/auth/me', { headers: { Cookie: cookiePair } });
           if (afterLogout.response.status !== 401) throw new Error(`Session remained valid after logout (status ${afterLogout.response.status})`);
           console.log('PASS logout revoked session');
+          let rateLimited = false;
+          for (let attempt = 1; attempt <= 12; attempt++) {
+            const rateCheck = await request('/api/auth/login', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: `rate-limit-${unique}@example.invalid`, password: 'Wrong-Password-123!' })
+            });
+            if (rateCheck.response.status === 429) {
+              rateLimited = true;
+              break;
+            }
+            if (![400, 401].includes(rateCheck.response.status)) {
+              throw new Error(`Unexpected login rate-limit probe response (${rateCheck.response.status}): ${JSON.stringify(rateCheck.body)}`);
+            }
+          }
+          if (!rateLimited) throw new Error('Login endpoint did not return HTTP 429 within 12 attempts');
+          console.log('PASS login endpoint enforces its rate limit with HTTP 429');
           console.log(`Test account email: ${email}`);
           console.log('Note: test account remains in the Neon testing branch for now.');
           NODE
