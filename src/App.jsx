@@ -136,7 +136,7 @@ export function Header() {
             if(name === 'Pricing') return <Link to="/pricing" key={name} onClick={close}>Pricing</Link>
             if(name === 'Track Order') return <Link to="/track-order" key={name} onClick={close}>{name}</Link>
             if(name === 'Investors') return <Link to="/investors" key={name} onClick={close}>{name}</Link>
-            return <div className={'mega-nav-item'+(activeMenu===name?' menu-active':'')} key={name}>
+            return <div className={'mega-nav-item'+(activeMenu===name?' menu-active':'')} key={name} onMouseLeave={() => { if(window.matchMedia('(hover: hover) and (pointer: fine)').matches) setActiveMenu('') }}>
               <button type="button" aria-expanded={activeMenu===name} onClick={() => toggle(name)} onMouseEnter={() => {if(window.matchMedia('(hover: hover) and (pointer: fine)').matches)setActiveMenu(name)}}>{name}<ChevronDown size={14}/></button>
               {activeMenu===name&&<MegaMenu name={name} close={close}/>}
             </div>
