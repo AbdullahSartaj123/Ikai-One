@@ -357,28 +357,58 @@
 }
 
 
-/* Always keep a visible way to restore the sidebar after collapsing it. */
-.sidebar-expand-floating{
-  display:inline-grid;
-  place-items:center;
-  flex:0 0 36px;
-  width:36px;
-  height:36px;
-  margin-right:10px;
-  border:1px solid #e3e8e2;
-  border-radius:10px;
-  background:#fff;
+/* Mid-edge sidebar toggle: discreet when idle, fully revealed on hover. */
+.sidebar-edge-toggle{
+  position:fixed;
+  z-index:120;
+  top:50%;
+  left:var(--side-width,240px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:0;
+  width:34px;
+  height:66px;
+  padding:0;
+  border:1px solid #e0e5e2;
+  border-left:0;
+  border-radius:0 15px 15px 0;
+  background:rgba(255,255,255,.96);
   color:#4659f5;
+  box-shadow:3px 4px 14px rgba(25,40,36,.10);
   cursor:pointer;
-  box-shadow:0 2px 8px rgba(24,43,37,.05);
-  transition:background .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease;
+  transform:translate(-50%,-50%);
+  opacity:.68;
+  transition:left .34s cubic-bezier(.2,.75,.25,1),transform .3s cubic-bezier(.2,.75,.25,1),opacity .22s ease,box-shadow .25s ease,background .2s ease;
+  -webkit-backdrop-filter:blur(10px);
+  backdrop-filter:blur(10px);
 }
-.sidebar-expand-floating:hover{
-  background:#f0f1ff;
-  border-color:#cfd3ff;
-  box-shadow:0 4px 12px rgba(70,89,245,.12);
+.sidebar-edge-toggle:hover,
+.sidebar-edge-toggle:focus-visible{
+  opacity:1;
+  transform:translate(0,-50%);
+  background:#fff;
+  box-shadow:5px 5px 20px rgba(70,89,245,.18);
+  outline:none;
 }
-.sidebar-expand-floating:active{transform:scale(.96)}
+.sidebar-edge-toggle:active{transform:translate(0,-50%) scale(.96)}
+.sidebar-edge-toggle svg{flex:0 0 auto;transition:transform .3s cubic-bezier(.2,.75,.25,1)}
+.sidebar-edge-toggle:hover svg{transform:scale(1.08)}
+.sidebar-edge-toggle-grip{
+  position:absolute;
+  left:4px;
+  top:50%;
+  width:3px;
+  height:22px;
+  border-radius:4px;
+  background:#d7dcfa;
+  transform:translateY(-50%);
+  transition:height .2s ease,background .2s ease;
+}
+.sidebar-edge-toggle:hover .sidebar-edge-toggle-grip{height:32px;background:#4659f5}
 @media(max-width:760px){
-  .sidebar-expand-floating{display:none}
+  .sidebar-edge-toggle{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .sidebar-edge-toggle,.sidebar-edge-toggle svg,.sidebar-edge-toggle-grip{transition:none!important}
 }
