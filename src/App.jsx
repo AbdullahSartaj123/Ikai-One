@@ -129,7 +129,7 @@ const megaMenus = {
 }
 const visitorSlug = value => String(value).toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')
 const visitorPath = title => title === 'Blog' ? '/blog' : title === 'Refer & Earn' ? '/explore/refer-earn' : '/explore/' + visitorSlug(title)
-const menuIconMap = { PackageCheck, Truck, Zap, Boxes, Globe2, Ship: Truck, Package: Box, Sparkles, ShieldCheck, Network: PlugZap, WalletCards, ChartNoAxesCombined: BarChart3, BrainCircuit: Sparkles, Mic: MessageCircle, MapPin, MapPinned: MapPin, Code2: PlugZap, Printer: PackageCheck, MessageSquare: MessageCircle, Store: Box, Grid2X2: Boxes, Gift: Sparkles, PackageOpen: Boxes, Handshake: Globe2, Calculator: CircleDollarSign, Scale: Activity, Wrench: Zap, GraduationCap: ShieldCheck, PenLine: MessageCircle, BookOpen: Boxes, BookText: Boxes, PlaySquare: Zap, MessageCircleQuestion: MessageCircle, UsersRound: Boxes }
+const menuIconMap = { PackageCheck, Truck, Zap, Boxes, Box, Globe2, Route, Activity, RefreshCcw, PlugZap, Ship: Truck, Package: Box, Sparkles, ShieldCheck, Network: PlugZap, WalletCards, ChartNoAxesCombined: BarChart3, BrainCircuit: Sparkles, Mic: MessageCircle, MapPin, MapPinned: MapPin, Code2: PlugZap, Printer: PackageCheck, MessageSquare: MessageCircle, Store: Box, Grid2X2: Boxes, Gift: Sparkles, PackageOpen: Boxes, Handshake: Globe2, Calculator: CircleDollarSign, Scale: Activity, Wrench: Zap, GraduationCap: ShieldCheck, PenLine: MessageCircle, BookOpen: Boxes, BookText: Boxes, PlaySquare: Zap, MessageCircleQuestion: MessageCircle, UsersRound: Boxes }
 function MegaItem({ item, onChoose, feature = false }) {
   const [title, description, iconName] = item
   const Icon = menuIconMap[iconName] || ArrowUpRight
@@ -272,6 +272,21 @@ export function Header() {
         .mega-site-header .main-nav.nav-open { padding-right: 10px !important; padding-left: 10px !important; }
         .mega-site-header .mega-nav-item > .mega-menu { padding: 11px !important; }
         .mega-site-header .mega-item-copy b { font-size: 14px !important; }
+      }
+      /* Launch navigation uses a compact two-column service menu, not legacy mega-menu gutters. */
+      @media (min-width: 761px) {
+        .mega-site-header .products-mega,
+        .mega-site-header .partners-mega {
+          grid-template-columns: minmax(0, 1fr) !important;
+          width: min(920px, calc(100vw - 64px)) !important;
+          left: 50% !important;
+        }
+        .mega-site-header .products-mega .mega-columns,
+        .mega-site-header .partners-mega .mega-columns {
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          gap: 28px !important;
+          padding: 25px !important;
+        }
       }
       /* Refined, touch-first public navigation */
       @media (max-width: 760px) {
