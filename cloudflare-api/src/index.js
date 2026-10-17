@@ -3,8 +3,6 @@ import { neon } from "@neondatabase/serverless";
 const ALLOWED_ORIGINS = new Set([
   "https://ikai.one",
   "https://www.ikai.one",
-  "http://ikai.one",
-  "http://www.ikai.one",
   "http://localhost:5173",
   "http://127.0.0.1:5173",
 ]);
@@ -211,6 +209,51 @@ async function readJson(request) {
 
 function emailConfigurationReady(env) {
   return Boolean(env.RESEND_API_KEY && env.EMAIL_FROM);
+}
+
+const AUTH_RATE_LIMITS = {
+  "/api/auth/register": { limit: 5, windowSeconds: 3600 },
+  "/api/auth/login": { limit: 10, windowSeconds: 60 },
+  "/api/auth/verify-email": { limit: 10, windowSeconds: 600 },
+  "/api/auth/resend-verification": { limit: 5, windowSeconds: 3600 },
+  "/api/auth/forgot-password": { limit: 5, windowSeconds: 3600 },
+  "/api/auth/reset-password": { limit: 10, windowSeconds: 600 },
+};
+
+async function applyAuthRateLimit(request, pathname, sql) {
+  if (request.method !== "POST") return null;
+  const policy = AUTH_RATE_LIMITS[pathname];
+  if (!policy) return null;
+
+  const ip = request.headers.get("CF-Connecting-IP")
+    || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || "unknown";
+  const bucketKey = await sha256(`${ip}:${pathname}`);
+  const rows = await sql`
+    INSERT INTO ikai.auth_rate_limits (bucket_key, window_started_at, request_count, updated_at)
+    VALUES (${bucketKey}, now(), 1, now())
+    ON CONFLICT (bucket_key) DO UPDATE SET
+      request_count = CASE
+        WHEN ikai.auth_rate_limits.window_started_at <= now() - (${policy.windowSeconds} * interval '1 second') THEN 1
+        ELSE ikai.auth_rate_limits.request_count + 1
+      END,
+      window_started_at = CASE
+        WHEN ikai.auth_rate_limits.window_started_at <= now() - (${policy.windowSeconds} * interval '1 second') THEN now()
+        ELSE ikai.auth_rate_limits.window_started_at
+      END,
+      updated_at = now()
+    RETURNING request_count
+  `;
+  if (Math.random() < 0.01) {
+    await sql`DELETE FROM ikai.auth_rate_limits WHERE updated_at < now() - interval '2 days'`;
+  }
+  if (Number(rows[0]?.request_count || 0) > policy.limit) {
+    return {
+      error: "Too many requests. Please wait before trying again.",
+      code: "RATE_LIMITED",
+    };
+  }
+  return null;
 }
 
 async function register(request, env, sql) {
@@ -454,6 +497,8 @@ export default {
       let sql;
       try {
         sql = neon(env.DATABASE_URL);
+        const rateLimitError = await applyAuthRateLimit(request, url.pathname, sql);
+        if (rateLimitError) return json(request, rateLimitError, 429);
         if (url.pathname === "/api/auth/register" && request.method === "POST") return await register(request, env, sql);
         if (url.pathname === "/api/auth/login" && request.method === "POST") return await login(request, env, sql);
         if (url.pathname === "/api/auth/verify-email" && request.method === "POST") return await verifyEmail(request, env, sql);
