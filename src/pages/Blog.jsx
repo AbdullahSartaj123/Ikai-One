@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { Header as MainHeader, Footer as MainFooter } from '../App.jsx'
 import { ArrowLeft, ArrowRight, ArrowUpRight, Bookmark, Boxes, CalendarDays, Check, Clock3, Mail, Search, Share2, Sparkles, Truck, TrendingUp, X } from 'lucide-react'
 
 const posts=[
