@@ -661,3 +661,105 @@
   .connect-hero-parcel>div>span,.connect-hero-foot{font-size:10px}
   .footer-main{gap:18px 12px}
 }
+
+
+/* Clean launch-ready IKAI One journal */
+.blog-site{--blog-ink:#17251f;--blog-muted:#68766d;--blog-line:#e6eae3;background:#fff;color:var(--blog-ink)}
+.blog-site .site-header{background:rgba(255,255,255,.97);backdrop-filter:blur(18px)}
+.blog-site .site-header .main-nav>a{color:#3f5046}
+.blog-site .site-header .main-nav>a:hover{color:#4659f5}
+.blog-site .site-footer{margin-top:0}
+.blog-index-main{max-width:1200px;margin:0 auto;padding:0 30px 76px}
+.journal-intro{display:flex;align-items:flex-end;justify-content:space-between;gap:32px;padding:68px 0 44px;border-bottom:1px solid var(--blog-line)}
+.journal-intro-copy{max-width:720px}
+.journal-kicker{display:inline-flex;align-items:center;gap:8px;color:#657268;font-size:10px;font-weight:850;letter-spacing:.14em}
+.journal-kicker>i{width:7px;height:7px;border-radius:50%;background:#4659f5;box-shadow:0 0 0 4px #4659f51a}
+.journal-intro h1{margin:18px 0 17px;font-size:clamp(42px,5.5vw,68px);line-height:1.02;letter-spacing:-.065em;font-weight:780}
+.journal-intro h1 em{font-style:normal;color:#4659f5}
+.journal-intro-copy>p{max-width:590px;margin:0;color:#68766d;font-size:15px;line-height:1.8}
+.journal-intro-note{display:flex;align-items:center;gap:12px;flex:0 0 auto;padding:16px 18px;border:1px solid #e7eaf1;border-radius:12px;background:#fafaff}
+.journal-intro-note>span{display:grid;place-items:center;width:38px;height:38px;border-radius:10px;background:#eef0ff;color:#4659f5}
+.journal-intro-note>div{display:flex;flex-direction:column;gap:5px}
+.journal-intro-note b{font-size:12px;color:#26372e}
+.journal-intro-note small{font-size:11px;color:#748078}
+.journal-library{padding-top:42px}
+.journal-library-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px}
+.journal-library-head h2{margin:9px 0 0;font-size:clamp(26px,3.5vw,38px);letter-spacing:-.045em;line-height:1.1}
+.journal-count{padding:7px 10px;border:1px solid #e8ece7;border-radius:7px;color:#69776e;font-size:11px;font-weight:700}
+.journal-toolbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:23px 0 22px;padding-bottom:16px;border-bottom:1px solid var(--blog-line)}
+.journal-categories{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.journal-categories button{padding:9px 12px;border:1px solid transparent;border-radius:8px;background:transparent;color:#69776e;font-size:11px;font-weight:700;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+.journal-categories button:hover{background:#f7f8ff;color:#4659f5}
+.journal-categories button.active{border-color:#dfe3ff;background:#f1f2ff;color:#3949dd}
+.journal-search{display:flex;align-items:center;gap:8px;flex:0 0 225px;padding:0 11px;border:1px solid #e0e6df;border-radius:9px;background:#fff;color:#77847b}
+.journal-search:focus-within{border-color:#aeb6ff;box-shadow:0 0 0 3px #4659f510}
+.journal-search input{width:100%;height:39px;min-width:0;border:0;outline:none;background:transparent;color:#26372e;font:inherit;font-size:12px}
+.journal-search>button{display:grid;place-items:center;padding:4px;border:0;background:transparent;color:#77847b;cursor:pointer}
+.journal-featured{margin-bottom:18px}
+.journal-featured .blog-card-featured{grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr);min-height:310px;border-color:#e2e7e1;border-radius:16px;box-shadow:0 8px 28px #1c32250a}
+.journal-featured .blog-card-art-link{min-height:310px}
+.journal-featured .blog-card-body{padding:clamp(22px,3.2vw,38px)}
+.journal-featured .blog-card h2{font-size:clamp(23px,2.6vw,34px);line-height:1.17;letter-spacing:-.045em}
+.journal-featured .blog-card-body>p{font-size:13px;line-height:1.8;color:#68766d}
+.journal-featured .blog-post-meta,.journal-grid .blog-post-meta{font-size:10px;gap:9px}
+.journal-featured .blog-post-meta span:first-child,.journal-grid .blog-post-meta span:first-child{color:#4659f5;letter-spacing:.07em}
+.journal-featured .blog-author,.journal-grid .blog-author{font-size:10px}
+.journal-featured .blog-read-link,.journal-grid .blog-read-link{font-size:11px}
+.journal-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.journal-grid .blog-card{border-radius:13px;min-height:100%;box-shadow:none}
+.journal-grid .blog-card:hover{box-shadow:0 14px 35px #2433260c}
+.journal-grid .blog-card-art-link,.journal-grid .blog-artwork{min-height:185px}
+.journal-grid .blog-card-body{padding:19px}
+.journal-grid .blog-card h2{font-size:19px;line-height:1.3;letter-spacing:-.035em}
+.journal-grid .blog-card-body>p{font-size:12px;line-height:1.75;color:#68766d}
+.journal-grid .blog-card-bottom{align-items:flex-start;flex-wrap:wrap}
+.blog-art-violet{background:linear-gradient(135deg,#e9e8ff,#d3d2ff);color:#5d57c9}
+.journal-bottom-cta{display:flex;align-items:center;justify-content:space-between;gap:25px;margin-top:52px;padding:28px 30px;border:1px solid #e4e8f5;border-radius:14px;background:linear-gradient(110deg,#fafaff,#f7f8ff)}
+.journal-bottom-cta h2{margin:9px 0 7px;font-size:clamp(22px,2.7vw,30px);letter-spacing:-.045em}
+.journal-bottom-cta p{margin:0;color:#68766d;font-size:12px;line-height:1.7}
+.journal-bottom-cta>a{display:inline-flex;align-items:center;justify-content:center;gap:8px;flex:0 0 auto;min-height:44px;padding:0 16px;border-radius:9px;background:#4659f5;color:#fff;font-size:12px;font-weight:750;white-space:nowrap;transition:background .15s}
+.journal-bottom-cta>a:hover{background:#3546dc}
+.blog-empty{gap:12px;min-height:230px}
+.blog-empty button{padding:9px 12px;border:1px solid #e0e5ff;border-radius:8px;background:#f4f5ff;color:#4659f5;font-size:11px;font-weight:700;cursor:pointer}
+.blog-article-main{padding-top:36px}
+.blog-article-main>h1{letter-spacing:-.055em}
+.blog-article-deck{color:#68766d}
+.blog-article-body section p{font-size:14px;line-height:1.9}
+.blog-article-lead{line-height:1.8}
+@media(max-width:900px){
+ .blog-index-main{padding:0 22px 56px}
+ .journal-intro{align-items:flex-start;flex-direction:column;padding:48px 0 32px;gap:22px}
+ .journal-intro-note{max-width:100%}
+ .journal-toolbar{align-items:flex-start;flex-direction:column}
+ .journal-search{flex-basis:auto;width:100%}
+ .journal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .journal-grid .blog-card:last-child:nth-child(odd){grid-column:1/-1}
+ .journal-grid .blog-card:last-child:nth-child(odd) .blog-card-art-link{max-height:230px}
+}
+@media(max-width:600px){
+ .blog-index-main{padding:0 16px 42px}
+ .journal-intro{padding:38px 0 27px;gap:18px}
+ .journal-intro h1{font-size:clamp(39px,11vw,54px);letter-spacing:-.06em}
+ .journal-intro-copy>p{font-size:14px;line-height:1.7}
+ .journal-intro-note{width:100%;padding:12px}
+ .journal-library{padding-top:29px}
+ .journal-library-head h2{font-size:27px}
+ .journal-toolbar{margin:17px 0}
+ .journal-categories{gap:5px}
+ .journal-categories button{padding:8px 9px;font-size:10px}
+ .journal-featured .blog-card-featured{grid-template-columns:minmax(0,1fr);min-height:0}
+ .journal-featured .blog-card-art-link,.journal-featured .blog-artwork{min-height:205px;height:205px}
+ .journal-featured .blog-card-body{padding:19px}
+ .journal-featured .blog-card h2{font-size:24px}
+ .journal-featured .blog-card-body>p{font-size:12px}
+ .journal-grid{grid-template-columns:minmax(0,1fr);gap:12px}
+ .journal-grid .blog-card:last-child:nth-child(odd){grid-column:auto}
+ .journal-grid .blog-card-art-link,.journal-grid .blog-artwork{min-height:175px;height:175px}
+ .journal-grid .blog-card-body{padding:17px}
+ .journal-grid .blog-card h2{font-size:19px}
+ .journal-bottom-cta{align-items:flex-start;flex-direction:column;margin-top:32px;padding:21px}
+ .journal-bottom-cta>a{width:100%}
+ .blog-article-main{padding:28px 16px 50px}
+ .blog-article-main>h1{font-size:clamp(33px,9vw,44px);letter-spacing:-.05em}
+ .blog-article-body section p{font-size:13px}
+}
