@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ThemeToggle } from './components/UI.jsx'
 import Logo from './components/Logo.jsx'
 import {
   Activity, ArrowRight, ArrowUpRight, BarChart3, Box, Boxes, Check, CheckCircle2,
@@ -381,7 +380,7 @@ export function Header() {
           })}
           <div className="mobile-nav-actions"><a className="button button-quiet nav-login-cta" href="/login" onClick={close}>Sign in <ArrowRight size={15}/></a><a className="button button-primary button-full" href="/signup" onClick={close}>Get started <ArrowUpRight size={16}/></a></div>
         </nav>
-        <div className="nav-actions"><ThemeToggle compact/><a className="button button-quiet nav-login-cta" href="/login">Sign in <ArrowRight size={15}/></a><a className="button button-primary nav-cta" href="/signup">Get started <ArrowUpRight size={15}/></a></div>
+        <div className="nav-actions"><a className="button button-quiet nav-login-cta" href="/login">Sign in <ArrowRight size={15}/></a><a className="button button-primary nav-cta" href="/signup">Get started <ArrowUpRight size={15}/></a></div>
         <button className="menu-toggle" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen}>{mobileOpen ? <X size={22}/> : <Menu size={22}/>}</button>
       </div>
       {activeMenu&&<button className="mega-backdrop" aria-label="Close navigation menu" onClick={close} onMouseEnter={() => { if(window.matchMedia('(hover: hover) and (pointer: fine)').matches) close() }}/>}
