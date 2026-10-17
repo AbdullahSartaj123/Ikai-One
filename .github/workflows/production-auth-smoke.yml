@@ -1,0 +1,55 @@
+name: Production authentication smoke check
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  production-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check public API health
+        shell: bash
+        run: |
+          set -euo pipefail
+          response="$(curl --silent --show-error --fail --retry 5 --retry-delay 3 --retry-all-errors https://api.ikai.one/health)"
+          echo "$response"
+          echo "$response" | grep -q '"status":"running"'
+          echo "$response" | grep -q '"version":"2.0.0"'
+
+      - name: Check production database connectivity
+        shell: bash
+        run: |
+          set -euo pipefail
+          response="$(curl --silent --show-error --fail --retry 5 --retry-delay 3 --retry-all-errors https://api.ikai.one/health/database)"
+          echo "$response"
+          echo "$response" | grep -q '"status":"connected"'
+          echo "$response" | grep -q '"ikaiSchemaExists":true'
+
+      - name: Check production test helpers are not exposed
+        shell: bash
+        run: |
+          set -euo pipefail
+          status="$(curl --silent --show-error --output /tmp/test-helper-response.json --write-out '%{http_code}' \
+            --request POST https://api.ikai.one/api/testing/verify-email \
+            --header 'Content-Type: application/json' \
+            --data '{"email":"production-smoke-check@example.invalid"}')"
+          cat /tmp/test-helper-response.json
+          if [ "$status" != "404" ]; then
+            echo "Expected the testing-only helper to be hidden in production; received HTTP $status."
+            exit 1
+          fi
+
+      - name: Check credentialed CORS for the production site
+        shell: bash
+        run: |
+          set -euo pipefail
+          headers="$(curl --silent --show-error --fail --dump-header - --output /dev/null \
+            --header 'Origin: https://ikai.one' https://api.ikai.one/health)"
+          echo "$headers"
+          echo "$headers" | grep -qi '^access-control-allow-origin: https://ikai.one'
+          echo "$headers" | grep -qi '^access-control-allow-credentials: true'
