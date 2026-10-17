@@ -159,7 +159,7 @@ function userFromRow(row) {
     id: row.user_id || row.id,
     name: row.full_name,
     email: row.email,
-    role: row.role || "owner",
+    role: row.role || "organization_admin",
     organizationId: row.organization_id,
     organizationName: row.organization_name,
     organizationSlug: row.organization_slug,
@@ -321,7 +321,7 @@ async function register(request, env, sql) {
       ),
       new_user AS (
         INSERT INTO ikai.users (organization_id, full_name, email, role, status)
-        SELECT id, ${fullName}, ${email}, 'owner', 'active' FROM new_org
+        SELECT id, ${fullName}, ${email}, 'organization_admin', 'active' FROM new_org
         RETURNING id, organization_id, full_name, email, role
       ),
       new_identity AS (
