@@ -37,8 +37,6 @@ jobs:
           email="staging-e2e-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT@example.invalid"
           password="Staging-Test-Password-2026!"
           new_password="Staging-Reset-Password-2026!"
-          jar="$(mktemp)"
-          trap 'rm -f "$jar"' EXIT
 
           status="$(curl --silent --show-error --output /tmp/register.json --write-out '%{http_code}' \
             --request POST "$STAGING_API/api/auth/register" \
@@ -53,17 +51,23 @@ jobs:
             --header "X-Testing-Verification-Secret: $TEST_HELPER_SECRET" \
             --data "$(jq -n --arg email "$email" '{email:$email}')")"
           cat /tmp/verify.json
+          if [ "$status" = "404" ]; then
+            echo "Test helper returned 404. Confirm GitHub Actions secret TEST_HELPER_SECRET exactly matches the staging Worker secret TEST_HELPER_SECRET."
+            exit 1
+          fi
           test "$status" = "200" || { echo "Test verification failed: HTTP $status"; exit 1; }
 
           status="$(curl --silent --show-error --output /tmp/login.json --write-out '%{http_code}' \
-            --cookie-jar "$jar" --request POST "$STAGING_API/api/auth/login" \
+            --request POST "$STAGING_API/api/auth/login" \
             --header 'Content-Type: application/json' \
             --data "$(jq -n --arg email "$email" --arg password "$password" '{email:$email,password:$password}')")"
           cat /tmp/login.json
           test "$status" = "200" || { echo "Login failed: HTTP $status"; exit 1; }
+          token="$(jq -r '.token // empty' /tmp/login.json)"
+          test -n "$token" || { echo "Staging login response did not include a bearer token."; exit 1; }
 
           status="$(curl --silent --show-error --output /tmp/me.json --write-out '%{http_code}' \
-            --cookie "$jar" "$STAGING_API/api/auth/me")"
+            --header "Authorization: Bearer $token" "$STAGING_API/api/auth/me")"
           cat /tmp/me.json
           test "$status" = "200" || { echo "Session check failed: HTTP $status"; exit 1; }
 
@@ -78,15 +82,17 @@ jobs:
           grep -q '"reuseStatus":400' /tmp/reset.json
 
           status="$(curl --silent --show-error --output /tmp/login-reset.json --write-out '%{http_code}' \
-            --cookie-jar "$jar" --request POST "$STAGING_API/api/auth/login" \
+            --request POST "$STAGING_API/api/auth/login" \
             --header 'Content-Type: application/json' \
             --data "$(jq -n --arg email "$email" --arg password "$new_password" '{email:$email,password:$password}')")"
           cat /tmp/login-reset.json
           test "$status" = "200" || { echo "Login with reset password failed: HTTP $status"; exit 1; }
+          reset_token="$(jq -r '.token // empty' /tmp/login-reset.json)"
+          test -n "$reset_token" || { echo "Staging login after password reset did not include a bearer token."; exit 1; }
 
           status="$(curl --silent --show-error --output /tmp/logout.json --write-out '%{http_code}' \
-            --cookie "$jar" --request POST "$STAGING_API/api/auth/logout")"
+            --header "Authorization: Bearer $reset_token" --request POST "$STAGING_API/api/auth/logout")"
           cat /tmp/logout.json
           test "$status" = "200" || { echo "Logout failed: HTTP $status"; exit 1; }
 
-          echo "PASS: staging registration, test verification, login, session, password reset, single-use reset token, and logout."
+          echo "PASS: staging registration, test verification, login, bearer session, password reset, single-use reset token, and logout."
