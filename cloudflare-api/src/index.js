@@ -192,6 +192,8 @@ async function authenticate(request, env) {
       AND s.revoked_at IS NULL
       AND s.expires_at > now()
       AND ai.email_verified_at IS NOT NULL
+      AND u.status = 'active'
+      AND o.status = 'active'
     LIMIT 1
   `;
   return rows[0] ? userFromRow(rows[0]) : null;
@@ -389,6 +391,8 @@ async function login(request, env, sql) {
     JOIN ikai.users u ON u.id = ai.user_id
     JOIN ikai.organizations o ON o.id = u.organization_id
     WHERE lower(ai.email) = ${email}
+      AND u.status = 'active'
+      AND o.status = 'active'
     LIMIT 1
   `;
   const row = rows[0];
