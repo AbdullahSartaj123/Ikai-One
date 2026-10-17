@@ -39,7 +39,7 @@ jobs:
             return { response, body };
           }
           const registered = await request('/api/auth/register', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Testing-Verification-Secret': secret },
             body: JSON.stringify({ email, password, fullName: 'Ikai Test User', companyName: `Ikai Test ${unique}`, businessType: 'shipper' })
           });
           if (registered.response.status !== 201) throw new Error(`Register failed (${registered.response.status}): ${JSON.stringify(registered.body)}`);
