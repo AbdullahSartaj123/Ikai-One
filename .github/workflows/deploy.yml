@@ -26,12 +26,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # TEMPORARY: route live frontend auth/API calls to isolated staging while testing.
-      # Restore https://api.ikai.one after validation is complete.
-      - name: Build React website for staging API tests
+      - name: Build React website
         run: npm run build
-        env:
-          VITE_API_BASE_URL: https://ikai-one-api-staging.abdullah-sartaj-ahmad.workers.dev
 
       - name: Upload website to InfinityFree
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
