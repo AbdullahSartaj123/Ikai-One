@@ -550,7 +550,7 @@ export default {
       }
     }
 
-    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments" || url.pathname === "/api/testing/verify-email" || url.pathname === "/api/testing/check-password-reset") {
+    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments" || url.pathname === "/api/cod-reconciliations" || url.pathname.startsWith("/api/cod-reconciliations/") || url.pathname === "/api/testing/verify-email" || url.pathname === "/api/testing/check-password-reset") {
       if (!env.DATABASE_URL) return json(request, { error: "Database is not configured." }, 503);
       let sql;
       try {
@@ -642,6 +642,83 @@ export default {
           }
           return json(request, { message: "Signed out." });
         }
+        if (url.pathname === "/api/cod-reconciliations" || url.pathname.startsWith("/api/cod-reconciliations/")) {
+          const user = await authenticate(request, env);
+          if (!user) return json(request, { error: "Authentication required." }, 401);
+
+          if (url.pathname === "/api/cod-reconciliations" && request.method === "GET") {
+            const requestedLimit = Number(url.searchParams.get("limit") || "50");
+            if (!Number.isInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > 100) {
+              return json(request, { error: "limit must be an integer between 1 and 100." }, 400);
+            }
+            const status = String(url.searchParams.get("status") || "").trim();
+            const allowedStatuses = ["pending", "matched", "short_paid", "under_review", "resolved"];
+            if (status && !allowedStatuses.includes(status)) {
+              return json(request, { error: "Invalid reconciliation status." }, 400);
+            }
+            const rows = status
+              ? await sql`SELECT id, order_reference, awb, courier_name, delivered_at, cod_expected, amount_remitted, (cod_expected - amount_remitted) AS difference, status, follow_up_note, remittance_reference, reviewed_at, created_at, updated_at FROM ikai.cod_reconciliations WHERE organization_id = ${user.organizationId}::uuid AND status = ${status} ORDER BY updated_at DESC LIMIT ${requestedLimit}`
+              : await sql`SELECT id, order_reference, awb, courier_name, delivered_at, cod_expected, amount_remitted, (cod_expected - amount_remitted) AS difference, status, follow_up_note, remittance_reference, reviewed_at, created_at, updated_at FROM ikai.cod_reconciliations WHERE organization_id = ${user.organizationId}::uuid ORDER BY updated_at DESC LIMIT ${requestedLimit}`;
+            return json(request, { data: rows, count: rows.length, limit: requestedLimit });
+          }
+
+          if (url.pathname === "/api/cod-reconciliations" && request.method === "POST") {
+            const body = await readJson(request);
+            const orderReference = String(body.orderReference || "").trim().slice(0, 100);
+            const awb = String(body.awb || "").trim().slice(0, 100) || null;
+            const courierName = String(body.courierName || "").trim().slice(0, 100);
+            const codExpected = Number(body.codExpected);
+            const amountRemitted = body.amountRemitted === undefined ? 0 : Number(body.amountRemitted);
+            const deliveredAt = body.deliveredAt ? new Date(body.deliveredAt) : null;
+            const note = String(body.followUpNote || "").trim().slice(0, 2000) || null;
+            const remittanceReference = String(body.remittanceReference || "").trim().slice(0, 100) || null;
+            if (!orderReference || !courierName || !Number.isFinite(codExpected) || codExpected < 0 ||
+                !Number.isFinite(amountRemitted) || amountRemitted < 0 ||
+                (deliveredAt && Number.isNaN(deliveredAt.getTime()))) {
+              return json(request, { error: "Provide a valid order reference, courier, non-negative COD amounts and optional delivery date." }, 400);
+            }
+            const status = amountRemitted === 0 ? "pending" : amountRemitted === codExpected ? "matched" : "short_paid";
+            const rows = await sql`
+              INSERT INTO ikai.cod_reconciliations
+                (organization_id, order_reference, awb, courier_name, delivered_at, cod_expected, amount_remitted, status, follow_up_note, remittance_reference, created_by)
+              VALUES
+                (${user.organizationId}::uuid, ${orderReference}, ${awb}, ${courierName}, ${deliveredAt}, ${codExpected}, ${amountRemitted}, ${status}, ${note}, ${remittanceReference}, ${user.id}::uuid)
+              ON CONFLICT (organization_id, order_reference) DO UPDATE SET
+                awb = EXCLUDED.awb, courier_name = EXCLUDED.courier_name,
+                delivered_at = EXCLUDED.delivered_at, cod_expected = EXCLUDED.cod_expected,
+                amount_remitted = EXCLUDED.amount_remitted, status = EXCLUDED.status,
+                follow_up_note = EXCLUDED.follow_up_note, remittance_reference = EXCLUDED.remittance_reference,
+                updated_at = now()
+              RETURNING id, order_reference, awb, courier_name, delivered_at, cod_expected, amount_remitted, (cod_expected - amount_remitted) AS difference, status, follow_up_note, remittance_reference, created_at, updated_at
+            `;
+            await sql`
+              INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
+              VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'cod_reconciliation_saved', 'cod_reconciliation', ${orderReference}, jsonb_build_object('status', ${status}, 'codExpected', ${codExpected}, 'amountRemitted', ${amountRemitted}))
+            `;
+            return json(request, { data: rows[0] }, 201);
+          }
+
+          const reviewMatch = url.pathname.match(/^\/api\/cod-reconciliations\/([0-9a-f-]{36})\/review$/i);
+          if (reviewMatch && request.method === "POST") {
+            const body = await readJson(request);
+            const note = String(body.followUpNote || "").trim().slice(0, 2000) || null;
+            const rows = await sql`
+              UPDATE ikai.cod_reconciliations
+              SET status = 'under_review', follow_up_note = COALESCE(${note}, follow_up_note),
+                  reviewed_by = ${user.id}::uuid, reviewed_at = now(), updated_at = now()
+              WHERE id = ${reviewMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+              RETURNING id, order_reference, status, follow_up_note, reviewed_at, updated_at
+            `;
+            if (!rows[0]) return json(request, { error: "Reconciliation record not found." }, 404);
+            await sql`
+              INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
+              VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'cod_reconciliation_reviewed', 'cod_reconciliation', ${rows[0].order_reference}, jsonb_build_object('status', 'under_review'))
+            `;
+            return json(request, { data: rows[0] });
+          }
+          return json(request, { error: "Method or reconciliation route not supported." }, 405);
+        }
+
         if (url.pathname === "/api/shipments" && request.method === "GET") {
           const user = await authenticate(request, env);
           if (!user) return json(request, { error: "Authentication required." }, 401);
