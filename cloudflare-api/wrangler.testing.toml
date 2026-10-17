@@ -1,0 +1,11 @@
+# Isolated testing Worker only. Never use this config for production.
+name = "ikai-one-api-testing"
+main = "cookie-wrapper.js"
+compatibility_date = "2026-10-15"
+workers_dev = true
+
+[vars]
+APP_URL = "https://deploy-preview-5--ikai-one.netlify.app"
+EMAIL_FROM = "Ikai.One Test <test@example.invalid>"
+DISABLE_EMAIL = "true"
+ENABLE_TEST_HELPERS = "true"
