@@ -608,6 +608,10 @@ export default {
         if (error?.message === "Request body must be valid JSON." || error?.message === "Request body is too large.") {
           return json(request, { error: error.message }, 400);
         }
+        if (env.ENABLE_TEST_HELPERS === "true" && env.DISABLE_EMAIL === "true" &&
+            env.TEST_HELPER_SECRET && request.headers.get("X-Testing-Verification-Secret") === env.TEST_HELPER_SECRET) {
+          return json(request, { error: "Testing API diagnostic.", databaseCode: error?.code || null, databaseMessage: String(error?.message || "unknown").slice(0, 300) }, 500);
+        }
         return json(request, { error: "The request could not be completed. Check the request details and service configuration." }, 500);
       }
     }
