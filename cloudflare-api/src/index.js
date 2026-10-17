@@ -244,6 +244,7 @@ export async function readJson(request) {
 }
 
 function emailConfigurationReady(env) {
+  if (env.ENABLE_TEST_HELPERS === "true" && env.DISABLE_EMAIL === "true") return true;
   return Boolean(env.RESEND_API_KEY && env.EMAIL_FROM);
 }
 
