@@ -468,20 +468,27 @@ function HeroArtwork() {
 }
 
 function Hero() {
-  return <section className="hero" id="top">
+  return <section className="hero hero-4pl" id="top">
     <div className="hero-grid-bg"/><div className="hero-glow glow-left"/><div className="hero-glow glow-right"/>
-    <div className="container hero-layout">
-      <div className="hero-copy">
-        <div className="eyebrow"><span className="eyebrow-mark"><Sparkles size={13}/></span> SHIPPING, WITHOUT THE SCATTER</div>
-        <h1>Every order.<br/>Every courier.<br/><span className="headline-highlight">One clear view.</span></h1>
-        <p className="hero-description">The shipping workspace built for ambitious ecommerce teams. Bring orders, delivery partners, tracking and COD operations into one place — and move your business forward.</p>
-        <div className="hero-buttons"><a className="button button-primary button-large" href="#get-started">Build your shipping flow <ArrowRight size={17}/></a><a className="button button-quiet button-large" href="#platform"><span className="play-icon"><ArrowRight size={13}/></span> Explore the platform</a></div>
-        <div className="hero-proof"><div className="proof-avatars"><span>A</span><span>I</span><span>K</span><span>+</span></div><div><div className="proof-stars">★★★★★ <span>Made for modern commerce</span></div><small>One workspace. More control over every shipment.</small></div></div>
-        <div className="hero-mini-points"><span><CheckCircle2 size={15}/> Multi-courier workflows</span><span><CheckCircle2 size={15}/> COD visibility</span><span><CheckCircle2 size={15}/> One shipment timeline</span></div>
+    <div className="container hero-layout hero-4pl-layout">
+      <div className="hero-copy hero-4pl-copy">
+        <div className="eyebrow"><span className="eyebrow-mark"><Sparkles size={13}/></span> 4PL LOGISTICS AGGREGATION · PAKISTAN</div>
+        <h1>Your entire logistics network.<br/><span className="headline-highlight">One control tower.</span></h1>
+        <p className="hero-description">IKAI One brings courier selection, domestic and cargo shipping, tracking, COD, returns and performance into one connected workflow — so your team can manage every delivery partner with greater clarity.</p>
+        <div className="hero-buttons">
+          <a className="button button-primary button-large" href="/signup">Build your logistics flow <ArrowRight size={17}/></a>
+          <a className="button button-quiet button-large" href="#platform">Explore the platform <ArrowUpRight size={16}/></a>
+        </div>
+        <div className="hero-coverage-note"><span className="coverage-note-icon"><CheckCircle2 size={17}/></span><div><b>One platform. Multiple delivery partners.</b><small>Built for parcel, cargo and ecommerce operations.</small></div></div>
+        <div className="hero-mini-points">
+          <span><CheckCircle2 size={15}/> Multi-courier workflows</span>
+          <span><CheckCircle2 size={15}/> COD & settlement visibility</span>
+          <span><CheckCircle2 size={15}/> Tracking & exceptions</span>
+        </div>
       </div>
       <HeroArtwork/>
     </div>
-    <a className="scroll-cue" href="#platform"><span/> Scroll to explore</a>
+    <div className="hero-route-caption"><span/> From order to doorstep, connected by IKAI One</div>
   </section>
 }
 
