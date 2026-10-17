@@ -343,6 +343,10 @@ async function register(request, env, sql) {
     if (error?.code === "23505") {
       return json(request, { error: "An account with this email already exists. Sign in or request a password reset." }, 409);
     }
+    if (env.ENABLE_TEST_HELPERS === "true" && env.DISABLE_EMAIL === "true" &&
+        request.headers.get("X-Testing-Verification-Secret") === env.TEST_HELPER_SECRET) {
+      return json(request, { error: "Testing registration diagnostic.", databaseCode: error?.code || null, databaseMessage: String(error?.message || "unknown").slice(0, 300) }, 503);
+    }
     return json(request, { error: "Account creation is temporarily unavailable. Confirm the authentication migration has been applied, then try again." }, 503);
   }
 
