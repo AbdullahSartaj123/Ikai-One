@@ -1,0 +1,74 @@
+name: Test Ikai.One Testing Authentication
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  auth-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out prepared authentication code
+        uses: actions/checkout@v4
+        with:
+          ref: phase-1/production-auth
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run isolated authentication smoke test
+        env:
+          TEST_HELPER_SECRET: ${{ secrets.TEST_HELPER_SECRET }}
+        run: |
+          node --input-type=module <<'NODE'
+          const base = 'https://ikai-one-api-testing.abdullah-sartaj-ahmad.workers.dev';
+          const secret = process.env.TEST_HELPER_SECRET;
+          if (!secret) throw new Error('Missing TEST_HELPER_SECRET repository secret');
+          const unique = `${Date.now()}-${process.env.GITHUB_RUN_ID || 'manual'}`;
+          const email = `ikai-test-${unique}@example.invalid`;
+          const password = `Test-${crypto.randomUUID()}-Safe!`;
+          async function request(path, options = {}) {
+            const response = await fetch(`${base}${path}`, options);
+            const text = await response.text();
+            let body;
+            try { body = JSON.parse(text); } catch { body = { raw: text.slice(0, 200) }; }
+            return { response, body };
+          }
+          const registered = await request('/api/auth/register', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, fullName: 'Ikai Test User', companyName: `Ikai Test ${unique}`, businessType: 'shipper' })
+          });
+          if (registered.response.status !== 201) throw new Error(`Register failed (${registered.response.status}): ${JSON.stringify(registered.body)}`);
+          if (registered.body.emailSent !== false) throw new Error('Expected email delivery to remain disabled');
+          console.log('PASS registration created a test account; real email was not sent');
+          const verified = await request('/api/testing/verify-email', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Testing-Verification-Secret': secret },
+            body: JSON.stringify({ email })
+          });
+          if (!verified.response.ok) throw new Error(`Test verification failed (${verified.response.status}): ${JSON.stringify(verified.body)}`);
+          console.log('PASS testing-only verification helper');
+          const login = await request('/api/auth/login', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+          if (!login.response.ok) throw new Error(`Login failed (${login.response.status}): ${JSON.stringify(login.body)}`);
+          const cookies = login.response.headers.getSetCookie?.() || [];
+          const sessionCookie = cookies.find(value => value.startsWith('__Host-ikai_session='));
+          if (!sessionCookie) throw new Error('Login succeeded but session cookie was not set');
+          const cookiePair = sessionCookie.split(';', 1)[0];
+          console.log('PASS login issued an HttpOnly session cookie');
+          const me = await request('/api/auth/me', { headers: { Cookie: cookiePair } });
+          if (!me.response.ok || me.body?.user?.email !== email) throw new Error(`Session check failed (${me.response.status}): ${JSON.stringify(me.body)}`);
+          console.log('PASS authenticated session check');
+          const logout = await request('/api/auth/logout', { method: 'POST', headers: { Cookie: cookiePair } });
+          if (!logout.response.ok) throw new Error(`Logout failed (${logout.response.status}): ${JSON.stringify(logout.body)}`);
+          const afterLogout = await request('/api/auth/me', { headers: { Cookie: cookiePair } });
+          if (afterLogout.response.status !== 401) throw new Error(`Session remained valid after logout (status ${afterLogout.response.status})`);
+          console.log('PASS logout revoked session');
+          console.log(`Test account email: ${email}`);
+          console.log('Note: test account remains in the Neon testing branch for now.');
+          NODE
