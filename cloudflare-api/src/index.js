@@ -6,7 +6,7 @@ const ALLOWED_ORIGINS = new Set([
   "http://localhost:5173",
   "http://127.0.0.1:5173",
 ]);
-const PASSWORD_ITERATIONS = 310000;
+const PASSWORD_ITERATIONS = 100000;
 
 function headersFor(request) {
   const origin = request.headers.get("Origin");
