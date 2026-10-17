@@ -127,7 +127,7 @@ export function Header() {
   const close = () => { setActiveMenu(''); setMobileOpen(false) }
   const toggle = name => setActiveMenu(current => current === name ? '' : name)
   return <>
-    <header className={'site-header mega-site-header' + (scrolled ? ' header-scrolled' : '')} onKeyDown={event => { if(event.key === 'Escape') close() }}>
+    <header className={'site-header mega-site-header' + (scrolled ? ' header-scrolled' : '')} onKeyDown={event => { if(event.key === 'Escape') close() }} onMouseLeave={() => { if(window.matchMedia('(hover: hover) and (pointer: fine)').matches) close() }}>
       <div className="nav-shell">
         <Brand/>
         <nav className={'main-nav mega-main-nav' + (mobileOpen ? ' nav-open' : '')} aria-label="Main navigation">
@@ -136,7 +136,7 @@ export function Header() {
             if(name === 'Pricing') return <Link to="/pricing" key={name} onClick={close}>Pricing</Link>
             if(name === 'Track Order') return <Link to="/track-order" key={name} onClick={close}>{name}</Link>
             if(name === 'Investors') return <Link to="/investors" key={name} onClick={close}>{name}</Link>
-            return <div className={'mega-nav-item'+(activeMenu===name?' menu-active':'')} key={name} onMouseLeave={() => { if(window.matchMedia('(hover: hover) and (pointer: fine)').matches) setActiveMenu('') }}>
+            return <div className={'mega-nav-item'+(activeMenu===name?' menu-active':'')} key={name}>
               <button type="button" aria-expanded={activeMenu===name} onClick={() => toggle(name)} onMouseEnter={() => {if(window.matchMedia('(hover: hover) and (pointer: fine)').matches)setActiveMenu(name)}}>{name}<ChevronDown size={14}/></button>
               {activeMenu===name&&<MegaMenu name={name} close={close}/>}
             </div>
