@@ -22,7 +22,10 @@ function withHeaders(response, request, setCookie) {
       origin === "http://localhost:5173" || origin === "http://127.0.0.1:5173") {
     headers.set("Access-Control-Allow-Origin", origin);
     headers.set("Access-Control-Allow-Credentials", "true");
-    headers.set("Vary", "Origin");
+    const vary = headers.get("Vary");
+    if (!vary || !vary.split(",").some((value) => value.trim().toLowerCase() === "origin")) {
+      headers.set("Vary", vary ? `${vary}, Origin` : "Origin");
+    }
   }
   headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
   if (setCookie) headers.append("Set-Cookie", setCookie);
@@ -53,8 +56,12 @@ export default {
     let upstreamRequest = request;
     if (isSessionRoute && cookieToken) {
       const headers = new Headers(request.headers);
-      headers.set("Authorization", `Bearer ${decodeURIComponent(cookieToken)}`);
-      upstreamRequest = new Request(request, { headers });
+      try {
+        headers.set("Authorization", `Bearer ${decodeURIComponent(cookieToken)}`);
+        upstreamRequest = new Request(request, { headers });
+      } catch {
+        // Ignore malformed client cookies; the API will treat the request as unauthenticated.
+      }
     }
 
     const response = await worker.fetch(upstreamRequest, env, ctx);
