@@ -1,0 +1,92 @@
+name: Staging authentication end-to-end test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/staging-auth-e2e.yml"
+      - "cloudflare-api/src/index.js"
+      - "cloudflare-api/cookie-wrapper.js"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  staging-auth:
+    runs-on: ubuntu-latest
+    env:
+      STAGING_API: https://ikai-one-api-staging.abdullah-sartaj-ahmad.workers.dev
+      TEST_HELPER_SECRET: ${{ secrets.TEST_HELPER_SECRET }}
+    steps:
+      - name: Check staging API and database
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --silent --show-error --fail --retry 5 --retry-delay 3 --retry-all-errors "$STAGING_API/health" | tee /tmp/health.json
+          grep -q '"status":"running"' /tmp/health.json
+          curl --silent --show-error --fail --retry 5 --retry-delay 3 --retry-all-errors "$STAGING_API/health/database" | tee /tmp/database.json
+          grep -q '"status":"connected"' /tmp/database.json
+          grep -q '"ikaiSchemaExists":true' /tmp/database.json
+          test -n "$TEST_HELPER_SECRET"
+
+      - name: Register, verify, login, session, password reset, and logout
+        shell: bash
+        run: |
+          set -euo pipefail
+          email="staging-e2e-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT@example.invalid"
+          password="Staging-Test-Password-2026!"
+          new_password="Staging-Reset-Password-2026!"
+          jar="$(mktemp)"
+          trap 'rm -f "$jar"' EXIT
+
+          status="$(curl --silent --show-error --output /tmp/register.json --write-out '%{http_code}' \
+            --request POST "$STAGING_API/api/auth/register" \
+            --header 'Content-Type: application/json' \
+            --data "$(jq -n --arg email "$email" --arg password "$password" '{fullName:"Staging E2E Test",companyName:"Ikai Staging E2E",email:$email,password:$password,businessType:"E-commerce / Online store"}')")"
+          cat /tmp/register.json
+          test "$status" = "201" || { echo "Registration failed: HTTP $status"; exit 1; }
+
+          status="$(curl --silent --show-error --output /tmp/verify.json --write-out '%{http_code}' \
+            --request POST "$STAGING_API/api/testing/verify-email" \
+            --header 'Content-Type: application/json' \
+            --header "X-Testing-Verification-Secret: $TEST_HELPER_SECRET" \
+            --data "$(jq -n --arg email "$email" '{email:$email}')")"
+          cat /tmp/verify.json
+          test "$status" = "200" || { echo "Test verification failed: HTTP $status"; exit 1; }
+
+          status="$(curl --silent --show-error --output /tmp/login.json --write-out '%{http_code}' \
+            --cookie-jar "$jar" --request POST "$STAGING_API/api/auth/login" \
+            --header 'Content-Type: application/json' \
+            --data "$(jq -n --arg email "$email" --arg password "$password" '{email:$email,password:$password}')")"
+          cat /tmp/login.json
+          test "$status" = "200" || { echo "Login failed: HTTP $status"; exit 1; }
+
+          status="$(curl --silent --show-error --output /tmp/me.json --write-out '%{http_code}' \
+            --cookie "$jar" "$STAGING_API/api/auth/me")"
+          cat /tmp/me.json
+          test "$status" = "200" || { echo "Session check failed: HTTP $status"; exit 1; }
+
+          status="$(curl --silent --show-error --output /tmp/reset.json --write-out '%{http_code}' \
+            --request POST "$STAGING_API/api/testing/check-password-reset" \
+            --header 'Content-Type: application/json' \
+            --header "X-Testing-Verification-Secret: $TEST_HELPER_SECRET" \
+            --data "$(jq -n --arg email "$email" --arg password "$new_password" '{email:$email,newPassword:$password}')")"
+          cat /tmp/reset.json
+          test "$status" = "200" || { echo "Password reset test failed: HTTP $status"; exit 1; }
+          grep -q '"firstResetStatus":200' /tmp/reset.json
+          grep -q '"reuseStatus":400' /tmp/reset.json
+
+          status="$(curl --silent --show-error --output /tmp/login-reset.json --write-out '%{http_code}' \
+            --cookie-jar "$jar" --request POST "$STAGING_API/api/auth/login" \
+            --header 'Content-Type: application/json' \
+            --data "$(jq -n --arg email "$email" --arg password "$new_password" '{email:$email,password:$password}')")"
+          cat /tmp/login-reset.json
+          test "$status" = "200" || { echo "Login with reset password failed: HTTP $status"; exit 1; }
+
+          status="$(curl --silent --show-error --output /tmp/logout.json --write-out '%{http_code}' \
+            --cookie "$jar" --request POST "$STAGING_API/api/auth/logout")"
+          cat /tmp/logout.json
+          test "$status" = "200" || { echo "Logout failed: HTTP $status"; exit 1; }
+
+          echo "PASS: staging registration, test verification, login, session, password reset, single-use reset token, and logout."
