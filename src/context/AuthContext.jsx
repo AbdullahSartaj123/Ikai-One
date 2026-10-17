@@ -3,6 +3,7 @@ import { apiRequest } from '../lib/api.js'
 
 const AuthContext = createContext(null)
 const PENDING_KEY = 'ikai-pending-signup'
+const LEGACY_SESSION_KEY = 'ikai-auth-session'
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
@@ -13,6 +14,8 @@ export function AuthProvider({ children }) {
   const [authMessage, setAuthMessage] = useState('')
 
   useEffect(() => {
+    // Remove bearer tokens left by the previous frontend version.
+    window.sessionStorage.removeItem(LEGACY_SESSION_KEY)
     let active = true
     apiRequest('/api/auth/me')
       .then(({ user }) => { if (active) setSession({ user }) })
@@ -36,6 +39,7 @@ export function AuthProvider({ children }) {
 
   const signOut = useCallback(async () => {
     try { await apiRequest('/api/auth/logout', { method: 'POST' }) } catch { /* Clear local UI even if the network is unavailable. */ }
+    window.sessionStorage.removeItem(LEGACY_SESSION_KEY)
     window.sessionStorage.removeItem(PENDING_KEY)
     setSession(null)
     setPendingSignup(null)
