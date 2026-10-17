@@ -42,7 +42,7 @@ jobs:
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email })
           });
-          if (!forgot.response.ok || !/if the account exists/i.test(forgot.body?.message || '')) throw new Error(`Forgot-password response was not generic/successful (${forgot.response.status}): ${JSON.stringify(forgot.body)}`);
+          if (!forgot.response.ok || !/if a verified account exists/i.test(forgot.body?.message || '')) throw new Error(`Forgot-password response was not generic/successful (${forgot.response.status}): ${JSON.stringify(forgot.body)}`);
           console.log('PASS forgot-password endpoint returns a generic response');
           const invalidReset = await request('/api/auth/reset-password', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
