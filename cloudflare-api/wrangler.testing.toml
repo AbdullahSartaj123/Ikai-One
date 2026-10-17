@@ -7,3 +7,4 @@ workers_dev = true
 APP_URL = "https://deploy-preview-5--ikai-one.netlify.app"
 EMAIL_FROM = "Ikai.One Test <test@example.invalid>"
 DISABLE_EMAIL = "true"
+ENABLE_TEST_HELPERS = "true"
