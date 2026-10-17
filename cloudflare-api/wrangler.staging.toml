@@ -3,8 +3,9 @@ main = "cookie-wrapper.js"
 compatibility_date = "2026-10-15"
 workers_dev = true
 
-# Staging-only defaults. Do not copy these values into the production Worker.
+# Staging-only defaults. Never copy these values to production.
 [vars]
-APP_URL = "http://localhost:5173"
+APP_URL = "https://ikai.one"
 DISABLE_EMAIL = "true"
 ENABLE_TEST_HELPERS = "true"
+STAGING_BEARER_MODE = "true"
