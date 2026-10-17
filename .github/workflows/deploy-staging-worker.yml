@@ -1,6 +1,12 @@
 name: Deploy Ikai.One API to STAGING
 
 on:
+  push:
+    branches:
+      - staging/phase1-auth
+    paths:
+      - "cloudflare-api/**"
+      - ".github/workflows/deploy-staging-worker.yml"
   workflow_dispatch:
     inputs:
       target:
@@ -19,7 +25,7 @@ concurrency:
 
 jobs:
   deploy-staging:
-    if: inputs.target == 'staging'
+    if: github.event_name == 'push' || inputs.target == 'staging'
     runs-on: ubuntu-latest
     steps:
       - name: Check out staging authentication branch
@@ -42,6 +48,7 @@ jobs:
         run: |
           grep -Eq '^name = "ikai-one-api-staging"$' wrangler.staging.toml
           grep -Eq '^DISABLE_EMAIL = "true"$' wrangler.staging.toml
+          grep -Eq '^STAGING_BEARER_MODE = "true"$' wrangler.staging.toml
           ! grep -Eq '^name = "ikai-one-api"$' wrangler.staging.toml
 
       - name: Deploy staging Worker only
