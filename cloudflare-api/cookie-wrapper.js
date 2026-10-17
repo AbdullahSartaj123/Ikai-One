@@ -8,9 +8,7 @@ function readCookie(request, name) {
   for (const part of cookieHeader.split(";")) {
     const separator = part.indexOf("=");
     if (separator < 0) continue;
-    if (part.slice(0, separator).trim() === name) {
-      return part.slice(separator + 1).trim();
-    }
+    if (part.slice(0, separator).trim() === name) return part.slice(separator + 1).trim();
   }
   return "";
 }
@@ -27,19 +25,14 @@ function withHeaders(response, request, setCookie) {
       headers.set("Vary", vary ? `${vary}, Origin` : "Origin");
     }
   }
-  headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Testing-Verification-Secret");
   if (setCookie) headers.append("Set-Cookie", setCookie);
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
 
 function cookieValue(token) {
   return `${SESSION_COOKIE}=${encodeURIComponent(token)}; ${COOKIE_ATTRIBUTES}`;
 }
-
 function clearCookie() {
   return `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 }
@@ -47,6 +40,7 @@ function clearCookie() {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    const stagingBearerMode = env.STAGING_BEARER_MODE === "true";
     const cookieToken = readCookie(request, SESSION_COOKIE);
     const isSessionRoute =
       (url.pathname === "/api/auth/me" && request.method === "GET") ||
@@ -54,20 +48,21 @@ export default {
       (url.pathname === "/api/shipments" && request.method === "GET");
 
     let upstreamRequest = request;
-    if (isSessionRoute && cookieToken) {
+    if (!stagingBearerMode && isSessionRoute && cookieToken) {
       const headers = new Headers(request.headers);
       try {
         headers.set("Authorization", `Bearer ${decodeURIComponent(cookieToken)}`);
         upstreamRequest = new Request(request, { headers });
       } catch {
-        // Ignore malformed client cookies; the API will treat the request as unauthenticated.
+        // Ignore malformed cookies; the API treats the request as unauthenticated.
       }
     }
 
     const response = await worker.fetch(upstreamRequest, env, ctx);
+    if (stagingBearerMode) return withHeaders(response, request, "");
+
     let setCookie = "";
     let output = response;
-
     if ((url.pathname === "/api/auth/login" || url.pathname === "/api/auth/verify-email") &&
         request.method === "POST" && response.ok) {
       const payload = await response.clone().json().catch(() => null);
@@ -75,17 +70,11 @@ export default {
         setCookie = cookieValue(payload.token);
         delete payload.token;
         output = new Response(JSON.stringify(payload), {
-          status: response.status,
-          statusText: response.statusText,
-          headers: response.headers,
+          status: response.status, statusText: response.statusText, headers: response.headers,
         });
       }
     }
-
-    if (url.pathname === "/api/auth/logout" && request.method === "POST") {
-      setCookie = clearCookie();
-    }
-
+    if (url.pathname === "/api/auth/logout" && request.method === "POST") setCookie = clearCookie();
     return withHeaders(output, request, setCookie);
   },
 };
