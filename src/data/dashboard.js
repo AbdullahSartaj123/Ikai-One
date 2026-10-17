@@ -1,6 +1,6 @@
 export const dashboardKpis = [
   { key: 'orders', label: 'Total Orders', value: 2846, format: 'number', change: 12.8, direction: 'up', note: 'vs. previous period', icon: 'ShoppingCart', tone: 'blue' },
-  { key: 'shipped', label: 'Shipped', value: 2417, format: 'number', change: 8.2, direction: 'up', note: 'vs. previous period', icon: 'PackageCheck', tone: 'orange' },
+  { key: 'shipped', label: 'Shipments', value: 2846, format: 'number', change: 8.2, direction: 'up', note: 'status totals aligned · demo', icon: 'PackageCheck', tone: 'orange' },
   { key: 'delivered', label: 'Delivered', value: 2106, format: 'number', change: 5.4, direction: 'up', note: 'vs. previous period', icon: 'CheckCircle2', tone: 'green' },
   { key: 'transit', label: 'In Transit', value: 412, format: 'number', change: 3.1, direction: 'down', note: 'vs. previous period', icon: 'Truck', tone: 'violet' },
   { key: 'rto', label: 'RTO', value: 137, format: 'number', change: 2.6, direction: 'down', note: 'vs. previous period', icon: 'PackageMinus', tone: 'rose' },
