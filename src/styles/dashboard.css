@@ -344,21 +344,7 @@
   pointer-events:auto;
   transition:max-height .32s cubic-bezier(.2,.7,.2,1),opacity .22s ease,transform .24s ease,margin .24s ease,padding .24s ease,visibility 0s;
 }
-.sidebar-nav-item.has-submenu:hover>.sidebar-submenu,
-.sidebar-nav-item.has-submenu:focus-within>.sidebar-submenu{
-  /* Pointer hover never opens a submenu; state controls visibility. */
-  max-height:0;
-  opacity:0;
-  visibility:hidden;
-  pointer-events:none;
-}
-.sidebar-nav-item.has-submenu.submenu-open:hover>.sidebar-submenu,
-.sidebar-nav-item.has-submenu.submenu-open:focus-within>.sidebar-submenu{
-  max-height:700px;
-  opacity:1;
-  visibility:visible;
-  pointer-events:auto;
-}
+/* Visibility is controlled only by the submenu-open state, never hover/focus. */
 .sidebar-submenu-toggle{transition:transform .22s ease,background .18s ease,color .18s ease}
 .sidebar-submenu-toggle svg{transition:transform .24s cubic-bezier(.2,.7,.2,1)}
 @media(prefers-reduced-motion:reduce){
