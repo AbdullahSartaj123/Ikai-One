@@ -2,24 +2,10 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { apiRequest } from '../lib/api.js'
 
 const AuthContext = createContext(null)
-const SESSION_KEY = 'ikai-auth-session'
 const PENDING_KEY = 'ikai-pending-signup'
 
-function readSession() {
-  try {
-    const value = JSON.parse(window.sessionStorage.getItem(SESSION_KEY) || 'null')
-    return value?.token && value?.user ? value : null
-  } catch {
-    return null
-  }
-}
-
-function saveSession(value) {
-  window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(value))
-}
-
 export function AuthProvider({ children }) {
-  const [session, setSession] = useState(() => readSession())
+  const [session, setSession] = useState(null)
   const [pendingSignup, setPendingSignup] = useState(() => {
     try { return JSON.parse(window.sessionStorage.getItem(PENDING_KEY) || 'null') } catch { return null }
   })
@@ -27,24 +13,10 @@ export function AuthProvider({ children }) {
   const [authMessage, setAuthMessage] = useState('')
 
   useEffect(() => {
-    const stored = readSession()
-    if (!stored?.token) {
-      setAuthLoading(false)
-      return
-    }
     let active = true
-    apiRequest('/api/auth/me', { token: stored.token })
-      .then(({ user }) => {
-        if (!active) return
-        const next = { token: stored.token, user }
-        saveSession(next)
-        setSession(next)
-      })
-      .catch(() => {
-        if (!active) return
-        window.sessionStorage.removeItem(SESSION_KEY)
-        setSession(null)
-      })
+    apiRequest('/api/auth/me')
+      .then(({ user }) => { if (active) setSession({ user }) })
+      .catch(() => { if (active) setSession(null) })
       .finally(() => { if (active) setAuthLoading(false) })
     return () => { active = false }
   }, [])
@@ -54,8 +26,7 @@ export function AuthProvider({ children }) {
       method: 'POST',
       body: { email: String(email || '').trim().toLowerCase(), password },
     })
-    const next = { token: result.token, user: result.user }
-    saveSession(next)
+    const next = { user: result.user }
     window.sessionStorage.removeItem(PENDING_KEY)
     setPendingSignup(null)
     setSession(next)
@@ -63,15 +34,13 @@ export function AuthProvider({ children }) {
     return { ok: true, user: next.user }
   }, [])
 
-  const signOut = useCallback(() => {
-    const token = session?.token
-    if (token) apiRequest('/api/auth/logout', { method: 'POST', token }).catch(() => {})
-    window.sessionStorage.removeItem(SESSION_KEY)
+  const signOut = useCallback(async () => {
+    try { await apiRequest('/api/auth/logout', { method: 'POST' }) } catch { /* Clear local UI even if the network is unavailable. */ }
     window.sessionStorage.removeItem(PENDING_KEY)
     setSession(null)
     setPendingSignup(null)
     setAuthMessage('')
-  }, [session?.token])
+  }, [])
 
   const beginSignup = useCallback(async (details) => {
     const result = await apiRequest('/api/auth/register', {
@@ -104,11 +73,9 @@ export function AuthProvider({ children }) {
       method: 'POST',
       body: { token },
     })
-    const next = { token: result.token, user: result.user }
-    saveSession(next)
+    setSession({ user: result.user })
     window.sessionStorage.removeItem(PENDING_KEY)
     setPendingSignup(null)
-    setSession(next)
     setAuthMessage('')
     return result
   }, [])
@@ -137,7 +104,7 @@ export function AuthProvider({ children }) {
   const value = useMemo(() => ({
     session,
     user: session?.user || null,
-    isAuthenticated: Boolean(session?.token && session?.user),
+    isAuthenticated: Boolean(session?.user),
     authLoading,
     pendingSignup,
     authMessage,
