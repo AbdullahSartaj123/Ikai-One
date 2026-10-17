@@ -446,24 +446,38 @@ function MiniBars() {
 }
 
 function HeroArtwork() {
-  return <div className="hero-art" aria-label="Illustration of the IKAI shipping workspace">
-    <div className="art-orbit orbit-one"/><div className="art-orbit orbit-two"/><div className="orbit-dot dot-one"/><div className="orbit-dot dot-two"/>
-    <div className="route-path route-path-one"/><div className="route-path route-path-two"/>
-    <div className="float-pill float-live"><span className="live-pulse"/><span><b>Network online</b><small>All systems in sync</small></span><CheckCircle2 size={18}/></div>
-    <div className="dashboard-window">
-      <div className="dashboard-top"><div className="window-brand"><span className="window-brand-icon"><Boxes size={15}/></span><b>Workspace overview</b></div><span className="sample-chip">SAMPLE DATA <i/></span></div>
-      <div className="dashboard-greeting"><div><small>TUESDAY, 13 OCTOBER</small><h3>Your shipping pulse <span>✳</span></h3></div><div className="dashboard-dots"><i/><i/><i/></div></div>
-      <div className="metric-grid">
-        <div className="metric-card"><span>Orders in motion</span><b>1,284</b><small className="metric-positive"><ArrowUpRight size={13}/> 12.8% <em>this week</em></small><div className="metric-sparkline"><svg viewBox="0 0 100 30" preserveAspectRatio="none"><path d="M0 25 C10 24 12 12 22 17 S38 20 48 10 S64 18 76 8 S90 10 100 2"/></svg></div></div>
-        <div className="metric-card"><span>Delivered</span><b>96.4<small>%</small></b><small className="metric-positive"><ArrowUpRight size={13}/> 3.2% <em>this week</em></small><div className="metric-progress"><span/></div></div>
+  return <div className="hero-art hero-network-art" aria-label="Illustration of a connected 4PL logistics control tower">
+    <div className="network-art-wash"/>
+    <div className="network-art-orbit orbit-one"/><div className="network-art-orbit orbit-two"/>
+    <svg className="network-art-lines" viewBox="0 0 620 500" fill="none" aria-hidden="true">
+      <path d="M85 118 C150 118 152 195 220 195"/>
+      <path d="M402 184 C470 184 470 120 540 120"/>
+      <path d="M404 286 C475 286 470 362 540 362"/>
+      <path d="M220 300 C150 300 150 370 85 370"/>
+      <path d="M310 92 V54"/><path d="M310 405 V450"/>
+    </svg>
+    <div className="network-partner partner-left"><span className="partner-icon partner-blue"><Truck size={18}/></span><div><small>DELIVERY NETWORK</small><b>Courier partners</b><span>Compare service options</span></div><ArrowUpRight size={15}/></div>
+    <div className="network-partner partner-right"><span className="partner-icon partner-lime"><Boxes size={18}/></span><div><small>SHIPMENT TYPES</small><b>Parcel + cargo</b><span>One connected workflow</span></div><ArrowUpRight size={15}/></div>
+    <div className="network-partner partner-bottom"><span className="partner-icon partner-peach"><WalletCards size={18}/></span><div><small>AFTER DISPATCH</small><b>Tracking, COD & returns</b><span>Follow the full journey</span></div></div>
+    <div className="control-tower-card">
+      <div className="tower-topbar"><div className="tower-brand"><span><Boxes size={16}/></span><div><b>IKAI One</b><small>4PL control tower</small></div></div><span className="tower-preview"><i/> INTERFACE PREVIEW</span></div>
+      <div className="tower-heading"><div><small>YOUR LOGISTICS, CONNECTED</small><h3>Network overview</h3></div><span className="tower-filter"><Activity size={14}/> All workflows</span></div>
+      <div className="tower-flow">
+        <div className="tower-flow-step"><span><Boxes size={17}/></span><div><b>Orders</b><small>Collect & prepare</small></div></div>
+        <i className="tower-flow-arrow"><ArrowRight size={14}/></i>
+        <div className="tower-flow-step"><span><Route size={17}/></span><div><b>Route</b><small>Choose a service</small></div></div>
+        <i className="tower-flow-arrow"><ArrowRight size={14}/></i>
+        <div className="tower-flow-step"><span><PackageCheck size={17}/></span><div><b>Deliver</b><small>Track & resolve</small></div></div>
       </div>
-      <div className="chart-panel"><div className="chart-heading"><div><b>Shipment activity</b><small>Across connected services</small></div><span>Last 7 days <ChevronDown size={12}/></span></div><MiniBars/><div className="chart-days"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div></div>
-      <div className="recent-shipment"><div className="parcel-icon"><PackageCheck size={17}/></div><div><b>Shipment #IK-248601</b><small>Lahore · Out for delivery</small></div><span className="shipment-status"><i/> In progress</span></div>
-      <div className="window-footer"><span><i className="footer-pulse"/> Mock workspace · sample data</span><span>Updated just now</span></div>
+      <div className="tower-capability-list">
+        <div><span className="tower-cap-icon cap-blue"><Truck size={15}/></span><span><b>Multi-courier shipping</b><small>Service selection & dispatch</small></span><CheckCircle2 size={16}/></div>
+        <div><span className="tower-cap-icon cap-green"><WalletCards size={15}/></span><span><b>COD & reconciliation</b><small>Collection through settlement</small></span><CheckCircle2 size={16}/></div>
+        <div><span className="tower-cap-icon cap-orange"><Activity size={15}/></span><span><b>Tracking & exceptions</b><small>Milestones and next actions</small></span><CheckCircle2 size={16}/></div>
+      </div>
+      <div className="tower-footnote"><span><i/> SAMPLE WORKFLOW</span><span>Designed to connect your network</span></div>
     </div>
-    <div className="float-pill float-cod"><span className="cod-icon"><WalletCards size={19}/></span><span><small>COD to reconcile</small><b>Rs 84,250 <em>+8.6%</em></b></span><span className="cod-arrow"><ArrowUpRight size={15}/></span></div>
-    <div className="float-pill float-delivered"><span className="delivered-icon"><Check size={16}/></span><span><b>Delivery confirmed</b><small>Parcel reached its destination</small></span></div>
-    <div className="art-caption"><span/>A clearer view of every delivery.</div>
+    <div className="network-floating-note float-note-top"><span className="note-icon"><Route size={17}/></span><span><b>Smarter service selection</b><small>Compare before you dispatch</small></span></div>
+    <div className="network-floating-note float-note-bottom"><span className="note-icon note-icon-green"><Check size={16}/></span><span><b>One shipment timeline</b><small>From booking to delivery</small></span></div>
   </div>
 }
 
