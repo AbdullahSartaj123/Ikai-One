@@ -443,3 +443,63 @@
 @media(prefers-reduced-motion:reduce){
   .sidebar-edge-toggle,.sidebar-edge-toggle svg,.sidebar-edge-toggle-grip{transition:none!important}
 }
+
+
+/* Refined sidebar handle: compact, aligned to the sidebar edge, clear of the account footer. */
+.dashboard-shell .sidebar-edge-toggle{
+  top:auto;
+  bottom:76px;
+  left:var(--side-width,240px);
+  width:28px;
+  height:42px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid #e3e8f5;
+  border-left:0;
+  border-radius:0 11px 11px 0;
+  background:rgba(255,255,255,.97);
+  color:#6573e9;
+  box-shadow:2px 3px 10px rgba(28,39,75,.07);
+  opacity:.58;
+  transform:translateX(-58%);
+  transition:left .32s cubic-bezier(.2,.75,.25,1),transform .26s cubic-bezier(.2,.75,.25,1),opacity .2s ease,box-shadow .22s ease,color .2s ease,background .2s ease;
+}
+.dashboard-shell .sidebar-edge-toggle:hover,
+.dashboard-shell .sidebar-edge-toggle:focus-visible{
+  opacity:1;
+  color:#4659f5;
+  background:#fff;
+  transform:translateX(0);
+  box-shadow:3px 4px 13px rgba(70,89,245,.13);
+  outline:none;
+}
+.dashboard-shell .sidebar-edge-toggle:active{transform:translateX(0) scale(.97)}
+.dashboard-shell .sidebar-edge-toggle-grip{
+  left:3px;
+  width:2px;
+  height:16px;
+  border-radius:3px;
+  background:#dfe3f8;
+  transition:height .2s ease,background .2s ease;
+}
+.dashboard-shell .sidebar-edge-toggle:hover .sidebar-edge-toggle-grip,
+.dashboard-shell .sidebar-edge-toggle:focus-visible .sidebar-edge-toggle-grip{
+  height:23px;
+  background:#4659f5;
+}
+.dashboard-shell .sidebar-edge-toggle svg{
+  width:15px;
+  height:15px;
+  margin-left:3px;
+  transition:transform .22s ease;
+}
+.dashboard-shell .sidebar-edge-toggle:hover svg{transform:scale(1.04)}
+@media(max-width:760px){
+  .dashboard-shell .sidebar-edge-toggle{display:none}
+}
+@media(prefers-reduced-motion:reduce){
+  .dashboard-shell .sidebar-edge-toggle,
+  .dashboard-shell .sidebar-edge-toggle svg,
+  .dashboard-shell .sidebar-edge-toggle-grip{transition:none!important}
+}
