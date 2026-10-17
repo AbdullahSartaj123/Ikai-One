@@ -1124,3 +1124,7 @@
  .dashboard-kpi-link .metric-foot{padding-right:0}
  .dashboard-channel-filter{min-width:0}
 }
+
+
+/* Domestic shipping rate comparison workflow */
+.domestic-rate-list{display:grid;gap:9px;margin-top:16px}.domestic-rate-heading{display:grid;gap:4px}.domestic-rate-heading b{font-size:13px;color:var(--text-primary,#172033)}.domestic-rate-heading small{font-size:11px;color:var(--text-muted,#6b7280)}.domestic-rate-option{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;text-align:left;padding:12px;border:1px solid var(--border,#e5e7eb);border-radius:12px;background:var(--surface,#fff);color:inherit;cursor:pointer}.domestic-rate-option>span{display:grid;gap:4px}.domestic-rate-option b{font-size:12px}.domestic-rate-option small{font-size:11px;color:var(--text-muted,#6b7280)}.domestic-rate-option strong{font-size:13px;white-space:nowrap}.domestic-rate-option i{grid-column:1/-1;font-size:11px;font-style:normal;color:var(--text-muted,#6b7280)}.domestic-rate-option.selected{border-color:#2877df;background:rgba(40,119,223,.06);box-shadow:0 0 0 1px #2877df}.domestic-rate-option.selected i{color:#1769d2;font-weight:700}
