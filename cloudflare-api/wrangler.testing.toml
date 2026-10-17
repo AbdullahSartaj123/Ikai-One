@@ -1,3 +1,4 @@
+# Isolated testing Worker only. Never use this config for production.
 name = "ikai-one-api-testing"
 main = "cookie-wrapper.js"
 compatibility_date = "2026-10-15"
