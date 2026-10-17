@@ -30,3 +30,4 @@ jobs:
       - working-directory: cloudflare-api
         run: npm install
       - run: node --check cloudflare-api/src/index.js
+      - run: node --check cloudflare-api/cookie-wrapper.js
