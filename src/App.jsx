@@ -239,6 +239,131 @@ export function Header() {
         .mega-site-header .mega-nav-item > .mega-menu { padding: 11px !important; }
         .mega-site-header .mega-item-copy b { font-size: 14px !important; }
       }
+      /* Refined, touch-first public navigation */
+      @media (max-width: 760px) {
+        .mega-site-header { isolation: isolate; }
+        .mega-site-header .nav-shell { gap: 10px !important; }
+        .mega-site-header .menu-toggle {
+          width: 44px !important; height: 44px !important; flex: 0 0 44px !important;
+          border: 1px solid #dfe6df !important; border-radius: 13px !important;
+          background: #fff !important; color: #192824 !important;
+          box-shadow: 0 3px 10px rgba(25,40,36,.06) !important;
+          transition: background .18s ease, border-color .18s ease, transform .18s ease !important;
+        }
+        .mega-site-header .menu-toggle:active { transform: scale(.96); background: #f0f2ff !important; }
+        .mega-site-header .main-nav.nav-open {
+          position: absolute !important; top: calc(100% + 1px) !important;
+          left: 0 !important; right: 0 !important; width: 100% !important;
+          display: flex !important; flex-direction: column !important; align-items: stretch !important;
+          gap: 5px !important; padding: 17px 16px max(22px, env(safe-area-inset-bottom)) !important;
+          max-height: calc(100dvh - 64px) !important; overflow-x: hidden !important; overflow-y: auto !important;
+          overscroll-behavior: contain !important; scrollbar-width: thin;
+          background: rgba(255,255,255,.985) !important;
+          border: 1px solid #e5eae4 !important; border-top: 0 !important;
+          border-radius: 0 0 20px 20px !important;
+          box-shadow: 0 24px 50px rgba(20,35,28,.16) !important;
+          backdrop-filter: blur(20px) !important; -webkit-backdrop-filter: blur(20px) !important;
+          animation: ikai-mobile-nav-in .2s ease-out both !important;
+        }
+        @keyframes ikai-mobile-nav-in {
+          from { opacity: 0; transform: translateY(-7px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .mega-site-header .main-nav.nav-open::before {
+          content: 'EXPLORE IKAI ONE'; display: block; padding: 0 3px 9px;
+          color: #7a887f; font-size: 10px; font-weight: 800; letter-spacing: .13em;
+        }
+        .mega-site-header .main-nav.nav-open > a {
+          display: flex !important; align-items: center !important; justify-content: space-between !important;
+          min-height: 51px !important; padding: 12px 13px !important; margin: 0 !important;
+          border: 1px solid #edf0ec !important; border-radius: 12px !important;
+          background: #fff !important; color: #26382f !important;
+          font-size: 15px !important; font-weight: 650 !important; line-height: 1.35 !important;
+        }
+        .mega-site-header .main-nav.nav-open > a:hover,
+        .mega-site-header .main-nav.nav-open > a:focus-visible {
+          background: #f5f6ff !important; border-color: #dfe2ff !important; color: #3445d5 !important;
+        }
+        .mega-site-header .mega-nav-item { width: 100% !important; border: 0 !important; }
+        .mega-site-header .mega-nav-item > button {
+          min-height: 51px !important; padding: 12px 13px !important;
+          border: 1px solid #edf0ec !important; border-radius: 12px !important;
+          background: #fff !important; color: #26382f !important;
+          font-size: 15px !important; font-weight: 700 !important; line-height: 1.35 !important;
+        }
+        .mega-site-header .mega-nav-item.menu-active > button {
+          border-color: #d9ddff !important; border-radius: 12px 12px 8px 8px !important;
+          background: #f0f2ff !important; color: #3445d5 !important;
+        }
+        .mega-site-header .mega-nav-item > .mega-menu {
+          margin: 7px 0 8px !important; padding: 13px !important;
+          border: 1px solid #e7ebe5 !important; border-radius: 13px !important;
+          background: #f8faf7 !important; box-shadow: inset 0 1px 2px rgba(25,40,36,.025) !important;
+        }
+        .mega-site-header .products-main,
+        .mega-site-header .mega-columns,
+        .mega-site-header .platform-feature-grid {
+          grid-template-columns: minmax(0,1fr) !important; gap: 13px !important;
+        }
+        .mega-site-header .mega-column h3,
+        .mega-site-header .products-side h3,
+        .mega-site-header .platform-menu-main > h3 {
+          margin: 0 0 6px !important; padding: 0 0 7px !important;
+          color: #6e7c73 !important; font-size: 10px !important; letter-spacing: .12em !important;
+          border-bottom: 1px solid #e4e9e2 !important;
+        }
+        .mega-site-header .mega-item,
+        .mega-site-header .mega-feature {
+          min-height: 60px !important; padding: 9px 7px !important; gap: 11px !important;
+          border-bottom: 1px solid #e8ece6 !important; border-radius: 9px !important;
+        }
+        .mega-site-header .mega-item:active,
+        .mega-site-header .mega-feature:active { background: #eef1ff !important; }
+        .mega-site-header .mega-item-icon {
+          flex: 0 0 38px !important; width: 38px !important; height: 38px !important;
+          border-radius: 11px !important; background: #edf0ff !important; color: #4a59e8 !important;
+        }
+        .mega-site-header .mega-item-copy b { color: #24362d !important; font-size: 14px !important; font-weight: 700 !important; }
+        .mega-site-header .mega-item-copy small { color: #6e7c73 !important; font-size: 12px !important; line-height: 1.45 !important; }
+        .mega-site-header .products-side {
+          margin-top: 13px !important; padding: 13px 10px 7px !important;
+          border: 1px solid #e6ebe4 !important; border-radius: 11px !important; background: #fff !important;
+        }
+        .mega-site-header .products-side a {
+          padding: 10px 3px !important; border-bottom: 1px solid #edf0eb !important;
+          color: #33443a !important; font-size: 13px !important; font-weight: 600 !important;
+        }
+        .mega-site-header .mega-promo {
+          align-items: center !important; gap: 12px !important; margin-top: 12px !important;
+          padding: 13px !important; border: 1px solid #e6ebe4 !important; border-radius: 12px !important;
+          background: #fff !important;
+        }
+        .mega-site-header .mega-promo b { font-size: 14px !important; }
+        .mega-site-header .mega-promo p { margin: 5px 0 !important; color: #6e7c73 !important; font-size: 12px !important; }
+        .mega-site-header .mega-promo a { font-size: 12px !important; }
+        .mega-site-header .mobile-nav-actions {
+          position: sticky !important; bottom: -1px !important; z-index: 2 !important;
+          display: flex !important; gap: 10px !important; margin: 7px -16px -22px !important;
+          padding: 13px 16px max(14px, env(safe-area-inset-bottom)) !important;
+          background: rgba(255,255,255,.97) !important; border-top: 1px solid #e8ece6 !important;
+        }
+        .mega-site-header .mobile-nav-actions .nav-login-cta,
+        .mega-site-header .mobile-nav-actions .button-primary {
+          display: inline-flex !important; align-items: center !important; justify-content: center !important;
+          min-height: 46px !important; border-radius: 11px !important; font-size: 13px !important;
+          font-weight: 750 !important; flex: 1 1 0 !important;
+        }
+        .mega-site-header .mobile-nav-actions .nav-login-cta {
+          border: 1px solid #dfe6df !important; background: #fff !important; color: #26382f !important;
+        }
+        .mega-site-header .mobile-nav-actions .button-primary { box-shadow: 0 5px 13px rgba(70,89,245,.18) !important; }
+      }
+      @media (max-width: 380px) {
+        .mega-site-header .main-nav.nav-open { padding-right: 12px !important; padding-left: 12px !important; }
+        .mega-site-header .mobile-nav-actions { margin-right: -12px !important; margin-left: -12px !important; padding-right: 12px !important; padding-left: 12px !important; }
+        .mega-site-header .mega-nav-item > .mega-menu { padding: 10px !important; }
+        .mega-site-header .mega-item-copy b { font-size: 13px !important; }
+      }
     `}</style>
     <header className={'site-header mega-site-header' + (scrolled ? ' header-scrolled' : '')} onKeyDown={event => { if(event.key === 'Escape') close() }} onMouseLeave={() => { if(window.matchMedia('(hover: hover) and (pointer: fine)').matches) close() }}>
       <div className="nav-shell">
