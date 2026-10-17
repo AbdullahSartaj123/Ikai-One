@@ -763,3 +763,35 @@
  .blog-article-main>h1{font-size:clamp(33px,9vw,44px);letter-spacing:-.05em}
  .blog-article-body section p{font-size:13px}
 }
+
+
+/* Editorial photography and sourced data insights for the IKAI One Journal */
+.blog-cover-image{display:block;width:100%;height:100%;min-height:inherit;object-fit:cover;transition:transform .45s ease}
+.blog-card-art-link{display:block;overflow:hidden;background:#eef0ff}
+.blog-card-art-link:hover .blog-cover-image{transform:scale(1.035)}
+.journal-featured .blog-card-art-link{height:100%;min-height:310px}
+.journal-grid .blog-card-art-link{height:185px;min-height:185px}
+.blog-article-photo{margin:30px 0 0;overflow:hidden;border:1px solid #e6eae3;border-radius:16px;background:#f4f5f8}
+.blog-article-photo img{display:block;width:100%;max-height:520px;aspect-ratio:16/8.2;object-fit:cover}
+.blog-article-photo figcaption{display:flex;justify-content:space-between;gap:16px;padding:11px 14px;color:#68766d;font-size:11px;line-height:1.5}
+.blog-article-photo figcaption span{flex:0 0 auto;color:#8a948d}
+.blog-data-insight{margin:26px 0 34px;padding:23px 25px;border:1px solid #e0e5ff;border-left:4px solid #4659f5;border-radius:12px;background:linear-gradient(115deg,#f7f8ff,#fff)}
+.blog-data-label{display:block;margin-bottom:10px;color:#4659f5;font-size:10px;font-weight:850;letter-spacing:.13em}
+.blog-data-insight strong{display:block;color:#17251f;font-size:clamp(25px,4vw,36px);font-weight:800;letter-spacing:-.045em;line-height:1.12}
+.blog-data-insight>p{margin:10px 0 9px;color:#34443a;font-size:14px;line-height:1.7}
+.blog-data-insight>small{display:block;color:#78847b;font-size:11px;line-height:1.65}
+.blog-data-insight>a{display:inline-flex;align-items:center;gap:5px;margin-top:13px;color:#4659f5;font-size:11px;font-weight:750;line-height:1.5}
+.blog-data-insight>a:hover{text-decoration:underline}
+@media(max-width:900px){
+ .journal-featured .blog-card-art-link{min-height:280px}
+ .journal-grid .blog-card-art-link{height:190px;min-height:190px}
+}
+@media(max-width:600px){
+ .journal-featured .blog-card-art-link{height:205px;min-height:205px}
+ .journal-grid .blog-card-art-link{height:175px;min-height:175px}
+ .blog-article-photo{margin-top:22px;border-radius:12px}
+ .blog-article-photo img{aspect-ratio:4/3;max-height:360px}
+ .blog-article-photo figcaption{flex-direction:column;gap:3px;padding:10px 12px;font-size:10px}
+ .blog-data-insight{padding:18px;margin:22px 0 27px}
+ .blog-data-insight>p{font-size:13px}
+}
