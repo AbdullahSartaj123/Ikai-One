@@ -91,6 +91,45 @@ jobs:
           const me = await request('/api/auth/me', { headers: { Cookie: cookiePair } });
           if (!me.response.ok || me.body?.user?.email !== email) throw new Error(`Session check failed (${me.response.status}): ${JSON.stringify(me.body)}`);
           console.log('PASS authenticated session check');
+          const orgA = me.body?.user?.organizationId;
+          if (!orgA) throw new Error('First test user has no organizationId');
+          const secondEmail = `ikai-isolation-${unique}@example.invalid`;
+          const secondPassword = `Test-${crypto.randomUUID()}-Safe!`;
+          const secondRegistered = await request('/api/auth/register', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Testing-Verification-Secret': secret },
+            body: JSON.stringify({ email: secondEmail, password: secondPassword, fullName: 'Ikai Isolation User', companyName: `Ikai Isolation ${unique}`, businessType: 'shipper' })
+          });
+          if (secondRegistered.response.status !== 201) throw new Error(`Second organization registration failed (${secondRegistered.response.status}): ${JSON.stringify(secondRegistered.body)}`);
+          const secondVerified = await request('/api/testing/verify-email', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Testing-Verification-Secret': secret },
+            body: JSON.stringify({ email: secondEmail })
+          });
+          if (!secondVerified.response.ok) throw new Error(`Second organization verification failed (${secondVerified.response.status}): ${JSON.stringify(secondVerified.body)}`);
+          const secondLogin = await request('/api/auth/login', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: secondEmail, password: secondPassword })
+          });
+          if (!secondLogin.response.ok) throw new Error(`Second organization login failed (${secondLogin.response.status}): ${JSON.stringify(secondLogin.body)}`);
+          const secondCookie = (secondLogin.response.headers.getSetCookie?.() || []).find(value => value.startsWith('__Host-ikai_session='));
+          if (!secondCookie) throw new Error('Second organization login did not issue a session cookie');
+          const secondCookiePair = secondCookie.split(';', 1)[0];
+          const secondMe = await request('/api/auth/me', { headers: { Cookie: secondCookiePair } });
+          if (!secondMe.response.ok || !secondMe.body?.user?.organizationId) throw new Error(`Second organization session check failed (${secondMe.response.status}): ${JSON.stringify(secondMe.body)}`);
+          const orgB = secondMe.body.user.organizationId;
+          if (orgA === orgB) throw new Error('Isolation setup failed: separate test accounts share the same organization');
+          const [shipmentsA, shipmentsB] = await Promise.all([
+            request('/api/shipments?limit=100', { headers: { Cookie: cookiePair } }),
+            request('/api/shipments?limit=100', { headers: { Cookie: secondCookiePair } })
+          ]);
+          if (!shipmentsA.response.ok || !shipmentsB.response.ok) throw new Error(`Organization shipments requests failed (A:${shipmentsA.response.status}, B:${shipmentsB.response.status})`);
+          const rowsA = shipmentsA.body?.data;
+          const rowsB = shipmentsB.body?.data;
+          if (!Array.isArray(rowsA) || !Array.isArray(rowsB)) throw new Error('Shipments endpoint did not return data arrays');
+          for (const row of rowsA) if (String(row.organization_id) !== String(orgA)) throw new Error('Organization A received a shipment belonging to another organization');
+          for (const row of rowsB) if (String(row.organization_id) !== String(orgB)) throw new Error('Organization B received a shipment belonging to another organization');
+          const idsA = new Set(rowsA.map(row => String(row.id)));
+          if (rowsB.some(row => idsA.has(String(row.id)))) throw new Error('The two organizations received overlapping shipment IDs');
+          console.log(`PASS organization-scoped shipment listing (A:${rowsA.length} rows, B:${rowsB.length} rows; org IDs differ)`);
           const logout = await request('/api/auth/logout', { method: 'POST', headers: { Cookie: cookiePair } });
           if (!logout.response.ok) throw new Error(`Logout failed (${logout.response.status}): ${JSON.stringify(logout.body)}`);
           const afterLogout = await request('/api/auth/me', { headers: { Cookie: cookiePair } });
