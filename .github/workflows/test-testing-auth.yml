@@ -50,6 +50,17 @@ jobs:
           });
           if (invalidReset.response.status !== 400) throw new Error(`Invalid reset token was not rejected as expected (status ${invalidReset.response.status}): ${JSON.stringify(invalidReset.body)}`);
           console.log('PASS invalid password-reset token rejected');
+          const unknownVerification = await request('/api/auth/verify-email', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: crypto.randomUUID() + crypto.randomUUID() })
+          });
+          if (unknownVerification.response.status !== 400) throw new Error(`Unknown verification token was not rejected (${unknownVerification.response.status}): ${JSON.stringify(unknownVerification.body)}`);
+          console.log('PASS unknown verification token rejected');
+          const malformedJson = await request('/api/auth/login', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{invalid-json'
+          });
+          if (malformedJson.response.status !== 400) throw new Error(`Malformed JSON was not rejected with HTTP 400 (${malformedJson.response.status}): ${JSON.stringify(malformedJson.body)}`);
+          console.log('PASS malformed JSON rejected cleanly');
           const registered = await request('/api/auth/register', {
             method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Testing-Verification-Secret': secret },
             body: JSON.stringify({ email, password, fullName: 'Ikai Test User', companyName: `Ikai Test ${unique}`, businessType: 'shipper' })
