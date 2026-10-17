@@ -51,7 +51,9 @@ export default {
     const isSessionRoute =
       (url.pathname === "/api/auth/me" && request.method === "GET") ||
       (url.pathname === "/api/auth/logout" && request.method === "POST") ||
-      (url.pathname === "/api/shipments" && request.method === "GET");
+      (url.pathname === "/api/shipments" && request.method === "GET") ||
+      url.pathname === "/api/cod-reconciliations" ||
+      url.pathname.startsWith("/api/cod-reconciliations/");
 
     let upstreamRequest = request;
     if (isSessionRoute && cookieToken) {
