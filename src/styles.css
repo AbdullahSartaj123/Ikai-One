@@ -542,3 +542,28 @@
     transform:none!important;
   }
 }
+
+
+/* Homepage logo motion: arrow rises through the two split bars and resets */
+.ikai-logo-animated .ikai-logo-mark{overflow:visible}
+.ikai-logo-animated .ikai-logo-arrow{transform-box:fill-box;transform-origin:center;animation:ikai-arrow-rise 2.8s cubic-bezier(.22,.7,.25,1) infinite}
+.ikai-logo-animated .ikai-logo-bar-left{transform-box:fill-box;transform-origin:center;animation:ikai-bars-left 2.8s cubic-bezier(.22,.7,.25,1) infinite}
+.ikai-logo-animated .ikai-logo-bar-right{transform-box:fill-box;transform-origin:center;animation:ikai-bars-right 2.8s cubic-bezier(.22,.7,.25,1) infinite}
+@keyframes ikai-arrow-rise{
+  0%,12%,100%{transform:translateY(0)}
+  34%,58%{transform:translateY(-8px)}
+  78%{transform:translateY(-2px)}
+}
+@keyframes ikai-bars-left{
+  0%,20%,100%{transform:translateX(0)}
+  38%,58%{transform:translateX(-3px)}
+  78%{transform:translateX(-.5px)}
+}
+@keyframes ikai-bars-right{
+  0%,20%,100%{transform:translateX(0)}
+  38%,58%{transform:translateX(3px)}
+  78%{transform:translateX(.5px)}
+}
+@media(prefers-reduced-motion:reduce){
+ .ikai-logo-animated .ikai-logo-arrow,.ikai-logo-animated .ikai-logo-bar-left,.ikai-logo-animated .ikai-logo-bar-right{animation:none!important}
+}
