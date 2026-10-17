@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, LoaderCircle, Moon, Sun, X } from 'lucide-react'
+import { ArrowDown, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, LoaderCircle, X } from 'lucide-react'
 
 export function Button({ variant='primary', size='md', loading=false, disabled=false, className='', children, type='button', ...props }) {
   return <button type={type} className={`ui-button ui-button-${variant} ui-button-${size} ${className}`.trim()} disabled={disabled || loading} aria-busy={loading || undefined} {...props}>
@@ -85,11 +85,6 @@ export function Toast({ open, tone='success', title, message, onClose }) {
   return <div className={`ui-toast ui-toast-${tone}`} role={tone==='danger'?'alert':'status'}><span className="ui-toast-mark">{tone==='success'?<Check size={16}/>:<span>!</span>}</span><div><strong>{title}</strong>{message&&<p>{message}</p>}</div><button type="button" aria-label="Dismiss notification" onClick={onClose}><X size={16}/></button></div>
 }
 export function Skeleton({ width='100%', height=16, radius=6, className='' }) { return <span aria-hidden="true" className={`ui-skeleton ${className}`.trim()} style={{width,height,borderRadius:radius}}/> }
-export function ThemeToggle({ compact=false }) {
-  const [dark,setDark]=useState(()=>typeof window!=='undefined' && (window.localStorage.getItem('ikai-theme')==='dark' || (!window.localStorage.getItem('ikai-theme') && window.matchMedia?.('(prefers-color-scheme: dark)').matches)))
-  useEffect(()=>{document.documentElement.dataset.theme=dark?'dark':'light';window.localStorage.setItem('ikai-theme',dark?'dark':'light')},[dark])
-  return <button type="button" className={`ui-theme-toggle ${compact?'is-compact':''}`} onClick={()=>setDark(v=>!v)} aria-label={dark?'Switch to light mode':'Switch to dark mode'} aria-pressed={dark} title={dark?'Switch to light mode':'Switch to dark mode'}>{dark?<Sun size={17}/>:<Moon size={17}/>}<span>{dark?'Light mode':'Dark mode'}</span></button>
-}
 
 export const formatNumber = (value, locale='en-PK') => new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(Number(value) || 0)
 export const formatCurrency = (value, currency='PKR', locale='en-PK') => new Intl.NumberFormat(locale, { style:'currency', currency, maximumFractionDigits: 2 }).format(Number(value) || 0)
