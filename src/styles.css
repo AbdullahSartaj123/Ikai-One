@@ -795,3 +795,55 @@
  .blog-data-insight{padding:18px;margin:22px 0 27px}
  .blog-data-insight>p{font-size:13px}
 }
+
+
+/* IKAI progress mark v2 — a live SVG route animation shared by the public header and app logo. */
+.ikai-logo-mark,.public-brand-mark{transform:none!important}
+.ikai-logo:hover .ikai-logo-mark,.ikai-logo:focus-visible .ikai-logo-mark{transform:translateY(-1px)!important}
+.ikai-logo-mark svg,.public-brand-mark .public-logo-motion{overflow:visible}
+.ikai-logo-mark .logo-motion-route{transform-box:fill-box;transform-origin:center;animation:none}
+@media(prefers-reduced-motion:no-preference){
+  .ikai-logo-mark svg,.public-brand-mark .public-logo-motion{animation:ikai-progress-cycle 3.2s cubic-bezier(.55,.05,.35,1) infinite}
+  .ikai-logo-mark .logo-motion-route,.public-brand-mark .logo-motion-route{
+    transform-box:fill-box;transform-origin:center;
+    animation:ikai-arrow-traverse 3.2s cubic-bezier(.55,.05,.35,1) infinite;
+  }
+  .ikai-logo-mark .logo-motion-bars,.public-brand-mark .logo-motion-bars{
+    transform-box:fill-box;transform-origin:center;
+    animation:ikai-upper-bars-impact 3.2s ease-in-out infinite;
+  }
+  .ikai-logo-mark .logo-motion-base,.public-brand-mark .logo-motion-base{
+    transform-box:fill-box;transform-origin:center;
+    animation:ikai-lower-bar-impact 3.2s ease-in-out infinite;
+  }
+  @keyframes ikai-progress-cycle{
+    0%,12%,100%{transform:translateY(0)}
+    20%{transform:translateY(1px)}
+    38%{transform:translateY(-1px)}
+    52%{transform:translateY(0)}
+  }
+  @keyframes ikai-arrow-traverse{
+    0%,12%{transform:translateY(15px)}
+    34%{transform:translateY(0)}
+    45%{transform:translateY(-16px)}
+    55%{transform:translateY(-16px)}
+    77%{transform:translateY(15px)}
+    84%,100%{transform:translateY(15px)}
+  }
+  @keyframes ikai-upper-bars-impact{
+    0%,28%,100%{transform:translateY(0) scaleX(1)}
+    36%{transform:translateY(-1px) scaleX(.88)}
+    43%{transform:translateY(1px) scaleX(1.04)}
+    50%{transform:translateY(0) scaleX(1)}
+  }
+  @keyframes ikai-lower-bar-impact{
+    0%,68%,100%{transform:scaleX(1)}
+    76%{transform:scaleX(.78)}
+    83%{transform:scaleX(1.04)}
+    90%{transform:scaleX(1)}
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .ikai-logo-mark svg,.public-brand-mark .public-logo-motion,
+  .ikai-logo-mark svg path,.public-brand-mark .public-logo-motion path{animation:none!important;transition:none!important}
+}
