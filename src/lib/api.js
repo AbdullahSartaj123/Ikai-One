@@ -1,9 +1,9 @@
 const DEFAULT_API_BASE_URL = 'https://api.ikai.one'
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\\/+$/, '')
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/+$/, '')
 const STAGING_TOKEN_KEY = 'ikai-staging-bearer-token'
 const USE_STAGING_BEARER = (() => {
   try { return new URL(API_BASE_URL).hostname.endsWith('.workers.dev') } catch { return false }
-})
+})()
 
 export async function apiRequest(path, { method = 'GET', body, signal } = {}) {
   const headers = { Accept: 'application/json' }
