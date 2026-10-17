@@ -21,9 +21,9 @@ npm run build
 - `/blog/ecommerce-shipping-playbook-2026` — 2026 e-commerce shipping playbook
 - `/blog/cod-cash-flow-without-spreadsheets` — COD cash-flow and reconciliation guide
 - `/blog/courier-performance-scorecard` — courier performance scorecard guide
-- `/login` — email or phone + password demo sign-in
+- `/login` — verified business email + password sign-in
 - `/signup` — company name, business email, phone, tax number, business type
-- `/verify-otp` — six-digit mock OTP verification
+- `/verify-otp` — one-time email verification and password recovery links
 - `/onboarding` — Company profile → Pickup address → Bank/KYC → Couriers → Done
 - `/app/dashboard` — protected seller dashboard
 - `/app/orders`, `/app/shipments`, `/app/returns`, `/app/ndr`, `/app/couriers`, `/app/rate-calculator`, `/app/pickup-addresses`, `/app/shipping-rules`, `/app/billing`, `/app/reports`, `/app/integrations`, `/app/support`, `/app/settings`
@@ -34,15 +34,15 @@ npm run build
 - `/verify-otp` handles a one-time email verification link. Links expire after 30 minutes and are single-use.
 - `/login` requires a verified email and a valid password.
 - `/verify-otp?mode=reset` requests a password reset; reset links are single-use and expire after 30 minutes.
-- Authenticated browser sessions are short-lived bearer tokens held in `sessionStorage`; the API validates every session against PostgreSQL.
+- Authenticated browser sessions use an `HttpOnly`, `Secure`, `SameSite=Lax` cookie set by the API wrapper; the raw session token is not exposed to frontend JavaScript. The API validates sessions against PostgreSQL.
 - `GET /api/shipments` derives `organization_id` from the authenticated session. Clients cannot select another tenant by passing an organization ID.
 
 ### Required one-time setup
 
-1. Run `cloudflare-api/migrations/0001_authentication.sql` in the Neon SQL Editor.
+1. Run both `cloudflare-api/migrations/0001_authentication.sql` and `cloudflare-api/migrations/0002_auth_rate_limits.sql` in the Neon SQL Editor.
 2. In Cloudflare Worker settings, configure secrets/variables: `RESEND_API_KEY` (secret), `EMAIL_FROM` (verified sender, e.g. `Ikai.One <no-reply@your-verified-domain>`), and `APP_URL` = `https://ikai.one`. Keep `DATABASE_URL` as a secret. Do not put secrets in Vite environment variables or frontend code.
 3. Verify the sender domain with Resend before expecting verification/reset email delivery.
-4. The Worker is deployed by `.github/workflows/deploy-cloudflare-worker.yml` after the changes are merged to `main`; the frontend deploys through `.github/workflows/deploy.yml`.
+4. The Worker is deployed by `.github/workflows/deploy-cloudflare-worker.yml` after the changes are merged to `main`; the frontend deploys through `.github/workflows/deploy.yml`. The authentication PR is not production-active until it is merged and deployment completes.
 
 Registration is intentionally unavailable until the email service is configured. Existing demo credentials are removed. Do not collect bank account, IBAN, CNIC, or KYC data until those workflows have dedicated security controls.
 
