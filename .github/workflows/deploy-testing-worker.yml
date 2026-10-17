@@ -2,6 +2,12 @@ name: Deploy Ikai.One Testing API
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - phase-1/production-auth
+    paths:
+      - 'cloudflare-api/**'
+      - '.github/workflows/deploy-testing-worker.yml'
 
 permissions:
   contents: read
