@@ -847,3 +847,19 @@
   .ikai-logo-mark svg,.public-brand-mark .public-logo-motion,
   .ikai-logo-mark svg path,.public-brand-mark .public-logo-motion path{animation:none!important;transition:none!important}
 }
+
+
+/* Wordmark color system: IKAI + dot in black, ONE in brand blue on every header/footer. */
+.brand-word.ikai-logo-type,.ikai-logo-type{color:#111827!important}
+.brand-word.ikai-logo-type .ikai-word,.brand-word.ikai-logo-type .ikai-dot,
+.ikai-logo-type .ikai-word,.ikai-logo-type .ikai-dot{color:#111827!important}
+.brand-word.ikai-logo-type .ikai-one,.ikai-logo-type .ikai-one{color:#4263eb!important}
+.public-brand-word{display:inline-flex;align-items:baseline;color:#111827!important}
+.public-brand-name,.public-brand-dot{color:#111827!important}
+.public-brand-one{color:#4263eb!important}
+.public-brand>span:last-child{color:#111827!important}
+.public-brand>span:last-child .public-brand-one{color:#4263eb!important}
+.public-footer .public-brand-word,.public-footer .public-brand-name,.public-footer .public-brand-dot{color:#fff!important}
+.public-footer .public-brand-one{color:#4263eb!important}
+.brand-light .ikai-logo-type,.brand-light .ikai-logo-type .ikai-word,.brand-light .ikai-logo-type .ikai-dot{color:#fff!important}
+.brand-light .ikai-logo-type .ikai-one{color:#4263eb!important}
