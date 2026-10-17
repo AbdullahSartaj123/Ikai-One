@@ -863,3 +863,215 @@
 .public-footer .public-brand-one{color:#4263eb!important}
 .brand-light .ikai-logo-type,.brand-light .ikai-logo-type .ikai-word,.brand-light .ikai-logo-type .ikai-dot{color:#fff!important}
 .brand-light .ikai-logo-type .ikai-one{color:#4263eb!important}
+
+
+
+/* HOMEPAGE REFRESH — light 4PL logistics aggregator positioning */
+.site-header{background:rgba(255,255,255,.92);border-bottom-color:#edf0f6}
+.hero.hero-4pl{
+  min-height:0;
+  overflow:hidden;
+  border-bottom:1px solid #edf0f6;
+  background:
+    radial-gradient(ellipse at 80% 25%,rgba(224,229,255,.58),transparent 42%),
+    radial-gradient(ellipse at 10% 90%,rgba(232,246,213,.46),transparent 36%),
+    #fff;
+}
+.hero-4pl .hero-grid-bg{
+  opacity:.24;
+  background-image:linear-gradient(rgba(224,230,240,.68) 1px,transparent 1px),linear-gradient(90deg,rgba(224,230,240,.68) 1px,transparent 1px);
+  background-size:68px 68px;
+  mask-image:linear-gradient(to bottom,#000 0%,transparent 85%);
+}
+.hero-4pl .glow-left{width:400px;height:400px;top:260px;left:-250px;background:radial-gradient(circle,rgba(215,242,171,.35),transparent 70%)}
+.hero-4pl .glow-right{width:650px;height:650px;top:-160px;right:-140px;background:radial-gradient(circle,rgba(218,224,255,.7),rgba(239,242,255,.34) 38%,transparent 70%)}
+.hero-4pl-layout{
+  width:min(1280px,calc(100% - 72px));
+  min-height:610px;
+  grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);
+  gap:clamp(26px,4vw,64px);
+  padding-top:24px;
+  padding-bottom:26px;
+}
+.hero-4pl-copy{padding:44px 0 56px;max-width:600px}
+.hero-4pl .eyebrow{
+  margin-bottom:23px;
+  padding:6px 12px 6px 7px;
+  border-color:#e5e9f4;
+  background:rgba(255,255,255,.82);
+  color:#53627a;
+  font-size:10px;
+  letter-spacing:.11em;
+  box-shadow:0 3px 14px rgba(41,58,101,.035);
+}
+.hero-4pl .eyebrow-mark{background:#e9edff;color:#4659f5}
+.hero-4pl h1{
+  max-width:650px;
+  font-size:clamp(42px,4.25vw,63px);
+  line-height:1.055;
+  letter-spacing:-.066em;
+  color:#17243a;
+}
+.hero-4pl .headline-highlight{color:#4659f5}
+.hero-4pl .headline-highlight:after{height:6px;bottom:-7px;border-top:2px solid #c7e96b;opacity:.95}
+.hero-4pl .hero-description{
+  max-width:535px;
+  margin:25px 0 25px;
+  color:#637187;
+  font-size:15px;
+  line-height:1.8;
+}
+.hero-4pl .hero-buttons{gap:11px}
+.hero-4pl .button-large{min-height:50px;padding:0 18px;border-radius:12px;font-size:12px}
+.hero-4pl .button-primary{background:#4659f5;box-shadow:0 8px 20px rgba(70,89,245,.16)}
+.hero-4pl .button-primary:hover{background:#3548df;box-shadow:0 11px 26px rgba(70,89,245,.23)}
+.hero-4pl .button-quiet{background:rgba(255,255,255,.8);border-color:#e1e6f0;color:#36445a}
+.hero-coverage-note{display:flex;align-items:center;gap:11px;margin-top:28px;padding:13px 15px;max-width:435px;border:1px solid #e9edf4;border-radius:13px;background:rgba(255,255,255,.75)}
+.coverage-note-icon{width:33px;height:33px;display:grid;place-items:center;flex:0 0 33px;border-radius:10px;background:#edf8e3;color:#4c8a3c}
+.hero-coverage-note b,.hero-coverage-note small{display:block}
+.hero-coverage-note b{color:#29394e;font-size:11px;font-weight:800;letter-spacing:-.01em}
+.hero-coverage-note small{margin-top:4px;color:#8190a0;font-size:10px;line-height:1.4}
+.hero-4pl .hero-mini-points{gap:11px 16px;margin-top:20px;padding-top:17px;border-top-color:#e8edf4}
+.hero-4pl .hero-mini-points span{color:#68788c;font-size:10px}
+.hero-4pl .hero-mini-points svg{color:#649e48}
+.hero-route-caption{display:flex;align-items:center;justify-content:center;gap:9px;padding:0 18px 20px;color:#8b96a8;font-size:10px;letter-spacing:.025em}
+.hero-route-caption>span{width:22px;height:1px;background:#b8c4d5}
+
+/* Network visual: a calm, legible product preview instead of decorative dashboard noise */
+.hero-network-art{
+  width:100%;
+  height:555px;
+  min-height:0;
+  align-self:center;
+  isolation:isolate;
+  animation:network-art-enter .85s .08s both;
+}
+@keyframes network-art-enter{from{opacity:0;transform:translateY(14px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
+.network-art-wash{position:absolute;inset:36px 12px 28px;border-radius:42%;background:radial-gradient(ellipse at center,rgba(231,235,255,.62),rgba(247,249,255,.42) 48%,transparent 72%);z-index:-2}
+.network-art-orbit{position:absolute;border:1px solid rgba(178,190,221,.45);border-radius:50%;pointer-events:none}
+.network-art-orbit.orbit-one{width:510px;height:340px;top:90px;right:0;transform:rotate(-15deg)}
+.network-art-orbit.orbit-two{width:420px;height:285px;top:120px;right:43px;border-style:dashed;border-color:rgba(180,192,226,.58);animation:network-orbit 42s linear infinite}
+@keyframes network-orbit{to{transform:rotate(345deg)}}
+.network-art-lines{position:absolute;inset:0;width:100%;height:100%;overflow:visible;z-index:-1}
+.network-art-lines path{stroke:#b7c5e9;stroke-width:1.4;stroke-dasharray:5 7;stroke-linecap:round;opacity:.85;animation:route-dash 20s linear infinite}
+@keyframes route-dash{to{stroke-dashoffset:-120}}
+.control-tower-card{
+  position:absolute;z-index:3;left:50%;top:50%;width:min(440px,82%);transform:translate(-50%,-50%);
+  overflow:hidden;border:1px solid rgba(218,225,239,.95);border-radius:20px;background:rgba(255,255,255,.97);
+  box-shadow:0 30px 75px rgba(36,53,97,.12),0 5px 16px rgba(36,53,97,.045);
+  animation:tower-hover 7s ease-in-out infinite;
+}
+@keyframes tower-hover{0%,100%{margin-top:0}50%{margin-top:-6px}}
+.tower-topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 17px;border-bottom:1px solid #edf0f6}
+.tower-brand{display:flex;align-items:center;gap:9px;min-width:0}
+.tower-brand>span{display:grid;place-items:center;width:32px;height:32px;flex:0 0 32px;border-radius:10px;background:#eef0ff;color:#4659f5}
+.tower-brand b,.tower-brand small{display:block}
+.tower-brand b{font-size:12px;font-weight:850;letter-spacing:-.02em;color:#1d2b43}
+.tower-brand small{margin-top:3px;color:#8a96a9;font-size:9px}
+.tower-preview{display:inline-flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid #e5eaf3;border-radius:999px;color:#7c8aa0;font-size:7px;font-weight:850;letter-spacing:.09em;white-space:nowrap}
+.tower-preview i,.tower-footnote i{width:5px;height:5px;border-radius:50%;background:#80b65c;box-shadow:0 0 0 3px rgba(128,182,92,.12)}
+.tower-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:18px 18px 12px}
+.tower-heading>div>small{font-size:8px;color:#8895aa;font-weight:850;letter-spacing:.1em}
+.tower-heading h3{margin:5px 0 0;color:#1d2b43;font:800 21px/1.15 'Manrope',sans-serif;letter-spacing:-.05em}
+.tower-filter{display:flex;align-items:center;gap:5px;padding:7px 8px;border:1px solid #e9edf4;border-radius:8px;color:#738198;font-size:8px;white-space:nowrap}
+.tower-flow{display:flex;align-items:center;justify-content:space-between;gap:5px;margin:0 17px;padding:13px 11px;border:1px solid #edf0f6;border-radius:12px;background:linear-gradient(115deg,#fbfcff,#fff)}
+.tower-flow-step{display:flex;align-items:center;gap:7px;min-width:0}
+.tower-flow-step>span{display:grid;place-items:center;width:32px;height:32px;flex:0 0 32px;border-radius:9px;background:#eef0ff;color:#4659f5}
+.tower-flow-step:nth-of-type(2)>span{background:#f0f7e5;color:#5c883e}
+.tower-flow-step b,.tower-flow-step small{display:block}
+.tower-flow-step b{color:#34435b;font-size:9px;font-weight:850}
+.tower-flow-step small{margin-top:4px;color:#8b97a8;font-size:7px;white-space:nowrap}
+.tower-flow-arrow{display:flex;align-items:center;justify-content:center;flex:0 0 14px;color:#a5b1c5}
+.tower-capability-list{padding:8px 18px 12px}
+.tower-capability-list>div{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0f2f7}
+.tower-capability-list>div:last-child{border-bottom:0}
+.tower-cap-icon{display:grid;place-items:center;width:31px;height:31px;flex:0 0 31px;border-radius:9px}
+.cap-blue{background:#eef0ff;color:#4659f5}.cap-green{background:#f0f7e6;color:#609047}.cap-orange{background:#fff0e9;color:#d7794c}
+.tower-capability-list>div>span:nth-child(2){flex:1;min-width:0}
+.tower-capability-list b,.tower-capability-list small{display:block}
+.tower-capability-list b{color:#34435a;font-size:9px;font-weight:800}
+.tower-capability-list small{margin-top:3px;color:#8d99aa;font-size:8px}
+.tower-capability-list>div>svg{color:#78a85a;flex:0 0 auto}
+.tower-footnote{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 17px;background:#fafbfe;border-top:1px solid #edf0f6;color:#8d99aa;font-size:7px}
+.tower-footnote>span:first-child{display:flex;align-items:center;gap:6px;font-weight:850;letter-spacing:.08em}
+.network-partner{position:absolute;z-index:4;display:flex;align-items:center;gap:9px;min-width:190px;padding:11px 12px;border:1px solid #e5eaf4;border-radius:13px;background:rgba(255,255,255,.96);box-shadow:0 13px 35px rgba(39,54,94,.09);animation:partner-drift 6s ease-in-out infinite}
+@keyframes partner-drift{0%,100%{translate:0 0}50%{translate:0 -5px}}
+.network-partner>div{min-width:0;flex:1}
+.network-partner small,.network-partner b,.network-partner div>span{display:block}
+.network-partner small{margin-bottom:4px;color:#929db0;font-size:7px;font-weight:850;letter-spacing:.09em}
+.network-partner b{color:#2e3c54;font-size:10px;white-space:nowrap}
+.network-partner div>span{margin-top:3px;color:#8b97a8;font-size:8px;white-space:nowrap}
+.network-partner>svg{color:#9aa8bd;flex:0 0 auto}
+.partner-icon{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border-radius:10px}
+.partner-blue{background:#eef0ff;color:#4659f5}.partner-lime{background:#f0f7e5;color:#628c42}.partner-peach{background:#fff0e9;color:#d77b52}
+.partner-left{left:-5px;top:87px}.partner-right{right:-5px;top:95px;animation-delay:-1.8s}.partner-bottom{right:-5px;bottom:75px;animation-delay:-3.2s}
+.network-floating-note{position:absolute;z-index:5;display:flex;align-items:center;gap:9px;padding:10px 12px;border:1px solid #e7ebf3;border-radius:12px;background:rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(39,54,94,.07);animation:partner-drift 6.5s ease-in-out infinite}
+.network-floating-note>span:last-child{display:block}
+.network-floating-note b,.network-floating-note small{display:block;white-space:nowrap}
+.network-floating-note b{font-size:9px;color:#33425a}
+.network-floating-note small{margin-top:3px;color:#8b97a8;font-size:8px}
+.note-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:#eef0ff;color:#4659f5}
+.note-icon-green{background:#f0f7e5;color:#609047}
+.float-note-top{right:18px;top:18px;animation-delay:-.8s}
+.float-note-bottom{left:8px;bottom:22px;animation-delay:-2.5s}
+.hero-4pl .hero-route-caption{padding-bottom:16px}
+.hero-4pl .hero-route-caption>span{background:#c2cbe0}
+
+@media(max-width:1120px){
+  .hero-4pl-layout{width:min(100% - 52px,1280px);grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:24px}
+  .hero-4pl h1{font-size:clamp(40px,4.4vw,56px)}
+  .hero-network-art{transform:scale(.96);transform-origin:center}
+  .network-partner{min-width:174px;padding:10px}
+  .partner-left{left:-8px}.partner-right{right:-8px}.partner-bottom{right:-8px}
+}
+@media(max-width:900px){
+  .hero-4pl-layout{min-height:0;grid-template-columns:minmax(0,1fr);gap:0;padding-top:42px;padding-bottom:10px}
+  .hero-4pl-copy{max-width:740px;padding:12px 0 18px}
+  .hero-4pl h1{max-width:740px;font-size:clamp(43px,7vw,66px)}
+  .hero-4pl .hero-description{max-width:660px;font-size:15px}
+  .hero-coverage-note{max-width:460px}
+  .hero-network-art{width:min(100%,650px);height:545px;margin:0 auto;transform:none}
+  .hero-4pl .hero-route-caption{padding-bottom:20px}
+}
+@media(max-width:600px){
+  .hero-4pl-layout{width:calc(100% - 36px);padding-top:28px}
+  .hero-4pl-copy{padding-top:5px}
+  .hero-4pl .eyebrow{font-size:8px;letter-spacing:.075em;margin-bottom:19px}
+  .hero-4pl h1{font-size:clamp(37px,10.1vw,50px);line-height:1.08;letter-spacing:-.06em}
+  .hero-4pl .hero-description{margin:19px 0 20px;font-size:13px;line-height:1.75}
+  .hero-4pl .hero-buttons{display:grid;grid-template-columns:minmax(0,1fr);gap:9px}
+  .hero-4pl .hero-buttons .button{width:100%;min-height:48px}
+  .hero-coverage-note{margin-top:21px;padding:11px 12px}
+  .hero-coverage-note b{font-size:10px}.hero-coverage-note small{font-size:9px}
+  .hero-4pl .hero-mini-points{gap:9px 13px;margin-top:16px;padding-top:14px}
+  .hero-4pl .hero-mini-points span{font-size:9px}
+  .hero-network-art{height:420px;width:calc(100% + 16px);margin:0 -8px}
+  .control-tower-card{width:min(400px,84%);border-radius:16px}
+  .tower-topbar{padding:11px 12px}.tower-brand>span{width:29px;height:29px;flex-basis:29px}
+  .tower-preview{font-size:6px;padding:5px 6px}
+  .tower-heading{padding:13px 13px 10px}.tower-heading h3{font-size:18px}.tower-filter{font-size:7px;padding:6px}
+  .tower-flow{margin:0 11px;padding:10px 7px;gap:3px}
+  .tower-flow-step{gap:5px}.tower-flow-step>span{width:26px;height:26px;flex-basis:26px}
+  .tower-flow-step b{font-size:8px}.tower-flow-step small{font-size:6px}
+  .tower-flow-arrow{flex-basis:10px}.tower-flow-arrow svg{width:11px}
+  .tower-capability-list{padding:5px 13px 8px}
+  .tower-capability-list>div{padding:8px 0;gap:8px}
+  .tower-cap-icon{width:27px;height:27px;flex-basis:27px}
+  .tower-capability-list b{font-size:8px}.tower-capability-list small{font-size:7px}
+  .tower-footnote{padding:8px 12px;font-size:6px}
+  .network-art-orbit.orbit-one{width:340px;height:250px;top:90px;right:-30px}
+  .network-art-orbit.orbit-two{width:295px;height:210px;top:110px;right:-2px}
+  .network-partner{min-width:0;max-width:164px;gap:7px;padding:8px;border-radius:10px}
+  .network-partner .partner-icon{width:28px;height:28px;flex-basis:28px}
+  .network-partner small{font-size:6px}.network-partner b{font-size:8px}.network-partner div>span{font-size:7px}
+  .network-partner>svg{display:none}
+  .partner-left{left:0;top:38px}.partner-right{right:0;top:40px}.partner-bottom{right:0;bottom:28px}
+  .network-floating-note{display:none}
+  .network-art-lines{opacity:.65}
+  .hero-4pl .hero-route-caption{font-size:8px;padding:0 14px 16px}
+}
+@media(prefers-reduced-motion:reduce){
+  .hero-4pl .hero-copy,.hero-network-art,.network-art-orbit.orbit-two,.network-art-lines path,
+  .control-tower-card,.network-partner,.network-floating-note{animation:none!important;transition:none!important}
+  .hero-4pl .scroll-cue span{animation:none!important}
+}
