@@ -127,6 +127,119 @@ export function Header() {
   const close = () => { setActiveMenu(''); setMobileOpen(false) }
   const toggle = name => setActiveMenu(current => current === name ? '' : name)
   return <>
+    <style>{`
+      @media (max-width: 900px) {
+        .mega-site-header .main-nav.nav-open {
+          align-items: stretch !important;
+          gap: 4px !important;
+          padding: 12px 14px 20px !important;
+          max-height: calc(100dvh - 76px) !important;
+          overflow-y: auto !important;
+          overscroll-behavior: contain;
+        }
+        .mega-site-header .mega-nav-item { width: 100% !important; }
+        .mega-site-header .mega-nav-item > button {
+          width: 100% !important;
+          min-height: 52px !important;
+          padding: 13px 14px !important;
+          justify-content: space-between !important;
+          border: 1px solid rgba(25,40,36,.10) !important;
+          border-radius: 12px !important;
+          background: rgba(255,255,255,.82) !important;
+          color: var(--ink) !important;
+          font-size: 16px !important;
+          font-weight: 700 !important;
+          text-align: left !important;
+        }
+        .mega-site-header .mega-nav-item.menu-active > button {
+          border-color: rgba(70,89,245,.34) !important;
+          background: #eef0ff !important;
+          color: #3445d5 !important;
+        }
+        .mega-site-header .mega-nav-item > .mega-menu {
+          position: static !important;
+          inset: auto !important;
+          transform: none !important;
+          display: block !important;
+          width: 100% !important;
+          min-width: 0 !important;
+          max-width: none !important;
+          max-height: none !important;
+          margin: 8px 0 10px !important;
+          padding: 15px !important;
+          overflow: visible !important;
+          border: 1px solid #dfe5df !important;
+          border-radius: 14px !important;
+          background: #fff !important;
+          box-shadow: 0 10px 28px rgba(25,40,36,.09) !important;
+        }
+        .mega-site-header .products-main,
+        .mega-site-header .mega-columns,
+        .mega-site-header .platform-feature-grid {
+          display: grid !important;
+          grid-template-columns: minmax(0, 1fr) !important;
+          gap: 16px !important;
+          min-width: 0 !important;
+        }
+        .mega-site-header .mega-column { min-width: 0 !important; }
+        .mega-site-header .mega-column h3,
+        .mega-site-header .products-side h3,
+        .mega-site-header .platform-menu-main > h3 {
+          margin: 0 0 8px !important;
+          padding: 0 0 8px !important;
+          border-bottom: 1px solid #e8ece8 !important;
+          color: #65746c !important;
+          font-size: 11px !important;
+          letter-spacing: .09em !important;
+          line-height: 1.4 !important;
+        }
+        .mega-site-header .mega-item,
+        .mega-site-header .mega-feature {
+          display: flex !important;
+          align-items: center !important;
+          gap: 12px !important;
+          min-height: 62px !important;
+          padding: 11px 9px !important;
+          border-bottom: 1px solid #edf0ed !important;
+          border-radius: 9px !important;
+          background: transparent !important;
+        }
+        .mega-site-header .mega-item:last-child,
+        .mega-site-header .mega-feature:last-child { border-bottom: 0 !important; }
+        .mega-site-header .mega-item-icon {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          flex: 0 0 40px !important;
+          width: 40px !important;
+          height: 40px !important;
+          border-radius: 11px !important;
+          background: #f0f2ff !important;
+          color: #4659f5 !important;
+        }
+        .mega-site-header .mega-item-copy { display: flex !important; flex-direction: column !important; gap: 4px !important; min-width: 0 !important; }
+        .mega-site-header .mega-item-copy b { color: #192824 !important; font-size: 15px !important; font-weight: 700 !important; line-height: 1.35 !important; }
+        .mega-site-header .mega-item-copy small { display: block !important; color: #68776f !important; font-size: 12px !important; line-height: 1.5 !important; white-space: normal !important; }
+        .mega-site-header .products-side { display: block !important; margin-top: 16px !important; padding-top: 14px !important; border-top: 1px solid #e8ece8 !important; }
+        .mega-site-header .products-side a {
+          display: block !important;
+          padding: 11px 9px !important;
+          border-bottom: 1px solid #edf0ed !important;
+          color: #192824 !important;
+          font-size: 14px !important;
+          font-weight: 600 !important;
+          line-height: 1.4 !important;
+        }
+        .mega-site-header .products-side a:last-child { border-bottom: 0 !important; }
+        .mega-site-header .mega-promo { margin-top: 14px !important; padding: 14px !important; border-radius: 12px !important; }
+        .mega-site-header .mega-promo p { font-size: 13px !important; line-height: 1.5 !important; }
+      }
+      @media (max-width: 380px) {
+        .mega-site-header .main-nav.nav-open { padding-right: 10px !important; padding-left: 10px !important; }
+        .mega-site-header .mega-nav-item > .mega-menu { padding: 11px !important; }
+        .mega-site-header .mega-item-copy b { font-size: 14px !important; }
+      }
+    `}</style>
     <header className={'site-header mega-site-header' + (scrolled ? ' header-scrolled' : '')} onKeyDown={event => { if(event.key === 'Escape') close() }} onMouseLeave={() => { if(window.matchMedia('(hover: hover) and (pointer: fine)').matches) close() }}>
       <div className="nav-shell">
         <Brand/>
