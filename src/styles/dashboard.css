@@ -315,3 +315,57 @@
 .dashboard-shell.sidebar-collapsed .sidebar-brand .ikai-logo-type{
   display:none;
 }
+
+
+/* Click-controlled dashboard submenus with smooth, exclusive expansion. */
+.sidebar-nav-item.has-submenu>.sidebar-submenu{
+  display:flex!important;
+  max-height:0;
+  overflow:hidden;
+  opacity:0;
+  visibility:hidden;
+  transform:translateY(-5px);
+  margin-top:0;
+  margin-bottom:0;
+  padding-top:0;
+  padding-bottom:0;
+  pointer-events:none;
+  transition:max-height .28s cubic-bezier(.2,.7,.2,1),opacity .2s ease,transform .24s ease,margin .24s ease,padding .24s ease,visibility 0s linear .28s;
+}
+.sidebar-nav-item.has-submenu.submenu-open>.sidebar-submenu{
+  max-height:700px;
+  opacity:1;
+  visibility:visible;
+  transform:translateY(0);
+  margin-top:2px;
+  margin-bottom:7px;
+  padding-top:5px;
+  padding-bottom:5px;
+  pointer-events:auto;
+  transition:max-height .32s cubic-bezier(.2,.7,.2,1),opacity .22s ease,transform .24s ease,margin .24s ease,padding .24s ease,visibility 0s;
+}
+.sidebar-nav-item.has-submenu:hover>.sidebar-submenu,
+.sidebar-nav-item.has-submenu:focus-within>.sidebar-submenu{
+  /* Pointer hover never opens a submenu; state controls visibility. */
+  max-height:0;
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+}
+.sidebar-nav-item.has-submenu.submenu-open:hover>.sidebar-submenu,
+.sidebar-nav-item.has-submenu.submenu-open:focus-within>.sidebar-submenu{
+  max-height:700px;
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+}
+.sidebar-submenu-toggle{transition:transform .22s ease,background .18s ease,color .18s ease}
+.sidebar-submenu-toggle svg{transition:transform .24s cubic-bezier(.2,.7,.2,1)}
+@media(prefers-reduced-motion:reduce){
+  .sidebar-nav-item.has-submenu>.sidebar-submenu,
+  .sidebar-submenu-toggle,
+  .sidebar-submenu-toggle svg{transition:none!important;transform:none!important}
+}
+@media(min-width:761px){
+  .sidebar-collapsed .sidebar-nav-item.has-submenu>.sidebar-submenu{display:none!important}
+}
