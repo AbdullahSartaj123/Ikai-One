@@ -542,3 +542,125 @@
     transform:none!important;
   }
 }
+
+
+/* Mobile-first readability pass for every public IKAI One page */
+@media(max-width:760px){
+  html{scroll-padding-top:72px}
+  body{overflow-x:hidden}
+  .container,.nav-shell,.mega-site-header .nav-shell{width:calc(100% - 32px);max-width:100%}
+  .public-page,.domestic-page,.cargo-shipping-page,.quick-page,.fulfillment-page,.shipx-page,.cargox-page,.oceanx-page,.connect-page{width:100%;max-width:100%;padding-left:16px;padding-right:16px;overflow-wrap:anywhere}
+  .site-header,.site-header.header-scrolled,.site-header.mega-site-header,.site-header.mega-site-header.header-scrolled{height:64px}
+  .brand-symbol{width:30px;height:30px}
+  .brand-word{font-size:23px}
+  .mega-site-header .brand-symbol{width:30px;height:30px}
+  .mega-site-header .brand-word{font-size:23px}
+  .main-nav>a,.mega-site-header .main-nav>a,.mega-site-header .mega-nav-item>button{font-size:14px;min-height:44px}
+  .mega-site-header .main-nav{max-height:calc(100dvh - 64px);overflow-y:auto}
+  .mega-site-header .nav-shell{gap:10px}
+  .mega-site-header .menu-toggle{width:40px;height:40px;flex:0 0 40px}
+  .mega-site-header .mobile-nav-actions .nav-login-cta,.mega-site-header .mobile-nav-actions .button-primary{min-height:44px;font-size:12px}
+  .hero{min-height:0}
+  .hero-layout{min-height:0;grid-template-columns:minmax(0,1fr);gap:14px;padding-top:0}
+  .hero-copy{padding:34px 0 8px}
+  .eyebrow{font-size:10px;max-width:100%;line-height:1.4}
+  .hero h1{font-size:clamp(38px,9.5vw,54px);line-height:1.04;letter-spacing:-.055em;overflow-wrap:normal}
+  .hero-description{font-size:15px;line-height:1.7;margin:16px 0 20px}
+  .hero-buttons{display:grid;grid-template-columns:1fr;gap:10px}
+  .hero-buttons .button,.button-large{width:100%;min-height:48px;font-size:13px}
+  .hero-proof{align-items:flex-start;gap:10px;margin-top:20px}
+  .hero-proof>div:last-child>small,.hero-mini-points span{font-size:11px}
+  .hero-mini-points{gap:10px 14px;margin-top:18px}
+  .hero-art{height:auto;min-height:340px;width:100%;margin:0;transform:none}
+  .dashboard-window{width:100%;max-width:460px;left:50%;transform:translateX(-50%);top:26px}
+  .metric-card{min-height:88px}
+  .metric-card>b{font-size:clamp(18px,5vw,23px)}
+  .float-pill{font-size:10px}
+  .section-title,.section-heading h2,.public-section-heading h2{font-size:clamp(26px,7vw,36px);line-height:1.15}
+  .section-description,.section-heading p,.public-section-heading p{font-size:14px;line-height:1.7}
+  .section-kicker{font-size:10px}
+  .features-grid,.benefits-grid,.solution-grid,.public-benefit-grid,.public-pricing-grid{grid-template-columns:minmax(0,1fr);gap:12px}
+  .feature-card,.solution-card,.public-benefit-grid article{padding:18px;border-radius:13px}
+  .feature-card h3,.solution-card h3,.public-benefit-grid h3{font-size:16px}
+  .feature-card p,.solution-card p,.public-benefit-grid p{font-size:13px;line-height:1.65}
+  .public-breadcrumb{font-size:12px;flex-wrap:wrap;gap:6px;margin:12px 0 18px}
+  .public-hero,.domestic-hero,.shipx-hero,.cargox-hero,.oceanx-hero,.connect-hero{grid-template-columns:minmax(0,1fr);gap:22px;padding-top:10px;padding-bottom:28px}
+  .public-hero-copy h1,.domestic-heading h1,.shipx-hero-copy h1,.cargox-hero-copy h1,.oceanx-hero-copy h1,.connect-hero-copy h1{font-size:clamp(34px,8.7vw,48px);line-height:1.06;letter-spacing:-.05em;overflow-wrap:normal}
+  .public-hero-copy>p,.domestic-heading p,.shipx-hero-copy>p,.cargox-hero-copy>p,.oceanx-hero-copy>p,.connect-hero-copy>p{font-size:14px;line-height:1.7}
+  .public-hero-actions,.domestic-heading-actions,.connect-actions{width:100%;gap:9px}
+  .public-hero-actions>* ,.domestic-heading-actions>*{flex:1;min-width:0}
+  .public-primary,.public-secondary,.domestic-btn{min-height:44px;padding:0 13px;font-size:12px}
+  .public-hero-visual,.connect-hero-visual,.domestic-hero-visual,.shipx-hero-visual,.cargox-hero-visual,.oceanx-hero-visual{width:100%;max-width:100%;min-width:0;padding:16px;border-radius:15px}
+  .public-visual-list>div{gap:9px;padding:10px 0}
+  .public-visual-list b{font-size:12px}
+  .public-visual-list small{font-size:10px}
+  .public-visual-stats{gap:9px}
+  .public-visual-stats>div{padding:12px}
+  .public-visual-stats>div b{font-size:14px}
+  .public-visual-stats>div small,.public-visual-stats>div span{font-size:10px}
+  .domestic-topline,.connect-topline,.shipx-topline,.cargox-topline,.oceanx-topline{align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:18px}
+  .domestic-kpi-grid,.shipx-metrics,.cargox-metrics,.oceanx-metrics,.connect-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:28px}
+  .domestic-kpi-grid>article,.shipx-metrics article,.cargox-metrics article,.oceanx-metrics article,.connect-metrics article{padding:13px;min-width:0}
+  .domestic-kpi-grid small,.shipx-metrics small,.cargox-metrics small,.oceanx-metrics small,.connect-metrics small{font-size:11px}
+  .domestic-kpi-grid b,.shipx-metrics b,.cargox-metrics b,.oceanx-metrics b,.connect-metrics b{font-size:clamp(20px,6vw,27px)}
+  .domestic-create,.domestic-board,.domestic-form,.shipx-create,.shipx-board,.cargox-create,.cargox-board,.oceanx-create,.oceanx-board,.connect-create,.connect-board{min-width:0;width:100%;padding:16px;margin-bottom:28px;border-radius:15px}
+  .domestic-form-grid,.domestic-form-summary,.shipx-form-grid,.shipx-form-summary,.cargox-form-grid,.cargox-form-summary,.oceanx-form-grid,.oceanx-form-summary,.connect-form-grid,.connect-form-summary{grid-template-columns:minmax(0,1fr);gap:12px}
+  .domestic-form label,.shipx-form-grid label,.cargox-form-grid label,.oceanx-form-grid label,.connect-form-grid label{font-size:12px;gap:7px}
+  .domestic-form input,.domestic-form select,.domestic-form textarea,.shipx-form-grid input,.shipx-form-grid select,.cargox-form-grid input,.cargox-form-grid select,.oceanx-form-grid input,.oceanx-form-grid select,.connect-form-grid input,.connect-form-grid select{min-height:44px;font-size:14px}
+  .domestic-form-footer,.shipx-form-footer,.cargox-form-footer,.oceanx-form-footer,.connect-form-footer{align-items:stretch;flex-direction:column;gap:12px}
+  .domestic-form-footer>* ,.shipx-form-footer>* ,.cargox-form-footer>* ,.oceanx-form-footer>* ,.connect-form-footer>*{width:100%}
+  .domestic-board-head,.shipx-board-head,.cargox-board-head,.oceanx-board-head,.connect-board-head{align-items:flex-start;flex-direction:column;gap:12px}
+  .domestic-board-head h2,.shipx-board-head h2,.cargox-board-head h2,.oceanx-board-head h2,.connect-board-head h2{font-size:24px;line-height:1.15}
+  .domestic-tools,.shipx-tools,.cargox-tools,.oceanx-tools,.connect-tools{align-items:stretch;flex-direction:column;gap:10px;margin:16px 0 12px}
+  .domestic-tabs,.domestic-tools .domestic-tabs,.shipx-tools .domestic-tabs,.cargox-tools .domestic-tabs,.oceanx-tools .domestic-tabs,.connect-tools .domestic-tabs{display:flex;max-width:100%;overflow-x:auto;flex-wrap:nowrap;gap:5px;padding-bottom:4px}
+  .domestic-tabs button,.shipx-tools .domestic-tabs button,.cargox-tools .domestic-tabs button,.oceanx-tools .domestic-tabs button,.connect-tools .domestic-tabs button{flex:0 0 auto;min-height:38px;padding:0 12px;font-size:11px;white-space:nowrap}
+  .domestic-search,.shipx-search,.cargox-search,.oceanx-search,.connect-search,.domestic-tools .domestic-search,.connect-tools .domestic-search{width:100%;min-width:0}
+  .domestic-search input,.shipx-search input,.cargox-search input,.oceanx-search input,.connect-search input{width:100%;min-height:42px;font-size:14px}
+  .domestic-table-wrap,.shipx-table-wrap,.cargox-table-wrap,.oceanx-table-wrap,.connect-table-wrap,.public-table-wrap{width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .domestic-table,.shipx-table,.cargox-table,.oceanx-table,.connect-table{min-width:680px}
+  .domestic-table th,.shipx-table th,.cargox-table th,.oceanx-table th,.connect-table th{font-size:10px;white-space:nowrap}
+  .domestic-table td,.shipx-table td,.cargox-table td,.oceanx-table td,.connect-table td{font-size:12px}
+  .domestic-board-foot,.shipx-board-foot,.cargox-board-foot,.oceanx-board-foot,.connect-board-foot{align-items:flex-start;flex-direction:column;gap:8px;font-size:11px}
+  .domestic-benefits,.shipx-benefits,.cargox-benefits,.oceanx-benefits,.connect-benefits{grid-template-columns:minmax(0,1fr);gap:16px;margin-bottom:28px}
+  .domestic-benefit-grid,.shipx-benefit-grid,.cargox-benefit-grid,.oceanx-benefit-grid,.connect-benefit-grid{grid-template-columns:minmax(0,1fr);gap:10px}
+  .domestic-benefit-grid article,.shipx-benefit-grid article,.cargox-benefit-grid article,.oceanx-benefit-grid article,.connect-benefit-grid article{padding:16px}
+  .domestic-benefit-grid h3,.shipx-benefit-grid h3,.cargox-benefit-grid h3,.oceanx-benefit-grid h3,.connect-benefit-grid h3{font-size:15px}
+  .domestic-benefit-grid p,.shipx-benefit-grid p,.cargox-benefit-grid p,.oceanx-benefit-grid p,.connect-benefit-grid p{font-size:12px;line-height:1.65}
+  .public-pricing-hero h1,.public-tracking-hero h1{font-size:clamp(34px,9vw,48px);line-height:1.06}
+  .public-pricing-hero>p,.public-tracking-hero>p{font-size:14px;line-height:1.7}
+  .public-pricing-control{grid-template-columns:minmax(0,1fr);gap:12px;padding:15px}
+  .public-pricing-control label,.public-pricing-control select{width:100%;min-height:44px;font-size:13px}
+  .public-pricing-grid article{padding:18px}
+  .public-pricing-grid h2{font-size:23px}
+  .public-pricing-grid p,.public-pricing-grid li{font-size:12px;line-height:1.6}
+  .public-tracking-hero form{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;padding:13px}
+  .public-tracking-hero form input{width:100%;min-width:0;min-height:44px;font-size:14px}
+  .public-tracking-hero form .public-primary{width:100%;min-height:44px}
+  .public-tracking-result{padding:17px}
+  .public-tracking-steps small{font-size:11px;line-height:1.45}
+  .public-tracking-steps b{font-size:13px}
+  .public-page .public-eyebrow,.domestic-page .domestic-overline{font-size:10px;line-height:1.5}
+  .public-page :is(p,li,label){overflow-wrap:anywhere}
+  .site-footer{padding-top:25px}
+  .footer-main{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 14px;padding-bottom:20px}
+  .footer-brand-column{grid-column:1/-1}
+  .footer-brand-column>p{font-size:12px}
+  .footer-col>a,.footer-col>span{font-size:12px;line-height:1.6}
+  .footer-col>b{font-size:10px}
+  .footer-bottom{gap:8px;font-size:10px}
+}
+@media(max-width:420px){
+  .container,.nav-shell,.mega-site-header .nav-shell{width:calc(100% - 28px)}
+  .public-page,.domestic-page,.cargo-shipping-page,.quick-page,.fulfillment-page,.shipx-page,.cargox-page,.oceanx-page,.connect-page{padding-left:14px;padding-right:14px}
+  .hero h1{font-size:clamp(36px,10vw,44px)}
+  .hero-art{min-height:290px}
+  .dashboard-window{top:18px}
+  .domestic-kpi-grid,.shipx-metrics,.cargox-metrics,.oceanx-metrics,.connect-metrics{gap:8px}
+  .domestic-kpi-grid>article,.shipx-metrics article,.cargox-metrics article,.oceanx-metrics article,.connect-metrics article{padding:11px}
+  .connect-journey-stops>div>span{width:32px;height:32px}
+  .connect-journey-stops small{font-size:9px}
+  .connect-journey-stops b{font-size:10px}
+  .connect-journey-steps b{font-size:9px}
+  .connect-hero-parcel>div>span,.connect-hero-foot{font-size:10px}
+  .footer-main{gap:18px 12px}
+}
