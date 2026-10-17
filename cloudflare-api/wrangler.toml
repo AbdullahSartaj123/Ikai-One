@@ -2,3 +2,7 @@ name = "ikai-one-api"
 main = "src/index.js"
 compatibility_date = "2026-10-15"
 workers_dev = true
+
+[vars]
+APP_URL = "https://ikai.one"
+EMAIL_FROM = "Ikai.One <accounts@ikai.one>"
