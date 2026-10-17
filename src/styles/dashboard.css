@@ -412,3 +412,34 @@
 @media(prefers-reduced-motion:reduce){
   .sidebar-edge-toggle,.sidebar-edge-toggle svg,.sidebar-edge-toggle-grip{transition:none!important}
 }
+
+
+/* Simplified sidebar toggle positioned at the bottom edge. */
+.sidebar-edge-toggle{
+  top:auto;
+  bottom:22px;
+  width:30px;
+  height:48px;
+  border-radius:0 12px 12px 0;
+  opacity:.58;
+  box-shadow:2px 3px 10px rgba(25,40,36,.07);
+  transform:translate(-50%,0);
+}
+.sidebar-edge-toggle:hover,
+.sidebar-edge-toggle:focus-visible{
+  opacity:1;
+  transform:translate(0,0);
+  box-shadow:3px 4px 13px rgba(70,89,245,.12);
+}
+.sidebar-edge-toggle:active{transform:translate(0,0) scale(.97)}
+.sidebar-edge-toggle-grip{
+  left:3px;
+  width:2px;
+  height:18px;
+  background:#dfe2fa;
+}
+.sidebar-edge-toggle:hover .sidebar-edge-toggle-grip{height:26px;background:#4659f5}
+.sidebar-edge-toggle svg{width:16px;height:16px}
+@media(prefers-reduced-motion:reduce){
+  .sidebar-edge-toggle,.sidebar-edge-toggle svg,.sidebar-edge-toggle-grip{transition:none!important}
+}
