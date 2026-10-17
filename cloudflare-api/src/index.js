@@ -345,7 +345,19 @@ async function register(request, env, sql) {
     }
     if (env.ENABLE_TEST_HELPERS === "true" && env.DISABLE_EMAIL === "true" &&
         request.headers.get("X-Testing-Verification-Secret") === env.TEST_HELPER_SECRET) {
-      return json(request, { error: "Testing registration diagnostic.", databaseCode: error?.code || null, databaseMessage: String(error?.message || "unknown").slice(0, 300) }, 503);
+      let roleConstraint = null;
+      try {
+        const constraints = await sql`
+          SELECT pg_get_constraintdef(c.oid) AS definition
+          FROM pg_constraint c
+          JOIN pg_class t ON t.oid = c.conrelid
+          JOIN pg_namespace n ON n.oid = t.relnamespace
+          WHERE n.nspname = 'ikai' AND t.relname = 'users' AND c.conname = 'users_role_check'
+          LIMIT 1
+        `;
+        roleConstraint = constraints[0]?.definition || null;
+      } catch { /* diagnostic must not mask the original error */ }
+      return json(request, { error: "Testing registration diagnostic.", databaseCode: error?.code || null, databaseMessage: String(error?.message || "unknown").slice(0, 300), roleConstraint }, 503);
     }
     return json(request, { error: "Account creation is temporarily unavailable. Confirm the authentication migration has been applied, then try again." }, 503);
   }
