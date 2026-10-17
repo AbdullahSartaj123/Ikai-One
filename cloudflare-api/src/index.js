@@ -113,6 +113,8 @@ function appUrl(env) {
 }
 
 async function sendEmail(env, { to, subject, html }) {
+  // Testing Workers must never send real messages.
+  if (env.DISABLE_EMAIL === "true") return false;
   if (!env.RESEND_API_KEY || !env.EMAIL_FROM) return false;
   try {
     const response = await fetch("https://api.resend.com/emails", {
