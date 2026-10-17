@@ -31,3 +31,4 @@ jobs:
         run: npm install
       - run: node --check cloudflare-api/src/index.js
       - run: node --check cloudflare-api/cookie-wrapper.js
+      - run: node --test cloudflare-api/tests/*.test.js
