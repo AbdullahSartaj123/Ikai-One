@@ -281,23 +281,23 @@
 .dashboard-shell .logo-light .ikai-logo-mark{background:transparent!important;color:#d5f56f}
 
 
-/* Keep the exact IKAI One brand treatment consistent on every dashboard route. */
+/* Match the public homepage logo exactly in every dashboard sidebar. */
 .dashboard-shell .sidebar-brand .ikai-logo-link{
   display:inline-flex;
   align-items:center;
   gap:9px;
-  color:#243247!important;
+  color:#192824!important;
   text-decoration:none;
 }
 .dashboard-shell .sidebar-brand .ikai-logo-mark{
-  width:29px;
-  height:29px;
-  flex:0 0 29px;
+  width:35px;
+  height:35px;
+  flex:0 0 35px;
   padding:0;
   border:0;
   border-radius:0!important;
   background:transparent!important;
-  color:#4659F5!important;
+  color:#192824!important;
 }
 .dashboard-shell .sidebar-brand .ikai-logo-mark svg,
 .dashboard-shell .sidebar-brand .ikai-logo-mark svg *{
@@ -305,19 +305,17 @@
   transition:none!important;
 }
 .dashboard-shell .sidebar-brand .ikai-logo-type{
-  color:#243247!important;
-  font-family:var(--ikai-font-display,Manrope,sans-serif);
-  font-size:21px;
-  font-weight:800;
-  line-height:1;
-  letter-spacing:-1.2px;
+  color:#192824!important;
+  font:800 26px/1 'Manrope',sans-serif;
+  letter-spacing:-1.5px;
 }
 .dashboard-shell .sidebar-brand .ikai-logo-type>span{
   color:#4659F5!important;
 }
 .dashboard-shell .sidebar-brand .ikai-logo-type>b{
-  color:#243247!important;
-  font-weight:800;
+  color:#192824!important;
+  font-weight:600;
+  letter-spacing:-1.3px;
 }
 .dashboard-shell.sidebar-collapsed .sidebar-brand .ikai-logo-link{
   justify-content:center;
