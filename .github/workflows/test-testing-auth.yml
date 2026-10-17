@@ -152,6 +152,52 @@ jobs:
           const afterLogout = await request('/api/auth/me', { headers: { Cookie: cookiePair } });
           if (afterLogout.response.status !== 401) throw new Error(`Session remained valid after logout (status ${afterLogout.response.status})`);
           console.log('PASS logout revoked session');
+          const resetEmail = `ikai-reset-${unique}@example.invalid`;
+          const oldResetPassword = `Old-${crypto.randomUUID()}-Password!`;
+          const newResetPassword = `New-${crypto.randomUUID()}-Password!`;
+          const resetRegistered = await request('/api/auth/register', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Testing-Verification-Secret': secret },
+            body: JSON.stringify({ email: resetEmail, password: oldResetPassword, fullName: 'Ikai Reset User', companyName: `Ikai Reset ${unique}`, businessType: 'shipper' })
+          });
+          if (resetRegistered.response.status !== 201) throw new Error(`Reset test account registration failed (${resetRegistered.response.status}): ${JSON.stringify(resetRegistered.body)}`);
+          const resetVerified = await request('/api/testing/verify-email', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Testing-Verification-Secret': secret },
+            body: JSON.stringify({ email: resetEmail })
+          });
+          if (!resetVerified.response.ok) throw new Error(`Reset test account verification failed (${resetVerified.response.status}): ${JSON.stringify(resetVerified.body)}`);
+          const resetLoginBefore = await request('/api/auth/login', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: resetEmail, password: oldResetPassword })
+          });
+          if (!resetLoginBefore.response.ok) throw new Error(`Reset test account initial login failed (${resetLoginBefore.response.status}): ${JSON.stringify(resetLoginBefore.body)}`);
+          const resetCookie = (resetLoginBefore.response.headers.getSetCookie?.() || []).find(value => value.startsWith('__Host-ikai_session='));
+          if (!resetCookie) throw new Error('Reset test account login did not issue a session cookie');
+          const resetCookiePair = resetCookie.split(';', 1)[0];
+          const resetSessionBefore = await request('/api/auth/me', { headers: { Cookie: resetCookiePair } });
+          if (!resetSessionBefore.response.ok) throw new Error('Reset test account session was not valid before password reset');
+          const resetLifecycle = await request('/api/testing/check-password-reset', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Testing-Verification-Secret': secret },
+            body: JSON.stringify({ email: resetEmail, newPassword: newResetPassword })
+          });
+          if (!resetLifecycle.response.ok || resetLifecycle.body?.firstResetStatus !== 200 || resetLifecycle.body?.reuseStatus !== 400) {
+            throw new Error(`Password reset or one-time-token reuse check failed (${resetLifecycle.response.status}): ${JSON.stringify(resetLifecycle.body)}`);
+          }
+          console.log('PASS valid password-reset token accepted once and rejected on reuse');
+          const resetSessionAfter = await request('/api/auth/me', { headers: { Cookie: resetCookiePair } });
+          if (resetSessionAfter.response.status !== 401) throw new Error(`Existing session remained valid after password reset (status ${resetSessionAfter.response.status})`);
+          console.log('PASS password reset revoked the existing session');
+          const oldPasswordAfterReset = await request('/api/auth/login', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: resetEmail, password: oldResetPassword })
+          });
+          if (oldPasswordAfterReset.response.status !== 401) throw new Error(`Old password still worked after reset (status ${oldPasswordAfterReset.response.status})`);
+          const newPasswordAfterReset = await request('/api/auth/login', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: resetEmail, password: newResetPassword })
+          });
+          if (!newPasswordAfterReset.response.ok) throw new Error(`New password did not work after reset (${newPasswordAfterReset.response.status}): ${JSON.stringify(newPasswordAfterReset.body)}`);
+          console.log('PASS new password works and old password is rejected');
+
           let rateLimited = false;
           for (let attempt = 1; attempt <= 12; attempt++) {
             const rateCheck = await request('/api/auth/login', {
