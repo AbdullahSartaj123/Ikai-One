@@ -199,7 +199,7 @@ async function authenticate(request, env) {
   return rows[0] ? userFromRow(rows[0]) : null;
 }
 
-async function readJson(request) {
+export async function readJson(request) {
   const maxBytes = 20000;
   const lengthHeader = request.headers.get("Content-Length");
   if (lengthHeader && Number(lengthHeader) > maxBytes) {
