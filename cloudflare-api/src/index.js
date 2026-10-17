@@ -10,9 +10,7 @@ const PASSWORD_ITERATIONS = 100000;
 
 function headersFor(request) {
   const origin = request.headers.get("Origin");
-  const allowedOrigin = origin && ALLOWED_ORIGINS.has(origin) ? origin : "https://ikai.one";
-  return {
-    "Access-Control-Allow-Origin": allowedOrigin,
+  const headers = {
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Max-Age": "86400",
@@ -21,6 +19,11 @@ function headersFor(request) {
     "Cache-Control": "no-store",
     "X-Content-Type-Options": "nosniff",
   };
+  // Only echo an explicitly allowlisted origin; never grant a fallback origin.
+  if (origin && ALLOWED_ORIGINS.has(origin)) {
+    headers["Access-Control-Allow-Origin"] = origin;
+  }
+  return headers;
 }
 
 function json(request, data, status = 200) {
