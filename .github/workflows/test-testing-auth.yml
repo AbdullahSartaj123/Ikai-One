@@ -51,6 +51,21 @@ jobs:
           });
           if (!verified.response.ok) throw new Error(`Test verification failed (${verified.response.status}): ${JSON.stringify(verified.body)}`);
           console.log('PASS testing-only verification helper');
+          const unprotectedVerify = await request('/api/testing/verify-email', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+          });
+          if (unprotectedVerify.response.status !== 404) throw new Error(`Testing verification helper was exposed without secret (status ${unprotectedVerify.response.status})`);
+          console.log('PASS verification helper rejects requests without its secret');
+          const badPassword = await request('/api/auth/login', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password: 'Definitely-Wrong-Password-123!' })
+          });
+          if (badPassword.response.status !== 401) throw new Error(`Wrong password was not rejected as expected (status ${badPassword.response.status}): ${JSON.stringify(badPassword.body)}`);
+          console.log('PASS incorrect password rejected');
+          const unauthShipments = await request('/api/shipments');
+          if (unauthShipments.response.status !== 401) throw new Error(`Unauthenticated shipments request was not rejected (status ${unauthShipments.response.status})`);
+          console.log('PASS unauthenticated shipments access rejected');
           const login = await request('/api/auth/login', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
