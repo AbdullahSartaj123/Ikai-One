@@ -55,7 +55,9 @@ export default {
       url.pathname === "/api/cod-reconciliations" ||
       url.pathname.startsWith("/api/cod-reconciliations/") ||
       url.pathname === "/api/inventory" ||
-      url.pathname.startsWith("/api/inventory/");
+      url.pathname.startsWith("/api/inventory/") ||
+      url.pathname === "/api/orders" ||
+      url.pathname.startsWith("/api/orders/");
 
     let upstreamRequest = request;
     if (isSessionRoute && cookieToken) {
