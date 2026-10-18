@@ -7,7 +7,7 @@ const USE_STAGING_BEARER = (() => {
 
 export async function apiRequest(path, { method = 'GET', body, signal } = {}) {
   const headers = { Accept: 'application/json' }
-  if (body !== undefined) headers['Content-Type'] = 'application/json'
+  if (body !== undefined) headers['Content-Type'] = 'text/plain;charset=UTF-8' // JSON is parsed by the API; simple content type avoids fragile cross-origin preflight
   if (USE_STAGING_BEARER && typeof window !== 'undefined') {
     const token = window.sessionStorage.getItem(STAGING_TOKEN_KEY)
     if (token) headers.Authorization = `Bearer ${token}`
