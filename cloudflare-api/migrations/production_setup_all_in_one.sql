@@ -191,7 +191,28 @@ CREATE TABLE IF NOT EXISTS ikai.shipment_events (
 CREATE INDEX IF NOT EXISTS shipment_events_org_shipment_time_idx
   ON ikai.shipment_events (organization_id, shipment_id, created_at DESC);
 
--- Verify the required operational tables exist before committing.
+-- 5. Organization-scoped operational workflow register
+CREATE TABLE IF NOT EXISTS ikai.workflow_records (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id uuid NOT NULL REFERENCES ikai.organizations(id) ON DELETE CASCADE,
+  workflow_key text NOT NULL CHECK (workflow_key ~ '^[a-z0-9-]{1,80}$'),
+  reference text NOT NULL,
+  title text NOT NULL,
+  status text NOT NULL DEFAULT 'Open',
+  payload jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_by uuid REFERENCES ikai.users(id) ON DELETE SET NULL,
+  updated_by uuid REFERENCES ikai.users(id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS workflow_records_org_key_updated_idx
+  ON ikai.workflow_records (organization_id, workflow_key, updated_at DESC);
+CREATE INDEX IF NOT EXISTS workflow_records_org_key_status_idx
+  ON ikai.workflow_records (organization_id, workflow_key, status);
+CREATE INDEX IF NOT EXISTS workflow_records_payload_gin_idx
+  ON ikai.workflow_records USING gin (payload);
+
+-- Verify all required operational tables exist before committing.
 DO $verify$
 DECLARE
   missing_tables text;
@@ -217,12 +238,6 @@ BEGIN
 END
 $verify$;
 
--- 9. Organization-scoped operational workflow register
-CREATE TABLE IF NOT EXISTS ikai.workflow_records (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  organization_id uuid NOT NULL REFERENCES ikai.organizations(id) ON DELETE CASCADE,
-  workflow_key text NOT NULL CHECK (workflow_key ~ '^[a-z0-9-]{1,80}
-
 -- After successful execution, verify with:
 -- SELECT table_name FROM information_schema.tables
 -- WHERE table_schema = 'ikai'
@@ -230,22 +245,6 @@ CREATE TABLE IF NOT EXISTS ikai.workflow_records (
 -- 'inventory_items','inventory_movements','orders','order_items',
 -- 'shipment_records','shipment_events','workflow_records')
 -- ORDER BY table_name;
-),
-  reference text NOT NULL,
-  title text NOT NULL,
-  status text NOT NULL DEFAULT 'Open',
-  payload jsonb NOT NULL DEFAULT '{}'::jsonb,
-  created_by uuid REFERENCES ikai.users(id) ON DELETE SET NULL,
-  updated_by uuid REFERENCES ikai.users(id) ON DELETE SET NULL,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now()
-);
-CREATE INDEX IF NOT EXISTS workflow_records_org_key_updated_idx
-  ON ikai.workflow_records (organization_id, workflow_key, updated_at DESC);
-CREATE INDEX IF NOT EXISTS workflow_records_org_key_status_idx
-  ON ikai.workflow_records (organization_id, workflow_key, status);
-CREATE INDEX IF NOT EXISTS workflow_records_payload_gin_idx
-  ON ikai.workflow_records USING gin (payload);
 
 COMMIT;
 
