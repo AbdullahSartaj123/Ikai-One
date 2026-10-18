@@ -1915,3 +1915,24 @@
  .hero-4pl-copy,.hero-4pl .headline-highlight:after,.hero-network-art,.network-art-lines path,.control-tower-card{animation:none!important;transition:none!important}
  .hero-4pl .hero-buttons .button-large,.hero-4pl .hero-buttons .button-large:hover{transform:none!important}
 }
+
+
+/* Hero balance: align supporting trust details with the lower edge of the right-side product preview */
+@media(min-width:901px){
+ .hero-4pl-layout{padding-top:8px!important;padding-bottom:8px!important;gap:clamp(28px,3.4vw,54px)!important}
+ .hero-4pl-copy{padding-top:18px!important;padding-bottom:14px!important}
+ .hero-4pl .eyebrow{margin-bottom:17px!important}
+ .hero-4pl h1{font-size:clamp(52px,4.4vw,68px)!important}
+ .hero-4pl .hero-description{margin:19px 0 20px!important}
+ .hero-coverage-note{margin-top:18px!important}
+ .hero-4pl .hero-mini-points{margin-top:12px!important;padding-top:11px!important}
+ .hero-4pl .hero-route-caption{padding-bottom:7px!important}
+}
+@media(min-width:901px) and (max-height:820px){
+ .hero-4pl-copy{padding-top:10px!important;padding-bottom:8px!important}
+ .hero-4pl .eyebrow{margin-bottom:13px!important}
+ .hero-4pl h1{font-size:clamp(48px,4.1vw,62px)!important}
+ .hero-4pl .hero-description{margin:14px 0 15px!important;font-size:15px!important;line-height:1.55!important}
+ .hero-coverage-note{margin-top:13px!important;padding:10px 12px!important}
+ .hero-4pl .hero-mini-points{margin-top:9px!important;padding-top:8px!important}
+}
