@@ -30,6 +30,24 @@ jobs:
           echo "$response" | grep -q '"status":"connected"'
           echo "$response" | grep -q '"ikaiSchemaExists":true'
 
+      - name: Check credentialed simple POST transport without changing production data
+        shell: bash
+        run: |
+          set -euo pipefail
+          headers_file=/tmp/order-post-headers.txt
+          body_file=/tmp/order-post-response.json
+          status="$(curl --silent --show-error --output "$body_file" --dump-header "$headers_file" --write-out '%{http_code}' \
+            --request POST https://api.ikai.one/api/orders \
+            --header 'Origin: https://ikai.one' \
+            --header 'Content-Type: text/plain;charset=UTF-8' \
+            --data '{}')"
+          cat "$body_file"
+          # No Authorization/session cookie is sent, so this must be rejected before any order can be created.
+          test "$status" = "401" || { echo "Expected unauthenticated order POST to return HTTP 401; received HTTP $status."; exit 1; }
+          grep -qi '^access-control-allow-origin: https://ikai.one' "$headers_file"
+          grep -qi '^access-control-allow-credentials: true' "$headers_file"
+          echo "PASS: production POST transport responds and rejects unauthenticated writes without changing data."
+
       - name: Check production test helpers are not exposed
         shell: bash
         run: |
