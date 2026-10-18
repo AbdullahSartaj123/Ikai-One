@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Navigate, Route, Routes, NavLink, useNavigate, Link } from 'react-router-dom'
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import {
@@ -13,6 +13,7 @@ import OrdersModule from './Orders.jsx'
 import ShipmentsModule from './Shipments.jsx'
 import { CourierPartners, RateCalculator, PickupAddresses, ShippingRules } from './LogisticsTools.jsx'
 import { overview, shipmentTrend, orderMix, recentShipments, navGroups } from '../data/mockData.js'
+import { apiRequest } from '../lib/api.js'
 import { dashboardKpis, ordersTrend, shipmentStatusBreakdown, topCourierPartners, recentOrders, dashboardAlerts } from '../data/dashboard.js'
 import StatusBadge from '../components/StatusBadge.jsx'
 import BillingModule from './Billing.jsx'
@@ -65,6 +66,70 @@ function DashboardHome() {
   const [statusFilter,setStatusFilter] = useState('All statuses')
   const [notice,setNotice] = useState('')
   const [channelFilter,setChannelFilter] = useState('All channels')
+  const [liveData,setLiveData] = useState({ loading:true, error:'', orders:[], shipments:[], cod:[], inventory:[] })
+
+  useEffect(() => {
+    let active = true
+    Promise.all([
+      apiRequest('/api/orders?limit=100'),
+      apiRequest('/api/shipments?limit=100'),
+      apiRequest('/api/cod-reconciliations?limit=100'),
+      apiRequest('/api/inventory?limit=100')
+    ]).then(([orders,shipments,cod,inventory]) => {
+      if (!active) return
+      setLiveData({
+        loading:false, error:'',
+        orders:Array.isArray(orders.data)?orders.data:[],
+        shipments:Array.isArray(shipments.data)?shipments.data:[],
+        cod:Array.isArray(cod.data)?cod.data:[],
+        inventory:Array.isArray(inventory.data)?inventory.data:[]
+      })
+    }).catch(error => {
+      if (!active) return
+      setLiveData(current => ({...current,loading:false,error:error?.message||'Live dashboard data is temporarily unavailable.'}))
+    })
+    return () => { active = false }
+  }, [])
+
+  const liveOrders = useMemo(() => liveData.orders.map(order => ({
+    id:order.order_number, customer:order.customer_name||'—', city:order.city||'—',
+    courier:order.courier||'Not assigned', date:order.created_at?new Date(order.created_at).toLocaleString('en-PK',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'—',
+    amount:Number(order.amount||0), status:order.status||'New', channel:order.channel||'Manual',
+    paymentMode:order.payment_mode, rawDate:order.created_at
+  })),[liveData.orders])
+  const liveShipmentStatuses = useMemo(() => {
+    const groups = [
+      {name:'Delivered',color:'#4c5df4',match:s=>s==='delivered'},
+      {name:'In Transit',color:'#a8d84f',match:s=>['in transit','picked up','out for delivery'].includes(s)},
+      {name:'Pending Pickup',color:'#ff9a7d',match:s=>['label pending','ready to ship','booked'].includes(s)},
+      {name:'Exceptions',color:'#9b7bd8',match:s=>['exception','ndr raised','ndr pending'].includes(s)},
+      {name:'RTO / Returned',color:'#dce3dc',match:s=>['rto','returned'].includes(s)}
+    ]
+    return groups.map(group=>({...group,value:liveData.shipments.filter(item=>group.match(String(item.status||'').toLowerCase())).length}))
+  },[liveData.shipments])
+  const effectiveOrders = liveData.error ? recentOrders : liveOrders
+  const visibleOrders = useMemo(() => effectiveOrders.filter(order =>
+    (order.id+' '+order.customer+' '+order.city+' '+order.courier).toLowerCase().includes(query.toLowerCase()) &&
+    (statusFilter==='All statuses'||order.status===statusFilter) &&
+    (channelFilter==='All channels'||(order.channel||'Manual')===channelFilter)
+  ),[effectiveOrders,query,statusFilter,channelFilter])
+  const liveKpis = useMemo(() => {
+    if (liveData.error) return dashboardKpis
+    const statuses=liveData.shipments.map(item=>String(item.status||'').toLowerCase())
+    const pendingCod=liveData.cod.filter(item=>!['matched','resolved'].includes(String(item.status||'').toLowerCase())).reduce((sum,item)=>sum+Math.max(0,Number(item.cod_expected||0)-Number(item.amount_remitted||0)),0)
+    const values={
+      orders:liveData.orders.length,
+      shipped:liveData.shipments.length,
+      delivered:statuses.filter(s=>s==='delivered').length,
+      transit:statuses.filter(s=>['in transit','picked up','out for delivery'].includes(s)).length,
+      rto:statuses.filter(s=>['rto','returned'].includes(s)).length,
+      ndr:statuses.filter(s=>['ndr raised','ndr pending','exception'].includes(s)).length,
+      cod:pendingCod
+    }
+    return dashboardKpis.map(item=>item.key==='wallet'
+      ? {...item,note:'Not connected to a wallet provider'}
+      : {...item,value:values[item.key]??item.value,change:0,direction:'up',note:item.key==='cod'?'Outstanding amount in loaded COD records':'Live saved records'})
+  },[liveData])
   const trend = useMemo(() => {
     if (period === 'Today') return ordersTrend.Today
     if (period === '30 days') return ordersTrend['30 days']
@@ -79,42 +144,37 @@ function DashboardHome() {
     }
     return ordersTrend['7 days']
   },[period,customStart,customEnd])
-  const visibleOrders = useMemo(() => recentOrders.filter(order =>
-    (order.id+' '+order.customer+' '+order.city+' '+order.courier).toLowerCase().includes(query.toLowerCase()) &&
-    (statusFilter==='All statuses'||order.status===statusFilter) &&
-    (channelFilter==='All channels'||(order.channel||'Manual')===channelFilter)
-  ),[query,statusFilter,channelFilter])
   const totalTrend = trend.reduce((sum,item)=>sum+item.orders,0)
   function exportCsv() {
-    const rows = [['Order ID','Customer','City','Courier','Date','COD Amount PKR','Status'],...visibleOrders.map(o=>[o.id,o.customer,o.city,o.courier,o.date,o.amount,o.status])]
+    const rows = [['Order ID','Customer','City','Courier','Date','Amount PKR','Status'],...visibleOrders.map(o=>[o.id,o.customer,o.city,o.courier,o.date,o.amount,o.status])]
     const csv=rows.map(row=>row.map(value=>'"'+String(value??'').replaceAll('"','""')+'"').join(',')).join('\n')
     const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}))
-    const anchor=document.createElement('a');anchor.href=url;anchor.download='ikai-dashboard-demo-orders.csv';anchor.click();URL.revokeObjectURL(url)
-    setNotice('Exported '+visibleOrders.length+' matching demo orders.')
+    const anchor=document.createElement('a');anchor.href=url;anchor.download='ikai-dashboard-orders.csv';anchor.click();URL.revokeObjectURL(url)
+    setNotice('Exported '+visibleOrders.length+' matching orders.')
   }
   function resetFilters() { setPeriod('7 days');setCustomStart('2026-10-07');setCustomEnd('2026-10-13');setQuery('');setStatusFilter('All statuses');setChannelFilter('All channels');setNotice('Dashboard filters reset.') }
-  const statusTotal = shipmentStatusBreakdown.reduce((sum,item)=>sum+item.value,0)
+  const currentKpis = liveKpis\n  const currentShipmentBreakdown = liveData.error ? shipmentStatusBreakdown : liveShipmentStatuses\n  const statusTotal = currentShipmentBreakdown.reduce((sum,item)=>sum+item.value,0)
   return <div className="page-stack dashboard-home-page dashboard-redesign">
     <div className="page-heading"><div><div className="page-eyebrow"><span/> AGGREGATOR CONTROL CENTRE</div><h1>Good to see you again</h1><p>Monitor shipping operations, courier performance and exceptions from one workspace.</p></div><div className="heading-actions"><button className="secondary-button" onClick={resetFilters}><RefreshCw size={15}/> Reset</button><Link className="primary-button" to="/app/orders"><Plus size={17}/> Create order</Link></div></div>
-    <div className="dashboard-demo-banner"><Activity size={16}/><span><b>Demo dashboard data</b> · Figures are illustrative and are not connected to live business records.</span></div>
+    {liveData.loading ? <div className="dashboard-demo-banner"><Activity size={16}/><span><b>Loading live workspace data…</b> · Fetching saved orders, shipments, inventory and COD records.</span></div> : liveData.error ? <div className="dashboard-demo-banner"><AlertTriangle size={16}/><span><b>Live data unavailable</b> · {liveData.error} Displaying clearly identified sample data where applicable.</span></div> : <div className="dashboard-demo-banner"><CheckCircle2 size={16}/><span><b>Connected to live workspace data</b> · Counts reflect records loaded from your organization. Wallet balance, trends and courier rankings remain illustrative until their data sources are connected.</span></div>}
     {notice&&<div className="inline-notice"><Check size={16}/>{notice}<button onClick={()=>setNotice('')} aria-label="Dismiss notification"><X size={15}/></button></div>}
     <div className="dashboard-filter-bar dashboard-filter-bar-v2"><div className="date-filter-label"><CalendarDays size={17}/><span>Reporting period</span></div><div className="date-range-options">{['Today','7 days','30 days','Custom'].map(option=><button key={option} className={period===option?'selected':''} onClick={()=>setPeriod(option)}>{option}</button>)}</div>{period==='Custom'&&<div className="custom-date-fields"><label>From<input type="date" value={customStart} max={customEnd} onChange={e=>setCustomStart(e.target.value)}/></label><label>To<input type="date" value={customEnd} min={customStart} onChange={e=>setCustomEnd(e.target.value)}/></label></div>}<span className="date-range-note">{period==='Today'?'Hourly sample':period==='Custom'?customStart+' — '+customEnd:'Sample trend · '+period}</span></div>
     <div className="dashboard-section-heading"><div><h2>Operational snapshot</h2><p>Use each metric to open its related workspace.</p></div><span className="sample-chip">SAMPLE METRICS</span></div>
-    <div className="metrics-grid dashboard-kpi-grid">{dashboardKpis.map(item=><Link key={item.key} className="dashboard-kpi-link" to={item.key==='orders'?'/app/orders':item.key==='cod'||item.key==='wallet'?'/app/billing':item.key==='ndr'?'/app/ndr':'/app/shipments'}><KpiCard item={item}/><span className="dashboard-kpi-drill">View records <ArrowRight size={12}/></span></Link>)}</div>
+    <div className="metrics-grid dashboard-kpi-grid">{currentKpis.map(item=><Link key={item.key} className="dashboard-kpi-link" to={item.key==='orders'?'/app/orders':item.key==='cod'||item.key==='wallet'?'/app/billing':item.key==='ndr'?'/app/ndr':'/app/shipments'}><KpiCard item={item}/><span className="dashboard-kpi-drill">View records <ArrowRight size={12}/></span></Link>)}</div>
     <div className="dashboard-analytics-grid">
       <section className="panel shipment-chart-panel dashboard-orders-chart"><div className="panel-heading"><div><span className="panel-eyebrow">ORDER VOLUME</span><h3>Orders over time</h3><p>{period==='Custom'?'Sample points within selected dates':period==='Today'?'Hourly order creation · sample':'Order creation across '+period+' · sample'}</p></div><span className="chart-total-chip"><b>{totalTrend.toLocaleString('en-PK')}</b><small>orders in plotted points</small></span></div>
         <div className="activity-chart">{trend.length?<ResponsiveContainer width="100%" height="100%"><AreaChart data={trend} margin={{top:12,right:10,left:-18,bottom:0}}><defs><linearGradient id="dashboardOrdersFillV2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#315cf5" stopOpacity={.22}/><stop offset="100%" stopColor="#315cf5" stopOpacity={0}/></linearGradient></defs><CartesianGrid strokeDasharray="3 5" vertical={false} stroke="#edf0eb"/><XAxis dataKey="label" axisLine={false} tickLine={false} tick={{fill:'#8791a2',fontSize:10}} dy={9}/><YAxis axisLine={false} tickLine={false} tick={{fill:'#8791a2',fontSize:10}}/><Tooltip content={<DashboardTooltip/>}/><Area type="monotone" dataKey="orders" name="Orders (sample)" stroke="#315cf5" strokeWidth={2.5} fill="url(#dashboardOrdersFillV2)" activeDot={{r:5,strokeWidth:0}}/></AreaChart></ResponsiveContainer>:<div className="dashboard-chart-empty"><CalendarDays size={22}/><b>No sample points in this date range</b><span>Choose a date within the available demo period.</span></div>}</div>
         <div className="chart-bottom-note"><span><Activity size={15}/><b>Trend preview</b></span><small>Not live reporting</small></div>
       </section>
-      <section className="panel order-mix-panel dashboard-status-chart"><div className="panel-heading"><div><span className="panel-eyebrow">SHIPMENT HEALTH</span><h3>Shipment status</h3><p>Illustrative current-state distribution</p></div><span className="sample-chip">DEMO</span></div>
-        <div className="donut-wrap"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={shipmentStatusBreakdown} cx="50%" cy="50%" innerRadius={63} outerRadius={88} paddingAngle={3} dataKey="value" stroke="none" cornerRadius={4}>{shipmentStatusBreakdown.map(entry=><Cell key={entry.name} fill={entry.color}/>)}</Pie><Tooltip formatter={value=>Number(value).toLocaleString('en-PK')+' sample shipments'} contentStyle={{borderRadius:10,border:'1px solid #e5eae3',fontSize:11}}/></PieChart></ResponsiveContainer><div className="donut-center"><b>{statusTotal.toLocaleString('en-PK')}</b><span>Sample records</span></div></div>
-        <div className="status-legend dashboard-status-legend">{shipmentStatusBreakdown.map(item=>{const pct=statusTotal?Math.round(item.value/statusTotal*100):0;return <Link key={item.name} to={item.name==='NDR Pending'?'/app/ndr':'/app/shipments'}><span><i style={{background:item.color}}/>{item.name}</span><b>{item.value.toLocaleString('en-PK')} <small>{pct}%</small></b></Link>})}</div>
+      <section className="panel order-mix-panel dashboard-status-chart"><div className="panel-heading"><div><span className="panel-eyebrow">SHIPMENT HEALTH</span><h3>Shipment status</h3><p>{liveData.error?'Illustrative current-state distribution':'Distribution of saved shipment statuses'}</p></div><span className="sample-chip">{liveData.error?'DEMO':'LIVE'}</span></div>
+        <div className="donut-wrap"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={currentShipmentBreakdown} cx="50%" cy="50%" innerRadius={63} outerRadius={88} paddingAngle={3} dataKey="value" stroke="none" cornerRadius={4}>{currentShipmentBreakdown.map(entry=><Cell key={entry.name} fill={entry.color}/>)}</Pie><Tooltip formatter={value=>Number(value).toLocaleString('en-PK')+(liveData.error?' sample shipments':' shipments')} contentStyle={{borderRadius:10,border:'1px solid #e5eae3',fontSize:11}}/></PieChart></ResponsiveContainer><div className="donut-center"><b>{statusTotal.toLocaleString('en-PK')}</b><span>{liveData.error?'Sample records':'Saved records'}</span></div></div>
+        <div className="status-legend dashboard-status-legend">{currentShipmentBreakdown.map(item=>{const pct=statusTotal?Math.round(item.value/statusTotal*100):0;return <Link key={item.name} to={item.name==='NDR Pending'?'/app/ndr':'/app/shipments'}><span><i style={{background:item.color}}/>{item.name}</span><b>{item.value.toLocaleString('en-PK')} <small>{pct}%</small></b></Link>})}</div>
         <div className="dashboard-reconciliation-note"><CheckCircle2 size={14}/> Status categories total {statusTotal.toLocaleString('en-PK')} sample records.</div>
       </section>
     </div>
     <div className="dashboard-third-row"><section className="panel courier-chart-panel"><div className="panel-heading"><div><span className="panel-eyebrow">DELIVERY NETWORK</span><h3>Courier shipment volume</h3><p>Top partners by illustrative shipment count</p></div><Link className="text-link" to="/app/couriers">View partners <ArrowRight size={14}/></Link></div><div className="courier-bar-chart"><ResponsiveContainer width="100%" height="100%"><BarChart data={topCourierPartners} layout="vertical" margin={{top:4,right:12,left:0,bottom:0}} barSize={18}><CartesianGrid strokeDasharray="3 5" vertical={false} stroke="#edf0eb"/><YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{fill:'#7d8795',fontSize:11}} width={88}/><XAxis type="number" axisLine={false} tickLine={false} tick={{fill:'#8791a2',fontSize:10}}/><Tooltip content={<DashboardTooltip/>}/><Bar dataKey="shipments" name="Sample shipments" fill="#315cf5" radius={[0,7,7,0]}>{topCourierPartners.map((item,index)=><Cell key={item.name} fill={index===0?'#315cf5':'#aeb8ca'}/>)}</Bar></BarChart></ResponsiveContainer></div><div className="dashboard-reconciliation-note"><Activity size={14}/> Volume ranking only; delivery and cost metrics require verified courier data.</div></section>
     <section className="panel attention-panel dashboard-alerts-side"><div className="panel-heading"><div><span className="panel-eyebrow">ACTION QUEUE</span><h3>Needs your attention</h3></div><span className="attention-count">{dashboardAlerts.length}</span></div>{dashboardAlerts.map(alert=>{const Icon=iconByName[alert.icon]||AlertTriangle;return <div className="attention-item dashboard-alert-item" key={alert.id}><span className={'attention-icon '+(alert.severity==='danger'?'orange':alert.severity==='info'?'purple':'green')}><Icon size={17}/></span><div><b>{alert.title}</b><small>{alert.description}</small><Link to={alert.href}>{alert.action} <ArrowRight size={13}/></Link></div></div>})}</section></div>
-    <section className="panel shipments-panel dashboard-recent-orders"><div className="panel-heading shipment-table-heading"><div><span className="panel-eyebrow">LATEST ACTIVITY</span><h3>Recent orders</h3><p>Search and filter the available sample records.</p></div><button className="outline-button" onClick={exportCsv}><Download size={15}/> Export CSV</button></div><div className="table-toolbar"><label className="table-search"><Search size={15}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search order, customer, courier..."/></label><label className="filter-select"><Filter size={14}/><select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}><option>All statuses</option>{[...new Set(recentOrders.map(order=>order.status))].map(status=><option key={status}>{status}</option>)}</select><ChevronDown size={13}/></label><label className="filter-select dashboard-channel-filter"><Filter size={14}/><select value={channelFilter} onChange={e=>setChannelFilter(e.target.value)}><option>All channels</option><option>Manual</option><option>Shopify</option><option>WooCommerce</option></select><ChevronDown size={13}/></label><span className="result-count">{visibleOrders.length} matching</span></div><div className="table-scroll"><table className="shipment-table"><thead><tr><th>ORDER</th><th>CUSTOMER</th><th>DESTINATION</th><th>COURIER</th><th>COD AMOUNT</th><th>STATUS</th><th/></tr></thead><tbody>{visibleOrders.map(order=><tr key={order.id}><td><Link className="shipment-id dashboard-order-link" to={'/app/orders/'+order.id}>{order.id}</Link><small>{order.date}</small></td><td><span className="customer-cell"><i>{order.customer.split(' ').map(part=>part[0]).join('').slice(0,2)}</i>{order.customer}</span></td><td>{order.city}, Pakistan</td><td><span className="courier-chip">{order.courier}</span></td><td className="amount-cell">{formatAmount(order.amount)}</td><td><StatusBadge status={order.status}/></td><td><Link className="row-more dashboard-row-open" aria-label={'Open '+order.id} to={'/app/orders/'+order.id}><ArrowRight size={16}/></Link></td></tr>)}</tbody></table>{visibleOrders.length===0&&<div className="empty-state"><Package size={25}/><b>No orders match</b><span>Try another search or status.</span></div>}</div><div className="table-footer"><span>Showing <b>{visibleOrders.length}</b> of <b>{recentOrders.length}</b> sample orders</span><Link to="/app/orders">View all orders <ArrowRight size={14}/></Link></div></section>
+    <section className="panel shipments-panel dashboard-recent-orders"><div className="panel-heading shipment-table-heading"><div><span className="panel-eyebrow">LATEST ACTIVITY</span><h3>Recent orders</h3><p>{liveData.error?'Search and filter sample records.':'Search and filter saved orders from your workspace.'}</p></div><button className="outline-button" onClick={exportCsv}><Download size={15}/> Export CSV</button></div><div className="table-toolbar"><label className="table-search"><Search size={15}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search order, customer, courier..."/></label><label className="filter-select"><Filter size={14}/><select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)}><option>All statuses</option>{[...new Set(effectiveOrders.map(order=>order.status))].map(status=><option key={status}>{status}</option>)}</select><ChevronDown size={13}/></label><label className="filter-select dashboard-channel-filter"><Filter size={14}/><select value={channelFilter} onChange={e=>setChannelFilter(e.target.value)}><option>All channels</option><option>Manual</option><option>Shopify</option><option>WooCommerce</option></select><ChevronDown size={13}/></label><span className="result-count">{visibleOrders.length} matching</span></div><div className="table-scroll"><table className="shipment-table"><thead><tr><th>ORDER</th><th>CUSTOMER</th><th>DESTINATION</th><th>COURIER</th><th>COD AMOUNT</th><th>STATUS</th><th/></tr></thead><tbody>{visibleOrders.map(order=><tr key={order.id}><td><Link className="shipment-id dashboard-order-link" to={'/app/orders/'+order.id}>{order.id}</Link><small>{order.date}</small></td><td><span className="customer-cell"><i>{order.customer.split(' ').map(part=>part[0]).join('').slice(0,2)}</i>{order.customer}</span></td><td>{order.city}, Pakistan</td><td><span className="courier-chip">{order.courier}</span></td><td className="amount-cell">{formatAmount(order.amount)}</td><td><StatusBadge status={order.status}/></td><td><Link className="row-more dashboard-row-open" aria-label={'Open '+order.id} to={'/app/orders/'+order.id}><ArrowRight size={16}/></Link></td></tr>)}</tbody></table>{visibleOrders.length===0&&<div className="empty-state"><Package size={25}/><b>No orders match</b><span>Try another search or status.</span></div>}</div><div className="table-footer"><span>Showing <b>{visibleOrders.length}</b> of <b>{effectiveOrders.length}</b> {liveData.error?'sample orders':'loaded orders'}</span><Link to="/app/orders">View all orders <ArrowRight size={14}/></Link></div></section>
     <section className="panel quick-actions-panel dashboard-quick-actions"><div className="panel-heading"><div><span className="panel-eyebrow">SHORTCUTS</span><h3>Quick actions</h3><p>Jump directly into common shipping workflows.</p></div></div><div className="quick-actions-grid dashboard-quick-grid"><Link to="/app/orders"><span className="quick-icon blue"><CirclePlus size={18}/></span><b>Create order</b><small>Enter an order manually</small><ArrowUpRight size={15}/></Link><Link to="/app/shipments"><span className="quick-icon orange"><PackageCheck size={18}/></span><b>View shipments</b><small>Track booking and delivery</small><ArrowUpRight size={15}/></Link><Link to="/app/rate-calculator"><span className="quick-icon green"><CircleDollarSign size={18}/></span><b>Compare rates</b><small>Review courier pricing</small><ArrowUpRight size={15}/></Link><Link to="/app/pickup-addresses"><span className="quick-icon violet"><MapPinned size={18}/></span><b>Pickup addresses</b><small>Manage ship-from locations</small><ArrowUpRight size={15}/></Link></div></section>
   </div>
 }
