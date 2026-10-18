@@ -125,3 +125,13 @@ test("customer follow-ups require a saved shipment in the current organization",
   assert.match(hub, /field==='Shipment ID'\?\<input required readOnly/);
   assert.match(hub, /internal follow-up only; it does not contact a courier/);
 });
+test("contact customer exception creates a saved internal customer follow-up linked to the shipment", async () => {
+  const shipments = await readFile(new URL("../../src/pages/Shipments.jsx", import.meta.url), "utf8");
+  assert.match(shipments, /if\(exceptionAction==='Contact customer'\)/);
+  assert.match(shipments, /workflowKey:'ndr-followups'/);
+  assert.match(shipments, /'Source shipment UUID':shipment\.shipmentId/);
+  assert.match(shipments, /'Contact channel':'Pending — not contacted'/);
+  assert.match(shipments, /'Buyer response':'Pending contact'/);
+  assert.match(shipments, /No customer message or call was sent/);
+  assert.match(shipments, /Saved to Customer Follow-ups\. No customer was contacted\./);
+});
