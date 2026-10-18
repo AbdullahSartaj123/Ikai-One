@@ -906,7 +906,7 @@ export default {
             return json(request, { data: rows[0], message: "Order saved. Courier booking has not been performed." }, 201);
           }
 
-          const statusMatch = url.pathname.match(/^\\/api\\/orders\\/([0-9a-f-]{36})\\/status$/i);
+          const statusMatch = url.pathname.match(/^\/api\/orders\/([0-9a-f-]{36})\/status$/i);
           if (statusMatch && request.method === "POST") {
             const body = await readJson(request);
             const status = String(body.status || "");
