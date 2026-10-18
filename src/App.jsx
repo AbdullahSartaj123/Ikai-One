@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from './context/AuthContext.jsx'
 import Logo from './components/Logo.jsx'
 import {
   Activity, ArrowRight, ArrowUpRight, BarChart3, Box, Boxes, Check, CheckCircle2,
@@ -153,12 +154,32 @@ export function Header() {
   const [activeMenu, setActiveMenu] = useState('')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [accountOpen, setAccountOpen] = useState(false)
+  const accountRef = useRef(null)
+  const navigate = useNavigate()
+  const { user, isAuthenticated, authLoading, signOut } = useAuth()
+  const displayName = user?.fullName || user?.name || user?.email?.split('@')[0] || 'Your account'
+  const initials = displayName.split(/[\s._-]+/).filter(Boolean).slice(0, 2).map(part => part[0].toUpperCase()).join('') || 'IK'
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 12)
     window.addEventListener('scroll', fn, { passive: true }); fn()
     return () => window.removeEventListener('scroll', fn)
   }, [])
-  const close = () => { setActiveMenu(''); setMobileOpen(false) }
+  useEffect(() => {
+    if (!accountOpen) return undefined
+    const handlePointer = event => { if (accountRef.current && !accountRef.current.contains(event.target)) setAccountOpen(false) }
+    const handleKey = event => { if (event.key === 'Escape') setAccountOpen(false) }
+    document.addEventListener('pointerdown', handlePointer)
+    document.addEventListener('keydown', handleKey)
+    return () => { document.removeEventListener('pointerdown', handlePointer); document.removeEventListener('keydown', handleKey) }
+  }, [accountOpen])
+  const handleSignOut = async () => {
+    setAccountOpen(false)
+    setMobileOpen(false)
+    await signOut()
+    navigate('/', { replace: true })
+  }
+  const close = () => { setActiveMenu(''); setMobileOpen(false); setAccountOpen(false) }
   const toggle = name => setActiveMenu(current => current === name ? '' : name)
   return <>
     <style>{`
@@ -430,9 +451,9 @@ export function Header() {
               {activeMenu===name&&<MegaMenu name={name} close={close}/>}
             </div>
           })}
-          <div className="mobile-nav-actions"><a className="button button-quiet nav-login-cta" href="/login" onClick={close}>Sign in <ArrowRight size={15}/></a><a className="button button-primary button-full" href="/signup" onClick={close}>Get started <ArrowUpRight size={16}/></a></div>
+          <div className="mobile-nav-actions">{!authLoading && (isAuthenticated ? <><Link className="button button-primary button-full" to="/app/dashboard" onClick={close}><Boxes size={16}/> Open dashboard <ArrowRight size={15}/></Link><button className="account-mobile-signout" type="button" onClick={handleSignOut}>Sign out</button></> : <><Link className="button button-quiet nav-login-cta" to="/login" onClick={close}>Sign in <ArrowRight size={15}/></Link><Link className="button button-primary button-full" to="/signup" onClick={close}>Get started <ArrowUpRight size={16}/></Link></>)}</div>
         </nav>
-        <div className="nav-actions"><a className="button button-quiet nav-login-cta" href="/login">Sign in <ArrowRight size={15}/></a><a className="button button-primary nav-cta" href="/signup">Get started <ArrowUpRight size={15}/></a></div>
+        <div className="nav-actions">{authLoading ? <span className="nav-auth-loading" aria-label="Checking account"><i/><i/><i/></span> : isAuthenticated ? <div className="nav-account" ref={accountRef}><button className="nav-account-trigger" type="button" aria-expanded={accountOpen} aria-label="Open your account menu" onClick={() => setAccountOpen(value => !value)}><span className="nav-account-avatar">{initials}</span><span className="nav-account-label">Dashboard</span><ChevronDown size={14}/></button>{accountOpen && <div className="nav-account-menu"><div className="nav-account-identity"><span className="nav-account-avatar nav-account-avatar-large">{initials}</span><span><b>{displayName}</b><small>{user?.email || 'Signed in'}</small></span></div><Link to="/app/dashboard" onClick={close}><Boxes size={16}/> Open dashboard <ArrowRight size={14}/></Link><button type="button" onClick={handleSignOut}><ArrowUpRight size={15}/> Sign out</button></div>}</div> : <><Link className="button button-quiet nav-login-cta" to="/login">Sign in <ArrowRight size={15}/></Link><Link className="button button-primary nav-cta" to="/signup">Get started <ArrowUpRight size={15}/></Link></>}</div>
         <button className="menu-toggle" onClick={() => setMobileOpen(!mobileOpen)} aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen}>{mobileOpen ? <X size={22}/> : <Menu size={22}/>}</button>
       </div>
       {activeMenu&&<button className="mega-backdrop" aria-label="Close navigation menu" onClick={close} onMouseEnter={() => { if(window.matchMedia('(hover: hover) and (pointer: fine)').matches) close() }}/>}
