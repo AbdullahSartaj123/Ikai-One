@@ -875,7 +875,7 @@ export default {
                 items.some(item => !String(item.name || "").trim() || !Number.isSafeInteger(Number(item.quantity)) || Number(item.quantity) < 1 || !Number.isFinite(Number(item.price)) || Number(item.price) < 0)) {
               return json(request, { error: "Complete customer, address, package and product details with valid quantities and prices." }, 400);
             }
-            if (email && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return json(request, { error: "Enter a valid email address." }, 400);
+            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json(request, { error: "Enter a valid email address." }, 400);
             const total = items.reduce((sum, item) => sum + Number(item.quantity) * Number(item.price), 0);
             const orderNumber = "IKO-" + Date.now().toString(36).toUpperCase() + "-" + Array.from(crypto.getRandomValues(new Uint8Array(3)), byte => byte.toString(16).padStart(2, "0")).join("").toUpperCase();
             const itemJson = JSON.stringify(items.map(item => ({ sku: String(item.sku || "").trim().slice(0, 100) || null, name: String(item.name).trim().slice(0, 200), quantity: Number(item.quantity), price: Number(item.price) })));
