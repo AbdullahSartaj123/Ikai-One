@@ -1238,3 +1238,14 @@
  .pricing-compare-table tbody td{font-size:13px}
  .pricing-compare-note{font-size:11px}
 }
+
+/* Compact WhatsApp contact action in the pricing plan finder */
+.pricing-whatsapp-button{display:flex;align-items:center;justify-content:center;gap:11px;align-self:end;min-height:62px;padding:12px 15px;border:1px solid #b7e4c5;border-radius:12px;background:#f0fbf3;color:#176b39;box-shadow:0 5px 16px rgba(25,130,65,.06);transition:background .18s ease,border-color .18s ease,transform .18s ease}
+.pricing-whatsapp-button:hover{background:#e5f8eb;border-color:#80d69b;transform:translateY(-1px)}
+.pricing-whatsapp-button>svg:first-child{flex:0 0 auto;color:#1eaa59}
+.pricing-whatsapp-button>span{display:flex;flex:1;flex-direction:column;gap:4px;min-width:0}
+.pricing-whatsapp-button strong{font-size:13px;line-height:1.25;font-weight:800;white-space:nowrap}
+.pricing-whatsapp-button small{font-size:10px;line-height:1.4;color:#557563}
+.pricing-whatsapp-button>svg:last-child{flex:0 0 auto;color:#23834a}
+@media(max-width:1080px){.pricing-whatsapp-button{grid-column:1/-1;justify-self:center;width:min(100%,360px);min-height:56px}}
+@media(max-width:760px){.pricing-whatsapp-button{grid-column:auto;width:100%;justify-self:stretch;min-height:58px}}
