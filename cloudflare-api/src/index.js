@@ -827,17 +827,36 @@ export default {
             const deliveredAt = body.deliveredAt ? new Date(body.deliveredAt) : null;
             const note = String(body.followUpNote || "").trim().slice(0, 2000) || null;
             const remittanceReference = String(body.remittanceReference || "").trim().slice(0, 100) || null;
-            if (!orderReference || !courierName || !Number.isFinite(codExpected) || codExpected < 0 ||
-                !Number.isFinite(amountRemitted) || amountRemitted < 0 ||
+            if (!orderReference || !awb || !courierName || !Number.isFinite(codExpected) || codExpected < 0 ||
+                !Number.isFinite(amountRemitted) || amountRemitted < 0 || amountRemitted > codExpected ||
                 (deliveredAt && Number.isNaN(deliveredAt.getTime()))) {
-              return json(request, { error: "Provide a valid order reference, courier, non-negative COD amounts and optional delivery date." }, 400);
+              return json(request, { error: "Provide a saved order reference, AWB, courier, and valid non-negative COD amounts where remittance does not exceed expected COD." }, 400);
             }
+            const linkedRows = await sql`
+              SELECT o.order_number, o.payment_mode, o.amount AS order_amount,
+                s.status AS shipment_status, s.courier AS shipment_courier, s.delivered_at AS shipment_delivered_at
+              FROM ikai.orders o
+              JOIN ikai.shipment_records s
+                ON s.order_id = o.id AND s.organization_id = o.organization_id
+              WHERE o.organization_id = ${user.organizationId}::uuid
+                AND o.order_number = ${orderReference}
+                AND (s.shipment_number = ${awb} OR s.tracking_number = ${awb})
+              LIMIT 1
+            `;
+            const linked = linkedRows[0];
+            if (!linked) return json(request, { error: "The order and AWB must match a saved shipment in your organization." }, 400);
+            if (linked.payment_mode !== "COD") return json(request, { error: "Only saved COD orders can be reconciled." }, 400);
+            if (linked.shipment_status !== "Delivered") return json(request, { error: "COD reconciliation is available only after the saved shipment is marked Delivered." }, 409);
+            if (!linked.shipment_courier || linked.shipment_courier === "Not booked") return json(request, { error: "The saved shipment has no assigned courier." }, 409);
+            if (linked.shipment_courier !== courierName) return json(request, { error: "Courier partner must match the saved shipment." }, 400);
+            if (Number(linked.order_amount) !== codExpected) return json(request, { error: "Expected COD must match the saved order amount." }, 400);
+            const effectiveDeliveredAt = linked.shipment_delivered_at || deliveredAt;
             const status = amountRemitted === 0 ? "pending" : amountRemitted === codExpected ? "matched" : "short_paid";
             const rows = await sql`
               INSERT INTO ikai.cod_reconciliations
                 (organization_id, order_reference, awb, courier_name, delivered_at, cod_expected, amount_remitted, status, follow_up_note, remittance_reference, created_by)
               VALUES
-                (${user.organizationId}::uuid, ${orderReference}, ${awb}, ${courierName}, ${deliveredAt}, ${codExpected}, ${amountRemitted}, ${status}, ${note}, ${remittanceReference}, ${user.id}::uuid)
+                (${user.organizationId}::uuid, ${orderReference}, ${awb}, ${courierName}, ${effectiveDeliveredAt}, ${codExpected}, ${amountRemitted}, ${status}, ${note}, ${remittanceReference}, ${user.id}::uuid)
               ON CONFLICT (organization_id, order_reference) DO UPDATE SET
                 awb = EXCLUDED.awb, courier_name = EXCLUDED.courier_name,
                 delivered_at = EXCLUDED.delivered_at, cod_expected = EXCLUDED.cod_expected,
