@@ -552,6 +552,22 @@ async function validateReturnLinks(sql, organizationId, payload) {
   return null;
 }
 
+async function validateNdrLinks(sql, organizationId, payload) {
+  const shipmentId = String(payload?.["Source shipment UUID"] || "").trim();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(shipmentId)) {
+    return "NDR records must reference a valid saved shipment.";
+  }
+  const shipments = await sql`
+    SELECT id
+    FROM ikai.shipment_records
+    WHERE id = ${shipmentId}::uuid
+      AND organization_id = ${organizationId}::uuid
+    LIMIT 1
+  `;
+  if (!shipments[0]) return "The selected shipment was not found in your organization.";
+  return null;
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -896,6 +912,10 @@ export default {
               const linkError = await validateReturnLinks(sql, user.organizationId, payload);
               if (linkError) return json(request, { error: linkError }, 400);
             }
+            if (workflowKey === "ndr") {
+              const linkError = await validateNdrLinks(sql, user.organizationId, payload);
+              if (linkError) return json(request, { error: linkError }, 400);
+            }
             const rows = await sql`
               INSERT INTO ikai.workflow_records
                 (organization_id, workflow_key, reference, title, status, payload, created_by, updated_by)
@@ -934,6 +954,11 @@ export default {
             if (existingRows[0].workflow_key === "returns") {
               const mergedPayload = { ...(existingRows[0].payload || {}), ...(payload || {}) };
               const linkError = await validateReturnLinks(sql, user.organizationId, mergedPayload);
+              if (linkError) return json(request, { error: linkError }, 400);
+            }
+            if (existingRows[0].workflow_key === "ndr") {
+              const mergedPayload = { ...(existingRows[0].payload || {}), ...(payload || {}) };
+              const linkError = await validateNdrLinks(sql, user.organizationId, mergedPayload);
               if (linkError) return json(request, { error: linkError }, 400);
             }
             const rows = await sql`
