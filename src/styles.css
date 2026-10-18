@@ -2287,3 +2287,54 @@ body{font-size:16px;-webkit-font-smoothing:antialiased}
  .hero-network-art{width:100%!important;height:410px!important;min-height:370px!important;transform:none!important}
  .control-tower-card{width:96%!important}
 }
+
+
+/* Corrective homepage sizing: restore balanced columns and keep the hero headline from wrapping excessively */
+@media(min-width:901px){
+ .hero-4pl-layout{
+   grid-template-columns:minmax(0,.98fr) minmax(0,1.02fr)!important;
+   gap:clamp(28px,3.2vw,46px)!important;
+   width:min(1370px,calc(100% - 104px))!important;
+   padding-top:8px!important;
+   padding-bottom:8px!important;
+   min-height:0!important;
+ }
+ .hero-4pl-copy{max-width:690px!important;padding:18px 0 14px!important}
+ .hero-4pl h1{
+   max-width:720px!important;
+   font-size:clamp(48px,4.15vw,64px)!important;
+   line-height:1.035!important;
+   letter-spacing:-.067em!important;
+ }
+ .hero-4pl .eyebrow{margin-bottom:16px!important}
+ .hero-4pl .hero-description{font-size:16px!important;line-height:1.68!important;margin:18px 0!important}
+ .hero-4pl .hero-buttons .button-large{min-height:52px!important;padding:0 19px!important;font-size:13px!important}
+ .hero-coverage-note{margin-top:15px!important;padding:10px 12px!important}
+ .hero-4pl .hero-mini-points{margin-top:10px!important;padding-top:9px!important}
+ .hero-network-art{
+   width:100%!important;
+   height:min(510px,calc(100svh - 180px))!important;
+   min-height:410px!important;
+   margin-left:0!important;
+   transform:none!important;
+ }
+ .control-tower-card{width:min(510px,90%)!important}
+}
+@media(min-width:901px) and (max-height:820px){
+ .hero-4pl-copy{padding-top:10px!important;padding-bottom:8px!important}
+ .hero-4pl h1{font-size:clamp(46px,3.8vw,59px)!important}
+ .hero-4pl .eyebrow{margin-bottom:12px!important}
+ .hero-4pl .hero-description{font-size:15px!important;line-height:1.55!important;margin:13px 0!important}
+ .hero-coverage-note{margin-top:11px!important;padding:9px 11px!important}
+ .hero-4pl .hero-mini-points{margin-top:8px!important;padding-top:7px!important}
+ .hero-network-art{height:min(470px,calc(100svh - 170px))!important;min-height:380px!important}
+}
+@media(max-width:900px){
+ .hero-4pl h1{font-size:clamp(48px,7vw,66px)!important;line-height:1.04!important}
+ .hero-4pl-layout{grid-template-columns:minmax(0,1fr)!important}
+ .hero-network-art{transform:none!important}
+}
+@media(max-width:600px){
+ .hero-4pl h1{font-size:clamp(39px,9.6vw,51px)!important;line-height:1.06!important}
+ .hero-4pl .hero-description{font-size:15px!important;line-height:1.7!important}
+}
