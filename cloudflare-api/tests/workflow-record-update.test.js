@@ -107,7 +107,7 @@ test("NDR records require a saved shipment in the current organization", async (
   assert.match(api, /\["ndr", "ndr-followups"\]\.includes\(workflowKey\)/);
   assert.match(api, /\["ndr", "ndr-followups"\]\.includes\(existingRows\[0\]\.workflow_key\)/);
   assert.match(api, /The selected shipment was not found in your organization\./);
-  assert.match(hub, /slug==='ndr'&&!form\['Source shipment UUID'\]/);
+  assert.match(hub, /\['ndr','ndr-followups'\]\.includes\(slug\)&&!form\['Source shipment UUID'\]/);
   assert.match(hub, /Select a saved shipment/);
   assert.match(hub, /Logging an NDR does not contact a courier\./);
 });
