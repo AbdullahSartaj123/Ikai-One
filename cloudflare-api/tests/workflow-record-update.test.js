@@ -63,7 +63,7 @@ test("returns must link to a saved order and persist the organization order UUID
 test("shipment exception panel is available for persisted Exception status", async () => {
   const shipments = await readFile(new URL("../../src/pages/Shipments.jsx", import.meta.url), "utf8");
   assert.match(shipments, /\['Exception','Undelivered','Lost\/Damaged'\]\.includes\(shipment\.status\)/);
-  assert.match(shipments, /exceptionAction==='Return to sender'\?'Returned':exceptionAction==='Reattempt delivery'\?'Ready to ship':'Exception'/);
+  assert.match(shipments, /const nextStatus=exceptionAction==='Return to sender'\?'Returned':'Ready to ship'/);
   assert.match(shipments, /No courier instruction was sent/);
   assert.match(shipments, /Action saved to shipment history/);
   assert.match(shipments, /Saved as an internal Ikai\.One event/);
@@ -124,4 +124,14 @@ test("customer follow-ups require a saved shipment in the current organization",
   assert.match(hub, /slug==='ndr-followups'&&!form\['Source shipment UUID'\]/);
   assert.match(hub, /field==='Shipment ID'\?\<input required readOnly/);
   assert.match(hub, /internal follow-up only; it does not contact a courier/);
+});
+test("contact customer exception creates a saved internal customer follow-up linked to the shipment", async () => {
+  const shipments = await readFile(new URL("../../src/pages/Shipments.jsx", import.meta.url), "utf8");
+  assert.match(shipments, /if\(exceptionAction==='Contact customer'\)/);
+  assert.match(shipments, /workflowKey:'ndr-followups'/);
+  assert.match(shipments, /'Source shipment UUID':shipment\.shipmentId/);
+  assert.match(shipments, /'Contact channel':'Pending — not contacted'/);
+  assert.match(shipments, /'Buyer response':'Pending contact'/);
+  assert.match(shipments, /No customer message or call was sent/);
+  assert.match(shipments, /Saved to Customer Follow-ups\. No customer was contacted\./);
 });
