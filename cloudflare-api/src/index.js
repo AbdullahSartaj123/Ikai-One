@@ -1028,7 +1028,18 @@ export default {
 
           if (url.pathname === "/api/shipments" && request.method === "POST") {
             const body = await readJson(request);
-            const orderId = String(body.orderId || body.order_id || "");
+            const orderId = String(body.orderId || body.order_id || "").trim();
+            if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(orderId)) {
+              return json(request, { error: "Choose a valid saved order before creating a shipment." }, 400);
+            }
+            const existingShipment = await sql`
+              SELECT shipment_number FROM ikai.shipment_records
+              WHERE order_id = ${orderId}::uuid AND organization_id = ${user.organizationId}::uuid
+              LIMIT 1
+            `;
+            if (existingShipment[0]) {
+              return json(request, { error: "A shipment record already exists for this order.", shipmentNumber: existingShipment[0].shipment_number }, 409);
+            }
             const rows = await sql`
               WITH chosen_order AS (
                 SELECT * FROM ikai.orders WHERE id = ${orderId}::uuid AND organization_id = ${user.organizationId}::uuid
@@ -1041,6 +1052,7 @@ export default {
                   ${String(body.destination || "").trim().slice(0,200)}, ${String(body.destinationPostalCode || body.pincode || "").trim().slice(0,12)},
                   GREATEST(weight, 0), amount, payment_mode, ${user.id}::uuid
                 FROM chosen_order
+                ON CONFLICT (organization_id, order_id) DO NOTHING
                 RETURNING *
               ), event AS (
                 INSERT INTO ikai.shipment_events (organization_id, shipment_id, status, description, location, source, created_by)
@@ -1053,7 +1065,15 @@ export default {
               )
               SELECT created.*, chosen_order.order_number FROM created CROSS JOIN chosen_order
             `;
-            if (!rows[0]) return json(request, { error: "Order not found or shipment already exists for this organization." }, 404);
+            if (!rows[0]) {
+              const [existing, order] = await Promise.all([
+                sql`SELECT shipment_number FROM ikai.shipment_records WHERE order_id = ${orderId}::uuid AND organization_id = ${user.organizationId}::uuid LIMIT 1`,
+                sql`SELECT id FROM ikai.orders WHERE id = ${orderId}::uuid AND organization_id = ${user.organizationId}::uuid LIMIT 1`
+              ]);
+              if (existing[0]) return json(request, { error: "A shipment record already exists for this order.", shipmentNumber: existing[0].shipment_number }, 409);
+              if (!order[0]) return json(request, { error: "Order not found in this organization." }, 404);
+              return json(request, { error: "Shipment could not be created. Please retry." }, 409);
+            }
             return json(request, { data: rows[0], message: "Shipment record saved. Courier booking has not been performed." }, 201);
           }
 
