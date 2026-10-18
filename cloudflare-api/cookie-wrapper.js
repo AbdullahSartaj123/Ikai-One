@@ -58,7 +58,9 @@ export default {
       url.pathname === "/api/inventory" ||
       url.pathname.startsWith("/api/inventory/") ||
       url.pathname === "/api/orders" ||
-      url.pathname.startsWith("/api/orders/");
+      url.pathname.startsWith("/api/orders/") ||
+      url.pathname === "/api/workflows" ||
+      /^\/api\/workflows\/[0-9a-f-]{36}$/i.test(url.pathname);
 
     let upstreamRequest = request;
     if (isSessionRoute && cookieToken) {
