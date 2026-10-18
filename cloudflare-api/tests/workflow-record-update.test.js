@@ -183,3 +183,10 @@ test("return workflow enforces allowed lifecycle transitions server-side", () =>
   assert.match(worker, /AND \(\$\{existingRows\[0\]\.workflow_key !== "returns"\} OR status = \$\{existingRows\[0\]\.status\}\)/);
   assert.match(worker, /Return status changed concurrently/);
 });
+
+ 
+test("return lifecycle updates remain organization-scoped and audited", () => {
+  assert.match(worker, /SELECT workflow_key, status, payload\s+FROM ikai\.workflow_records\s+WHERE id = \$\{recordMatch\[1\]\}::uuid AND organization_id = \$\{user\.organizationId\}::uuid/);
+  assert.match(worker, /'workflow_record_updated', 'workflow_record'/);
+  assert.match(worker, /jsonb_build_object\('workflowKey', \$\{rows\[0\]\.workflow_key\}, 'status', \$\{status\}\)/);
+});
