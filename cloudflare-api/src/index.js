@@ -978,13 +978,13 @@ export default {
             return json(request, { data: rows[0], message: "Shipment record saved. Courier booking has not been performed." }, 201);
           }
 
-          const eventMatch = url.pathname.match(/^\\/api\\/shipments\\/([0-9a-f-]{36})\\/events$/i);
+          const eventMatch = url.pathname.match(/^\/api\/shipments\/([0-9a-f-]{36})\/events$/i);
           if (eventMatch && request.method === "GET") {
             const rows = await sql`SELECT id, status, description, location, source, created_at FROM ikai.shipment_events WHERE shipment_id = ${eventMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid ORDER BY created_at DESC LIMIT 100`;
             return json(request, { data: rows, count: rows.length });
           }
 
-          const statusMatch = url.pathname.match(/^\\/api\\/shipments\\/([0-9a-f-]{36})\\/status$/i);
+          const statusMatch = url.pathname.match(/^\/api\/shipments\/([0-9a-f-]{36})\/status$/i);
           if (statusMatch && request.method === "POST") {
             const body = await readJson(request);
             const status = String(body.status || "").trim();
