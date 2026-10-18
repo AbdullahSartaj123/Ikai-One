@@ -925,19 +925,91 @@ export default {
           return json(request, { error: "Method or order route not supported." }, 405);
         }
 
-        if (url.pathname === "/api/shipments" && request.method === "GET") {
+        if (url.pathname === "/api/shipments" || url.pathname.startsWith("/api/shipments/")) {
           const user = await authenticate(request, env);
           if (!user) return json(request, { error: "Authentication required." }, 401);
-          const requestedLimit = Number(url.searchParams.get("limit") || "25");
-          if (!Number.isInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > 100) return json(request, { error: "limit must be an integer between 1 and 100." }, 400);
-          const rows = await sql`
-            SELECT *
-            FROM ikai.shipments
-            WHERE organization_id = ${user.organizationId}::uuid
-            ORDER BY created_at DESC
-            LIMIT ${requestedLimit}
-          `;
-          return json(request, { data: rows, count: rows.length, limit: requestedLimit });
+
+          if (url.pathname === "/api/shipments" && request.method === "GET") {
+            const requestedLimit = Number(url.searchParams.get("limit") || "100");
+            if (!Number.isInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > 100) return json(request, { error: "limit must be an integer between 1 and 100." }, 400);
+            const search = String(url.searchParams.get("search") || "").trim().slice(0, 120);
+            const status = String(url.searchParams.get("status") || "").trim();
+            const rows = await sql`
+              SELECT s.*, o.order_number,
+                COALESCE((SELECT jsonb_agg(jsonb_build_object('status', e.status, 'description', e.description, 'location', e.location, 'source', e.source, 'created_at', e.created_at) ORDER BY e.created_at DESC)
+                  FROM ikai.shipment_events e WHERE e.shipment_id = s.id AND e.organization_id = s.organization_id), '[]'::jsonb) AS events
+              FROM ikai.shipment_records s JOIN ikai.orders o ON o.id = s.order_id AND o.organization_id = s.organization_id
+              WHERE s.organization_id = ${user.organizationId}::uuid
+                AND (${search} = '' OR s.shipment_number ILIKE '%' || ${search} || '%' OR o.order_number ILIKE '%' || ${search} || '%' OR s.destination ILIKE '%' || ${search} || '%')
+                AND (${status} = '' OR s.status = ${status})
+              ORDER BY s.created_at DESC LIMIT ${requestedLimit}
+            `;
+            return json(request, { data: rows, count: rows.length, limit: requestedLimit });
+          }
+
+          if (url.pathname === "/api/shipments" && request.method === "POST") {
+            const body = await readJson(request);
+            const orderId = String(body.orderId || body.order_id || "");
+            const rows = await sql`
+              WITH chosen_order AS (
+                SELECT * FROM ikai.orders WHERE id = ${orderId}::uuid AND organization_id = ${user.organizationId}::uuid
+              ), created AS (
+                INSERT INTO ikai.shipment_records
+                  (organization_id, order_id, shipment_number, courier, status, origin, destination, destination_postal_code, weight, amount, payment_mode, created_by)
+                SELECT organization_id, id, ${"IKS-" + ""} || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 10)),
+                  COALESCE(NULLIF(${String(body.courier || "").trim().slice(0,100)}, ''), 'Not booked'),
+                  'Label pending', ${String(body.origin || "").trim().slice(0,160)},
+                  ${String(body.destination || "").trim().slice(0,200)}, ${String(body.destinationPostalCode || body.pincode || "").trim().slice(0,12)},
+                  GREATEST(weight, 0), amount, payment_mode, ${user.id}::uuid
+                FROM chosen_order
+                RETURNING *
+              ), event AS (
+                INSERT INTO ikai.shipment_events (organization_id, shipment_id, status, description, location, source, created_by)
+                SELECT organization_id, id, status, 'Shipment record created. Courier booking has not been performed.', destination, 'internal', ${user.id}::uuid
+                FROM created RETURNING id
+              ), audit AS (
+                INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
+                SELECT organization_id, ${user.id}::uuid, 'shipment_created', 'shipment', shipment_number, jsonb_build_object('orderId', order_id, 'courierBookingConfirmed', false)
+                FROM created RETURNING id
+              )
+              SELECT created.*, chosen_order.order_number FROM created CROSS JOIN chosen_order
+            `;
+            if (!rows[0]) return json(request, { error: "Order not found or shipment already exists for this organization." }, 404);
+            return json(request, { data: rows[0], message: "Shipment record saved. Courier booking has not been performed." }, 201);
+          }
+
+          const eventMatch = url.pathname.match(/^\\/api\\/shipments\\/([0-9a-f-]{36})\\/events$/i);
+          if (eventMatch && request.method === "GET") {
+            const rows = await sql`SELECT id, status, description, location, source, created_at FROM ikai.shipment_events WHERE shipment_id = ${eventMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid ORDER BY created_at DESC LIMIT 100`;
+            return json(request, { data: rows, count: rows.length });
+          }
+
+          const statusMatch = url.pathname.match(/^\\/api\\/shipments\\/([0-9a-f-]{36})\\/status$/i);
+          if (statusMatch && request.method === "POST") {
+            const body = await readJson(request);
+            const status = String(body.status || "").trim();
+            const allowed = ["Label pending", "Ready to ship", "Booked", "Picked up", "In transit", "Out for delivery", "Delivered", "Exception", "Returned"];
+            if (!allowed.includes(status)) return json(request, { error: "Invalid internal shipment status." }, 400);
+            const description = String(body.description || "Internal status updated. This does not contact a courier.").trim().slice(0,500);
+            const location = String(body.location || "").trim().slice(0,200);
+            const rows = await sql`
+              WITH changed AS (
+                UPDATE ikai.shipment_records SET status = ${status}, updated_at = now()
+                WHERE id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+                RETURNING *
+              ), event AS (
+                INSERT INTO ikai.shipment_events (organization_id, shipment_id, status, description, location, source, created_by)
+                SELECT organization_id, id, ${status}, ${description}, ${location}, 'internal', ${user.id}::uuid FROM changed
+                RETURNING id
+              )
+              SELECT changed.* FROM changed
+            `;
+            if (!rows[0]) return json(request, { error: "Shipment not found." }, 404);
+            await sql`INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
+              VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'shipment_status_changed', 'shipment', ${rows[0].shipment_number}, jsonb_build_object('status', ${status}, 'courierBookingConfirmed', false))`;
+            return json(request, { data: rows[0], message: "Internal status saved. No courier was contacted." });
+          }
+          return json(request, { error: "Method or shipment route not supported." }, 405);
         }
         return json(request, { error: "Endpoint not found", path: url.pathname }, 404);
       } catch (error) {
