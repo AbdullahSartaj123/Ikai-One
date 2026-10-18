@@ -1936,3 +1936,207 @@
  .hero-coverage-note{margin-top:13px!important;padding:10px 12px!important}
  .hero-4pl .hero-mini-points{margin-top:9px!important;padding-top:8px!important}
 }
+
+
+/* IKAI One public-site design system — readable type, generous controls, responsive spacing */
+:root{
+ --public-type-body:16px;
+ --public-type-small:13px;
+ --public-type-label:12px;
+ --public-space-section:clamp(64px,7vw,104px);
+}
+body{font-size:16px;-webkit-font-smoothing:antialiased}
+.site-header{height:82px}
+.site-header.header-scrolled{height:74px}
+.nav-shell{width:min(1400px,calc(100% - 72px));gap:28px}
+.main-nav{gap:clamp(18px,2vw,30px)}
+.main-nav>a,.nav-login{font-size:14px}
+.nav-actions{gap:18px}
+.button{min-height:46px;padding:0 19px;font-size:14px;border-radius:11px}
+.nav-cta{min-height:44px;font-size:13px;padding:0 16px}
+.brand-symbol{width:38px;height:38px}
+.brand-word{font-size:28px}
+.hero-4pl-layout{width:min(1400px,calc(100% - 80px))!important}
+.hero-4pl .eyebrow{font-size:12px!important}
+.hero-4pl .hero-description{font-size:18px!important;line-height:1.75!important}
+.hero-4pl .hero-buttons .button-large{font-size:14px!important;min-height:56px!important}
+.hero-4pl .hero-mini-points span{font-size:12px!important}
+.section{padding:var(--public-space-section) 0}
+.section-kicker{font-size:11px}
+.section-title h2,.network-copy h2,.tracking-copy h2,.calculator-copy h2,.early-access-copy h2{font-size:clamp(36px,4vw,54px)}
+.section-title>p{font-size:16px;line-height:1.8}
+.feature-card{padding:28px;min-height:300px}
+.feature-card h3{font-size:22px}
+.feature-card p{font-size:14px;line-height:1.8;min-height:70px}
+.feature-card>a,.feature-eyebrow{font-size:12px}
+.network-copy>p{font-size:15px}
+.network-checks b{font-size:14px}
+.network-checks small{font-size:13px}
+.network-label{font-size:10px}
+.network-node b{font-size:13px}
+.network-node small{font-size:11px}
+.tracking-copy>p,.calculator-copy>p,.early-access-copy>p{font-size:15px;line-height:1.8}
+.signal-inner>p,.signal-item,.signal-end{font-size:11px}
+.site-footer{font-size:14px}
+.footer-col h4{font-size:14px}
+.footer-col a,.footer-brand-column p,.footer-bottom{font-size:13px}
+.public-header{min-height:76px}
+.public-header-inner{min-height:76px;gap:22px}
+.public-brand{font-size:25px}
+.public-brand-mark{width:40px;height:40px}
+.public-nav-group{gap:clamp(14px,1.8vw,24px)}
+.public-nav-group a{font-size:13px}
+.public-nav-actions .button,.public-nav-actions a{font-size:13px}
+.public-page{max-width:1280px;padding:clamp(28px,4vw,52px) clamp(22px,4vw,48px) 72px;font-size:16px;line-height:1.7}
+.public-page p{font-size:16px;line-height:1.8}
+.public-page li{font-size:15px;line-height:1.7}
+.public-page h1{font-size:clamp(38px,4.5vw,60px);line-height:1.08;letter-spacing:-.055em}
+.public-page h2{font-size:clamp(27px,3vw,38px);line-height:1.16;letter-spacing:-.04em}
+.public-page h3{font-size:clamp(19px,2vw,24px);line-height:1.25;letter-spacing:-.025em}
+.public-page h4{font-size:17px;line-height:1.35}
+.public-page .public-eyebrow,.public-page .public-breadcrumb,.public-page .domestic-demo-badge,.public-page .domestic-live-note{font-size:12px}
+.public-page .domestic-heading h1{font-size:clamp(40px,4.5vw,62px);line-height:1.04}
+.public-page .domestic-heading p{font-size:16px;line-height:1.8}
+.public-page .domestic-kpi-grid small{font-size:13px}
+.public-page .domestic-kpi-grid strong{font-size:clamp(25px,2.5vw,34px)}
+.public-page .domestic-section-head h2{font-size:25px}
+.public-page .domestic-section-head p{font-size:13px}
+.public-page .domestic-tabs button{font-size:13px}
+.public-page .domestic-search input{font-size:13px}
+.public-page .domestic-filter-note{font-size:13px}
+.public-page .domestic-table th{font-size:11px}
+.public-page .domestic-table td,.public-page .domestic-table td>b{font-size:12px}
+.public-page .domestic-table td small{font-size:11px}
+.public-page .domestic-status{font-size:11px}
+.public-page .domestic-table-footer{font-size:12px}
+.public-page .domestic-courier-info>b{font-size:14px}
+.public-page .domestic-courier-info small,.public-page .domestic-courier-price small{font-size:11px}
+.public-page .domestic-courier-price strong{font-size:20px}
+.public-page .domestic-courier-price button{font-size:12px}
+.public-page .domestic-bottom-title h3{font-size:15px}
+.public-page .domestic-bottom-title p{font-size:12px}
+.public-page .domestic-exception-row b,.public-page .domestic-check-row{font-size:12px}
+.public-page .domestic-exception-row small,.public-page .domestic-disclaimer{font-size:11px}
+.public-page .domestic-exception-row button{font-size:11px}
+.public-page .domestic-create-modal form label{font-size:12px}
+.public-page .feature-workspace-head h2{font-size:clamp(25px,3vw,34px)}
+.public-page .feature-workspace-head p{font-size:14px}
+.public-page .feature-metrics small{font-size:12px}
+.public-page .feature-metrics b{font-size:22px}
+.public-page .feature-inline-tool label{font-size:12px}
+.public-page .feature-inline-tool input{font-size:14px;min-height:44px}
+.public-page .feature-code-panel pre{font-size:13px}
+.public-page .feature-faq-list article>button{font-size:14px;min-height:54px}
+.public-page .feature-faq-list article>p{font-size:14px;line-height:1.8}
+.public-page .feature-knowledge-grid article b{font-size:14px}
+.public-page .feature-knowledge-grid article p{font-size:12px}
+.public-page .public-hero h1,.public-page .public-pricing-hero>h1,.public-page .public-tracking-hero h1{font-size:clamp(40px,4.5vw,62px);line-height:1.07}
+.public-page .public-hero-copy>p,.public-page .public-pricing-hero>p,.public-page .public-tracking-hero>p{font-size:16px;line-height:1.8}
+.public-page .public-section-heading h2{font-size:clamp(28px,3vw,40px)}
+.public-page .public-section-heading p{font-size:15px;line-height:1.8}
+.public-page .public-benefit-grid article h3{font-size:20px}
+.public-page .public-benefit-grid article p{font-size:14px;line-height:1.8}
+.public-page .public-pricing-control label{font-size:12px}
+.public-page .public-pricing-control select,.public-page .public-tool-grid input,.public-page .public-tool-grid select,.public-page .public-contact-form input,.public-page .public-contact-form select{font-size:14px;min-height:45px}
+.public-page .public-pricing-control>div small{font-size:12px}
+.public-page .public-pricing-control>div b{font-size:15px}
+.public-page .public-pricing-grid article{padding:26px}
+.public-page .public-pricing-grid article>span{font-size:11px}
+.public-page .public-pricing-grid h2{font-size:28px}
+.public-page .public-pricing-grid article>p{font-size:14px;line-height:1.7}
+.public-page .public-plan-note{font-size:21px}
+.public-page .public-plan-note small{font-size:12px}
+.public-page .public-pricing-grid li{font-size:13px;line-height:1.6}
+.public-page .public-pricing-grid article>a{font-size:13px}
+.public-page .public-tracking-hero>small{font-size:12px}
+.public-page .public-tracking-hero form input{font-size:15px}
+.public-page .public-track-result-head{font-size:13px}
+.public-page .public-tracking-result h2{font-size:27px}
+.public-page .public-tracking-result h2 span{font-size:11px}
+.public-page .public-tracking-result>p{font-size:14px}
+.public-page .public-tracking-steps b{font-size:13px}
+.public-page .public-tracking-steps small{font-size:12px}
+.public-page .public-tool-grid label{font-size:12px}
+.public-page .public-tool-result{min-width:210px;padding:17px 19px}
+.public-page .public-tool-result span,.public-page .public-tool-result small{font-size:12px}
+.public-page .public-tool-result b{font-size:26px}
+.public-page .public-contact-form label{font-size:12px}
+.public-page .public-contact-modal h2{font-size:30px}
+.public-page .public-contact-modal>p{font-size:14px}
+.public-footer{padding-top:38px;padding-bottom:22px}
+.public-footer-top>p{font-size:14px}
+.public-footer-actions a,.public-footer-bottom a{font-size:13px}
+.public-footer-bottom{font-size:12px}
+.blog-site{font-size:16px}
+.blog-site p{font-size:16px;line-height:1.8}
+.blog-site h1{font-size:clamp(38px,4.6vw,62px);line-height:1.08}
+.blog-site h2{font-size:clamp(27px,3.2vw,40px);line-height:1.16}
+.blog-site h3{font-size:22px;line-height:1.25}
+.blog-site .blog-post-meta,.blog-site .blog-author,.blog-site .blog-read-link{font-size:12px}
+.blog-site .blog-article-body{font-size:17px;line-height:1.9}
+.blog-site .blog-article-lead{font-size:19px;line-height:1.8}
+.blog-site .blog-data-label,.blog-site .blog-section-kicker{font-size:12px}
+@media(max-width:1080px){
+ .nav-shell{width:calc(100% - 44px)}
+ .public-nav-group a{font-size:12px}
+ .section{padding:clamp(58px,7vw,82px) 0}
+ .feature-card{padding:23px}
+ .public-page{padding-left:28px;padding-right:28px}
+}
+@media(max-width:760px){
+ .site-header{height:auto;min-height:72px}
+ .site-header.header-scrolled{height:auto;min-height:68px}
+ .nav-shell{width:calc(100% - 32px);gap:12px}
+ .brand-word{font-size:25px}
+ .main-nav>a,.nav-login{font-size:14px}
+ .button{min-height:46px;font-size:14px}
+ .hero-4pl .hero-description{font-size:16px!important}
+ .section{padding:58px 0}
+ .section-title h2,.network-copy h2,.tracking-copy h2,.calculator-copy h2,.early-access-copy h2{font-size:clamp(32px,7.2vw,42px)}
+ .section-title>p,.network-copy>p,.tracking-copy>p,.calculator-copy>p,.early-access-copy>p{font-size:15px}
+ .feature-grid{grid-template-columns:1fr}
+ .feature-card{min-height:0;padding:22px}
+ .feature-card h3{font-size:21px}
+ .feature-card p{min-height:0;font-size:14px}
+ .signal-inner{align-items:flex-start;flex-direction:column;gap:13px;padding-top:19px;padding-bottom:19px}
+ .signal-list{width:100%;flex-wrap:wrap;gap:12px 18px}
+ .signal-item,.signal-end{font-size:12px}
+ .public-header{min-height:0}
+ .public-header-inner{min-height:0}
+ .public-nav-group a{font-size:12px}
+ .public-page{padding:24px 20px 52px;font-size:16px}
+ .public-page p{font-size:15px}
+ .public-page li{font-size:14px}
+ .public-page h1{font-size:clamp(34px,9vw,46px)}
+ .public-page h2{font-size:clamp(25px,7vw,32px)}
+ .public-page h3{font-size:20px}
+ .public-page .domestic-heading h1{font-size:clamp(36px,9vw,46px)}
+ .public-page .domestic-kpi-grid small{font-size:12px}
+ .public-page .domestic-kpi-grid strong{font-size:25px}
+ .public-page .domestic-section-head h2{font-size:21px}
+ .public-page .domestic-table th{font-size:10px}
+ .public-page .domestic-table td,.public-page .domestic-table td>b{font-size:11px}
+ .public-page .domestic-table td small{font-size:10px}
+ .public-page .feature-workspace-head h2{font-size:25px}
+ .public-page .feature-workspace-head p{font-size:13px}
+ .public-page .feature-metrics b{font-size:20px}
+ .public-page .feature-faq-list article>button{font-size:13px}
+ .public-page .feature-faq-list article>p{font-size:13px}
+ .public-page .public-hero h1,.public-page .public-pricing-hero>h1,.public-page .public-tracking-hero h1{font-size:clamp(34px,9vw,46px)}
+ .public-page .public-hero-copy>p,.public-page .public-pricing-hero>p,.public-page .public-tracking-hero>p{font-size:15px}
+ .public-page .public-pricing-grid h2{font-size:25px}
+ .public-page .public-pricing-grid article>p{font-size:14px}
+ .public-page .public-pricing-grid li{font-size:13px}
+ .public-footer{padding:28px 20px 18px}
+ .public-footer-top>p{font-size:13px}
+ .public-footer-actions a,.public-footer-bottom a{font-size:12px}
+ .blog-site p{font-size:15px}
+ .blog-site h1{font-size:clamp(34px,9vw,46px)}
+ .blog-site h2{font-size:clamp(25px,7vw,33px)}
+ .blog-site h3{font-size:20px}
+ .blog-site .blog-article-body{font-size:16px;line-height:1.85}
+ .blog-site .blog-article-lead{font-size:17px}
+}
+@media(prefers-reduced-motion:reduce){
+ .hero-4pl-copy,.hero-network-art,.network-art-lines path,.control-tower-card{animation:none!important}
+}
