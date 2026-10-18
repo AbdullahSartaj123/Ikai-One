@@ -106,6 +106,7 @@ function workflowRecordToRow(record,cfg,index){
 const WORKFLOW_TRANSITIONS = {
  returns: {'requested':'Pickup pending','pickup pending':'In transit','in transit':'Completed','completed':null},
  ndr: {'needs action':'Action requested','action requested':'Delivered','delivered':null,'rto':null},
+ 'ndr-followups': {'open':'In progress','in progress':'Awaiting response','awaiting response':'Reattempt scheduled','reattempt scheduled':'Resolved','resolved':null},
  manifests: {'draft':'Pickup scheduled','pickup scheduled':'Acknowledged','acknowledged':'Completed','completed':null},
  'pickup-performance': {'scheduled':'Collected','collected':'Completed','missed':'Escalation requested','escalation requested':'Resolved','completed':null,'resolved':null},
  support: {'open':'Awaiting reply','awaiting reply':'Resolved','resolved':null},
