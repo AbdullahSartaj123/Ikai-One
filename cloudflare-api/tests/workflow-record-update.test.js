@@ -109,7 +109,7 @@ test("NDR records require a saved shipment in the current organization", async (
   assert.match(api, /The selected shipment was not found in your organization\./);
   assert.match(hub, /slug==='ndr'&&!form\['Source shipment UUID'\]/);
   assert.match(hub, /Select a saved shipment/);
-  assert.match(hub, /Logging an NDR does not contact a courier\./);
+  assert.match(hub, /Log an NDR response against a saved shipment; no courier action is triggered\./);
 });
 
 test("customer follow-ups require a saved shipment in the current organization", async () => {
