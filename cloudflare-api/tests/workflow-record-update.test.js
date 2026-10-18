@@ -104,10 +104,20 @@ test("NDR records require a saved shipment in the current organization", async (
   const api = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
   const hub = await readFile(new URL("../../src/pages/OperationsHub.jsx", import.meta.url), "utf8");
   assert.match(api, /async function validateNdrLinks\(sql, organizationId, payload\)/);
-  assert.match(api, /workflowKey === "ndr"/);
-  assert.match(api, /existingRows\[0\]\.workflow_key === "ndr"/);
+  assert.match(api, /\["ndr", "ndr-followups"\]\.includes\(workflowKey\)/);
+  assert.match(api, /\["ndr", "ndr-followups"\]\.includes\(existingRows\[0\]\.workflow_key\)/);
   assert.match(api, /The selected shipment was not found in your organization\./);
   assert.match(hub, /slug==='ndr'&&!form\['Source shipment UUID'\]/);
   assert.match(hub, /Select a saved shipment/);
-  assert.match(hub, /Logging an NDR does not contact a courier\./);
+  assert.match(hub, /Log an NDR response against a saved shipment; no courier action is triggered\./);
+});
+
+test("customer follow-ups require a saved shipment in the current organization", async () => {
+  const api = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  const hub = await readFile(new URL("../../src/pages/OperationsHub.jsx", import.meta.url), "utf8");
+  assert.match(api, /\["ndr", "ndr-followups"\]\.includes\(workflowKey\)/);
+  assert.match(api, /\["ndr", "ndr-followups"\]\.includes\(existingRows\[0\]\.workflow_key\)/);
+  assert.match(hub, /slug==='ndr-followups'&&!form\['Source shipment UUID'\]/);
+  assert.match(hub, /field==='Shipment ID'\?\<input required readOnly/);
+  assert.match(hub, /internal follow-up only; it does not contact a courier/);
 });
