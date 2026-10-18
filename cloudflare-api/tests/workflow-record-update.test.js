@@ -30,3 +30,15 @@ test("frontend edit reference field matcher uses word boundaries correctly", () 
   assert.ok(frontend.includes("field.toLowerCase()!=='order id'"), "linked order IDs must not replace a workflow record reference");
   assert.ok(!frontend.includes("\\\\bid\\\\b"));
 });
+
+test("shipment status endpoint enforces lifecycle transitions and terminal states", async () => {
+  const api = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  assert.match(api, /"Label pending": \["Ready to ship", "Booked", "Exception"\]/);
+  assert.match(api, /"In transit": \["Out for delivery", "Delivered", "Exception", "Returned"\]/);
+  assert.match(api, /"Delivered": \[\]/);
+  assert.match(api, /"Returned": \[\]/);
+  assert.match(api, /Shipment status cannot move from/);
+  assert.match(api, /AND status = \$\{currentStatus\}/);
+  assert.match(api, /Shipment changed concurrently/);
+  assert.match(api, /'shipment_status_changed', 'shipment'/);
+});
