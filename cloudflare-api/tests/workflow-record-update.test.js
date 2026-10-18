@@ -190,3 +190,10 @@ test("return lifecycle updates remain organization-scoped and audited", () => {
   assert.match(worker, /'workflow_record_updated', 'workflow_record'/);
   assert.match(worker, /jsonb_build_object\('workflowKey', \$\{rows\[0\]\.workflow_key\}, 'status', \$\{status\}\)/);
 });
+
+ 
+test("return details can be edited without changing lifecycle status", () => {
+  assert.match(worker, /if \(status !== currentStatus && !\(allowedNext\[currentStatus\] \|\| \[\]\)\.includes\(status\)\)/);
+  assert.match(worker, /SET status = \$\{status\},[\s\S]*payload = CASE WHEN \$\{payload !== null\}/);
+  assert.match(worker, /'workflow_record_updated', 'workflow_record'/);
+});

@@ -979,7 +979,7 @@ export default {
                 "Completed": []
               };
               const currentStatus = existingRows[0].status;
-              if (!(allowedNext[currentStatus] || []).includes(status)) {
+              if (status !== currentStatus && !(allowedNext[currentStatus] || []).includes(status)) {
                 return json(request, { error: `Return status cannot move from "${currentStatus}" to "${status}". Refresh the return and choose the next allowed step.` }, 409);
               }
               const mergedPayload = { ...(existingRows[0].payload || {}), ...(payload || {}) };
