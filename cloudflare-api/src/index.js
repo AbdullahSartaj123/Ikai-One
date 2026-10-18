@@ -1015,7 +1015,7 @@ export default {
                 AND (${!["returns", "ndr-followups"].includes(existingRows[0].workflow_key)} OR status = ${existingRows[0].status})
               RETURNING id, workflow_key, reference, title, status, payload, created_at, updated_at
             `;
-            if (!rows[0]) return json(request, { error: ["returns", "ndr-followups"].includes(existingRows[0].workflow_key) ? "Workflow status changed concurrently. Refresh and try again." : "Workflow record not found." }, 409);
+            if (!rows[0]) return json(request, { error: existingRows[0].workflow_key === "returns" ? "Return status changed concurrently. Refresh and try again." : existingRows[0].workflow_key === "ndr-followups" ? "Customer follow-up status changed concurrently. Refresh and try again." : "Workflow record not found." }, 409);
             await sql`
               INSERT INTO ikai.organization_audit_events
                 (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
