@@ -206,7 +206,8 @@ BEGIN
     ('orders'),
     ('order_items'),
     ('shipment_records'),
-    ('shipment_events')
+    ('shipment_events'),
+    ('workflow_records')
   ) AS t(table_name)
   WHERE to_regclass('ikai.' || t.table_name) IS NULL;
 
@@ -215,6 +216,36 @@ BEGIN
   END IF;
 END
 $verify$;
+
+-- 9. Organization-scoped operational workflow register
+CREATE TABLE IF NOT EXISTS ikai.workflow_records (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id uuid NOT NULL REFERENCES ikai.organizations(id) ON DELETE CASCADE,
+  workflow_key text NOT NULL CHECK (workflow_key ~ '^[a-z0-9-]{1,80}
+
+-- After successful execution, verify with:
+-- SELECT table_name FROM information_schema.tables
+-- WHERE table_schema = 'ikai'
+-- AND table_name IN ('cod_reconciliations','organization_audit_events',
+-- 'inventory_items','inventory_movements','orders','order_items',
+-- 'shipment_records','shipment_events','workflow_records')
+-- ORDER BY table_name;
+),
+  reference text NOT NULL,
+  title text NOT NULL,
+  status text NOT NULL DEFAULT 'Open',
+  payload jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_by uuid REFERENCES ikai.users(id) ON DELETE SET NULL,
+  updated_by uuid REFERENCES ikai.users(id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS workflow_records_org_key_updated_idx
+  ON ikai.workflow_records (organization_id, workflow_key, updated_at DESC);
+CREATE INDEX IF NOT EXISTS workflow_records_org_key_status_idx
+  ON ikai.workflow_records (organization_id, workflow_key, status);
+CREATE INDEX IF NOT EXISTS workflow_records_payload_gin_idx
+  ON ikai.workflow_records USING gin (payload);
 
 COMMIT;
 
