@@ -1258,3 +1258,45 @@
 .pricing-whatsapp-button small{color:rgba(255,255,255,.82);font-size:10px}
 .pricing-whatsapp-button>svg:last-child{color:#fff}
 .pricing-whatsapp-button:focus-visible{outline:3px solid rgba(37,211,102,.35);outline-offset:3px}
+
+
+/* Shared public navigation: authenticated account state */
+.nav-account{position:relative;display:flex;align-items:center}
+.nav-account-trigger{display:inline-flex;align-items:center;gap:9px;min-height:43px;padding:5px 12px 5px 6px;border:1px solid #dfe6df;border-radius:12px;background:#fff;color:#26382f;font-size:12px;font-weight:750;box-shadow:0 3px 10px rgba(25,40,36,.035);transition:border-color .18s ease,background .18s ease,box-shadow .18s ease}
+.nav-account-trigger:hover,.nav-account-trigger[aria-expanded="true"]{border-color:#c8ceff;background:#f8f8ff;box-shadow:0 5px 16px rgba(70,89,245,.08)}
+.nav-account-avatar{display:grid;place-items:center;flex:0 0 32px;width:32px;height:32px;border:1px solid #dce1ff;border-radius:10px;background:linear-gradient(145deg,#eef0ff,#dfe3ff);color:#3949d8;font-size:11px;font-weight:850;letter-spacing:-.03em}
+.nav-account-label{white-space:nowrap}
+.nav-account-trigger>svg{color:#7a877f;transition:transform .18s ease}
+.nav-account-trigger[aria-expanded="true"]>svg{transform:rotate(180deg)}
+.nav-account-menu{position:absolute;z-index:90;top:calc(100% + 11px);right:0;width:270px;padding:10px;border:1px solid #e2e8e1;border-radius:16px;background:#fff;box-shadow:0 20px 50px rgba(25,40,36,.16);animation:nav-account-in .16s ease-out both}
+@keyframes nav-account-in{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.nav-account-identity{display:flex;align-items:center;gap:11px;padding:9px 8px 14px;border-bottom:1px solid #edf0ec;margin-bottom:7px;min-width:0}
+.nav-account-avatar-large{width:39px;height:39px;flex-basis:39px;border-radius:12px;font-size:13px}
+.nav-account-identity>span:last-child{display:flex;flex-direction:column;gap:4px;min-width:0}
+.nav-account-identity b{overflow:hidden;color:#22352a;font-size:13px;text-overflow:ellipsis;white-space:nowrap}
+.nav-account-identity small{overflow:hidden;color:#77847c;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
+.nav-account-menu>a,.nav-account-menu>button{display:flex;align-items:center;gap:10px;width:100%;min-height:42px;padding:0 10px;border:0;border-radius:9px;background:transparent;color:#35483d;text-align:left;font-size:12px;font-weight:700}
+.nav-account-menu>a>svg:last-child{margin-left:auto}
+.nav-account-menu>a:hover,.nav-account-menu>button:hover{background:#f3f5ff;color:#3445d5}
+.nav-account-menu>button{color:#a13c36}
+.nav-account-menu>button:hover{background:#fff2f0;color:#a12f29}
+.nav-auth-loading{display:inline-flex;align-items:center;gap:4px;min-width:105px;height:42px;padding:0 15px;border:1px solid #e6ebe5;border-radius:12px;background:#fff}
+.nav-auth-loading i{width:5px;height:5px;border-radius:50%;background:#aab5ac;animation:nav-auth-pulse 1s ease-in-out infinite}
+.nav-auth-loading i:nth-child(2){animation-delay:.15s}.nav-auth-loading i:nth-child(3){animation-delay:.3s}
+@keyframes nav-auth-pulse{0%,60%,100%{opacity:.35;transform:translateY(0)}30%{opacity:1;transform:translateY(-2px)}}
+.account-mobile-signout{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 15px;border:1px solid #f0d9d6;border-radius:11px;background:#fff;color:#a13c36;font-size:13px;font-weight:750}
+@media(max-width:900px){
+ .nav-actions .nav-account-trigger{min-height:40px;padding-right:9px}
+ .nav-actions .nav-account-label{display:none}
+ .nav-actions .nav-account-menu{right:0}
+}
+@media(max-width:760px){
+ .mega-site-header .nav-actions{display:flex!important;gap:0!important;margin-left:auto!important}
+ .mega-site-header .nav-actions .nav-account-trigger{min-height:42px;padding:4px 8px 4px 4px;border-radius:12px}
+ .mega-site-header .nav-actions .nav-account-avatar{width:32px;height:32px;flex-basis:32px}
+ .mega-site-header .nav-actions .nav-account-trigger>svg{display:none}
+ .mega-site-header .nav-actions .nav-account-menu{position:fixed;top:70px;right:14px;width:min(290px,calc(100vw - 28px))}
+ .mega-site-header .nav-actions .nav-auth-loading{min-width:44px;width:44px;justify-content:center;padding:0}
+ .mega-site-header .mobile-nav-actions .account-mobile-signout{flex:0 0 auto}
+}
+@media(prefers-reduced-motion:reduce){.nav-account-menu,.nav-auth-loading i{animation:none!important}}
