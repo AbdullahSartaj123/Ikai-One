@@ -66,3 +66,12 @@ test("shipment exception panel is available for persisted Exception status", asy
   assert.match(shipments, /exceptionAction==='Return to sender'\?'Returned':exceptionAction==='Reattempt delivery'\?'Ready to ship':'Exception'/);
   assert.match(shipments, /No courier instruction was sent/);
 });
+
+test("return workflow validates saved order and shipment links within the same organization", () => {
+  assert.match(worker, /async function validateReturnLinks\(sql, organizationId, payload\)/);
+  assert.match(worker, /SELECT id\s+FROM ikai\.orders\s+WHERE id = \$\{orderId\}::uuid AND organization_id = \$\{organizationId\}::uuid/);
+  assert.match(worker, /AND order_id = \$\{orderId\}::uuid\s+AND organization_id = \$\{organizationId\}::uuid/);
+  assert.match(worker, /workflowKey === "returns"/);
+  assert.match(worker, /existingRows\[0\]\.workflow_key === "returns"/);
+  assert.match(worker, /The selected shipment does not belong to the selected order in your organization\./);
+});
