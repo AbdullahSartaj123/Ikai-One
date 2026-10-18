@@ -27,5 +27,6 @@ test("frontend edit submits the saved reference, title, status and payload", () 
 test("frontend edit reference field matcher uses word boundaries correctly", () => {
   assert.ok(frontend.includes("\\bid\\b"));
   assert.ok(frontend.includes("reference|awb|sku|code|number|subject|ticket"));
+  assert.ok(frontend.includes("field.toLowerCase()!=='order id'"), "linked order IDs must not replace a workflow record reference");
   assert.ok(!frontend.includes("\\\\bid\\\\b"));
 });
