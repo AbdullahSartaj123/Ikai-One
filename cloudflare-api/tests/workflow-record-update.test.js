@@ -172,3 +172,14 @@ test("COD reconciliation action accurately describes moving a record into review
   assert.match(billing, /submitted for review/);
   assert.doesNotMatch(billing, /Mark reviewed|value="reviewed"|\['Matched','Resolved','Reviewed'\]/);
 });
+
+ 
+test("return workflow enforces allowed lifecycle transitions server-side", () => {
+  assert.match(worker, /New return requests must start in Requested status/);
+  assert.match(worker, /"Requested": \["Pickup pending"\]/);
+  assert.match(worker, /"Pickup pending": \["In transit"\]/);
+  assert.match(worker, /"In transit": \["Completed"\]/);
+  assert.match(worker, /Return status cannot move from/);
+  assert.match(worker, /AND \(\$\{existingRows\[0\]\.workflow_key !== "returns"\} OR status = \$\{existingRows\[0\]\.status\}\)/);
+  assert.match(worker, /Return status changed concurrently/);
+});
