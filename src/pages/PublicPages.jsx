@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Header as MainHeader, Footer as MainFooter } from '../App.jsx'
-import { ArrowRight, ArrowUpRight, BadgeCheck, BarChart3, Boxes, Calculator, Check, ChevronRight, CircleHelp, Clock3, Globe2, Mail, MapPin, PackageCheck, Search, ShieldCheck, Sparkles, Truck, WalletCards, Users, Plus, Download, Filter, CalendarDays, Banknote, ClipboardList, CircleCheck, AlertCircle, X, Printer, ArrowUpDown, ChevronDown } from 'lucide-react'
+import { Activity, ArrowRight, ArrowUpRight, BadgeCheck, BarChart3, Boxes, Calculator, Check, CheckCircle2, ChevronRight, CircleHelp, Clock3, Globe2, Mail, MapPin, PackageCheck, Route, Search, ShieldCheck, Sparkles, Truck, WalletCards, Users, Plus, Download, Filter, CalendarDays, Banknote, ClipboardList, CircleCheck, AlertCircle, X, Printer, ArrowUpDown, ChevronDown } from 'lucide-react'
 
 const titleFromSlug = slug => String(slug||'').split('-').map(w=>w==='api'?'API':w==='cod'?'COD':w==='ai'?'AI':w.charAt(0).toUpperCase()+w.slice(1)).join(' ')
 const catalog = {
