@@ -840,7 +840,7 @@ export default {
                 ON s.order_id = o.id AND s.organization_id = o.organization_id
               WHERE o.organization_id = ${user.organizationId}::uuid
                 AND o.order_number = ${orderReference}
-                AND (s.shipment_number = ${awb} OR s.tracking_number = ${awb})
+                AND s.shipment_number = ${awb}
               LIMIT 1
             `;
             const linked = linkedRows[0];
