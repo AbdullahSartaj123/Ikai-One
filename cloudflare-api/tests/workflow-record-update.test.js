@@ -87,3 +87,15 @@ test("shipment list can create a persisted shipment from a saved order without b
   assert.match(api, /courierBookingConfirmed', false/);
   assert.match(api, /Shipment record saved\. Courier booking has not been performed\./);
 });
+
+test("shipment lifecycle status updates synchronize linked order status and audit the order change", () => {
+  assert.match(worker, /order_sync AS \(/);
+  assert.match(worker, /WHEN \$\{status\} = 'Ready to ship' THEN 'Ready to Ship'/);
+  assert.match(worker, /WHEN \$\{status\} IN \('Booked', 'Picked up', 'In transit', 'Out for delivery'\) THEN 'Shipped'/);
+  assert.match(worker, /WHEN \$\{status\} = 'Delivered' THEN 'Delivered'/);
+  assert.match(worker, /WHEN \$\{status\} = 'Exception' THEN 'NDR raised'/);
+  assert.match(worker, /WHEN \$\{status\} = 'Returned' THEN 'RTO'/);
+  assert.match(worker, /o\.organization_id = changed\.organization_id/);
+  assert.match(worker, /'order_status_synced_from_shipment', 'order'/);
+  assert.match(worker, /o\.status IS DISTINCT FROM CASE/);
+});

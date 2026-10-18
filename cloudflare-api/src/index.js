@@ -1176,6 +1176,36 @@ export default {
                 INSERT INTO ikai.shipment_events (organization_id, shipment_id, status, description, location, source, created_by)
                 SELECT organization_id, id, ${status}, ${description}, ${location}, 'internal', ${user.id}::uuid FROM changed
                 RETURNING id
+              ), order_sync AS (
+                UPDATE ikai.orders o
+                SET status = CASE
+                    WHEN ${status} = 'Ready to ship' THEN 'Ready to Ship'
+                    WHEN ${status} IN ('Booked', 'Picked up', 'In transit', 'Out for delivery') THEN 'Shipped'
+                    WHEN ${status} = 'Delivered' THEN 'Delivered'
+                    WHEN ${status} = 'Exception' THEN 'NDR raised'
+                    WHEN ${status} = 'Returned' THEN 'RTO'
+                  END,
+                  updated_by = ${user.id}::uuid,
+                  updated_at = now()
+                FROM changed
+                WHERE o.id = changed.order_id
+                  AND o.organization_id = changed.organization_id
+                  AND ${status} IN ('Ready to ship', 'Booked', 'Picked up', 'In transit', 'Out for delivery', 'Delivered', 'Exception', 'Returned')
+                  AND o.status IS DISTINCT FROM CASE
+                    WHEN ${status} = 'Ready to ship' THEN 'Ready to Ship'
+                    WHEN ${status} IN ('Booked', 'Picked up', 'In transit', 'Out for delivery') THEN 'Shipped'
+                    WHEN ${status} = 'Delivered' THEN 'Delivered'
+                    WHEN ${status} = 'Exception' THEN 'NDR raised'
+                    WHEN ${status} = 'Returned' THEN 'RTO'
+                  END
+                RETURNING o.id, o.organization_id, o.order_number, o.status
+              ), order_audit AS (
+                INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
+                SELECT order_sync.organization_id, ${user.id}::uuid, 'order_status_synced_from_shipment', 'order',
+                  order_sync.order_number,
+                  jsonb_build_object('status', order_sync.status, 'sourceShipment', changed.shipment_number)
+                FROM order_sync JOIN changed ON changed.order_id = order_sync.id
+                RETURNING id
               )
               SELECT changed.* FROM changed
             `;
