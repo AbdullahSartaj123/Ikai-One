@@ -99,3 +99,15 @@ test("shipment lifecycle status updates synchronize linked order status and audi
   assert.match(worker, /'order_status_synced_from_shipment', 'order'/);
   assert.match(worker, /o\.status IS DISTINCT FROM CASE/);
 });
+
+test("NDR records require a saved shipment in the current organization", async () => {
+  const api = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  const hub = await readFile(new URL("../../src/pages/OperationsHub.jsx", import.meta.url), "utf8");
+  assert.match(api, /async function validateNdrLinks\(sql, organizationId, payload\)/);
+  assert.match(api, /workflowKey === "ndr"/);
+  assert.match(api, /existingRows\[0\]\.workflow_key === "ndr"/);
+  assert.match(api, /The selected shipment was not found in your organization\./);
+  assert.match(hub, /slug==='ndr'&&!form\['Source shipment UUID'\]/);
+  assert.match(hub, /Select a saved shipment/);
+  assert.match(hub, /Logging an NDR does not contact a courier\./);
+});
