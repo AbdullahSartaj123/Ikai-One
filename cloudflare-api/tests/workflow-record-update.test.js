@@ -75,3 +75,15 @@ test("return workflow validates saved order and shipment links within the same o
   assert.match(worker, /existingRows\[0\]\.workflow_key === "returns"/);
   assert.match(worker, /The selected shipment does not belong to the selected order in your organization\./);
 });
+
+test("shipment list can create a persisted shipment from a saved order without booking a courier", async () => {
+  const shipmentsPage = await readFile(new URL("../../src/pages/Shipments.jsx", import.meta.url), "utf8");
+  const api = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  assert.match(shipmentsPage, /apiRequest\('\/api\/orders\?limit=100'\)/);
+  assert.match(shipmentsPage, /apiRequest\('\/api\/shipments'/);
+  assert.match(shipmentsPage, /orderId:shipmentDraft\.orderId/);
+  assert.match(shipmentsPage, /disabled=\{loading\|\|dataSource==='demo'\}/);
+  assert.match(shipmentsPage, /This creates an internal shipment record and history event only/);
+  assert.match(api, /courierBookingConfirmed', false/);
+  assert.match(api, /Shipment record saved\. Courier booking has not been performed\./);
+});
