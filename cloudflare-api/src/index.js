@@ -521,6 +521,37 @@ async function resetPassword(request, env, sql) {
   return json(request, { message: "Password updated. You can now sign in with your new password." });
 }
 
+
+async function validateReturnLinks(sql, organizationId, payload) {
+  const orderId = String(payload?.["Source order UUID"] || "").trim();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(orderId)) {
+    return "Return requests must reference a valid saved order.";
+  }
+  const orders = await sql`
+    SELECT id
+    FROM ikai.orders
+    WHERE id = ${orderId}::uuid AND organization_id = ${organizationId}::uuid
+    LIMIT 1
+  `;
+  if (!orders[0]) return "The selected order was not found in your organization.";
+
+  const shipmentId = String(payload?.["Source shipment UUID"] || "").trim();
+  if (!shipmentId) return null;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(shipmentId)) {
+    return "The linked shipment ID is invalid.";
+  }
+  const shipments = await sql`
+    SELECT id
+    FROM ikai.shipment_records
+    WHERE id = ${shipmentId}::uuid
+      AND order_id = ${orderId}::uuid
+      AND organization_id = ${organizationId}::uuid
+    LIMIT 1
+  `;
+  if (!shipments[0]) return "The selected shipment does not belong to the selected order in your organization.";
+  return null;
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -861,6 +892,10 @@ export default {
               return json(request, { error: "Provide a valid workflow key, reference and title." }, 400);
             }
             if (JSON.stringify(payload).length > 20000) return json(request, { error: "Workflow details are too large." }, 413);
+            if (workflowKey === "returns") {
+              const linkError = await validateReturnLinks(sql, user.organizationId, payload);
+              if (linkError) return json(request, { error: linkError }, 400);
+            }
             const rows = await sql`
               INSERT INTO ikai.workflow_records
                 (organization_id, workflow_key, reference, title, status, payload, created_by, updated_by)
@@ -889,6 +924,18 @@ export default {
             if (reference !== null && !reference) return json(request, { error: "Reference cannot be empty." }, 400);
             if (title !== null && !title) return json(request, { error: "Title cannot be empty." }, 400);
             if (payload && JSON.stringify(payload).length > 20000) return json(request, { error: "Workflow details are too large." }, 413);
+            const existingRows = await sql`
+              SELECT workflow_key, payload
+              FROM ikai.workflow_records
+              WHERE id = ${recordMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+              LIMIT 1
+            `;
+            if (!existingRows[0]) return json(request, { error: "Workflow record not found." }, 404);
+            if (existingRows[0].workflow_key === "returns") {
+              const mergedPayload = { ...(existingRows[0].payload || {}), ...(payload || {}) };
+              const linkError = await validateReturnLinks(sql, user.organizationId, mergedPayload);
+              if (linkError) return json(request, { error: linkError }, 400);
+            }
             const rows = await sql`
               UPDATE ikai.workflow_records
               SET status = ${status},
