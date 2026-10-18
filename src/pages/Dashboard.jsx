@@ -107,6 +107,8 @@ function DashboardHome() {
     ]
     return groups.map(group=>({...group,value:liveData.shipments.filter(item=>group.match(String(item.status||'').toLowerCase())).length}))
   },[liveData.shipments])
+  const currentShipmentBreakdown = liveData.error ? shipmentStatusBreakdown : liveShipmentStatuses
+  const statusTotal = currentShipmentBreakdown.reduce((sum, item) => sum + Number(item.value || 0), 0)
   const effectiveOrders = liveData.error ? recentOrders : liveOrders
   const visibleOrders = useMemo(() => effectiveOrders.filter(order =>
     (order.id+' '+order.customer+' '+order.city+' '+order.courier).toLowerCase().includes(query.toLowerCase()) &&
