@@ -882,12 +882,18 @@ export default {
           if (recordMatch && request.method === "POST") {
             const body = await readJson(request);
             const status = String(body.status || "").trim().slice(0, 60);
+            const reference = body.reference === undefined ? null : String(body.reference || "").trim().slice(0, 160);
+            const title = body.title === undefined ? null : String(body.title || "").trim().slice(0, 200);
             const payload = body.payload && typeof body.payload === "object" && !Array.isArray(body.payload) ? body.payload : null;
             if (!status) return json(request, { error: "A non-empty status is required." }, 400);
+            if (reference !== null && !reference) return json(request, { error: "Reference cannot be empty." }, 400);
+            if (title !== null && !title) return json(request, { error: "Title cannot be empty." }, 400);
             if (payload && JSON.stringify(payload).length > 20000) return json(request, { error: "Workflow details are too large." }, 413);
             const rows = await sql`
               UPDATE ikai.workflow_records
               SET status = ${status},
+                  reference = COALESCE(${reference}, reference),
+                  title = COALESCE(${title}, title),
                   payload = CASE WHEN ${payload !== null} THEN payload || ${JSON.stringify(payload || {})}::jsonb ELSE payload END,
                   updated_by = ${user.id}::uuid, updated_at = now()
               WHERE id = ${recordMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
