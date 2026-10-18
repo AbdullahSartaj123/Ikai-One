@@ -642,6 +642,114 @@ export default {
           }
           return json(request, { message: "Signed out." });
         }
+        if (url.pathname === "/api/inventory" || url.pathname.startsWith("/api/inventory/")) {
+          const user = await authenticate(request, env);
+          if (!user) return json(request, { error: "Authentication required." }, 401);
+
+          if (url.pathname === "/api/inventory" && request.method === "GET") {
+            const requestedLimit = Number(url.searchParams.get("limit") || "100");
+            if (!Number.isInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > 100) {
+              return json(request, { error: "limit must be an integer between 1 and 100." }, 400);
+            }
+            const search = String(url.searchParams.get("search") || "").trim().slice(0, 120);
+            const rows = search
+              ? await sql`SELECT id, sku, name, variant, warehouse, quantity_on_hand, reorder_level, unit_cost, (quantity_on_hand * unit_cost) AS stock_value, CASE WHEN quantity_on_hand = 0 THEN 'out_of_stock' WHEN quantity_on_hand <= reorder_level THEN 'low_stock' ELSE 'in_stock' END AS stock_status, created_at, updated_at FROM ikai.inventory_items WHERE organization_id = ${user.organizationId}::uuid AND (sku ILIKE ${'%' + search + '%'} OR name ILIKE ${'%' + search + '%'} OR warehouse ILIKE ${'%' + search + '%'}) ORDER BY updated_at DESC LIMIT ${requestedLimit}`
+              : await sql`SELECT id, sku, name, variant, warehouse, quantity_on_hand, reorder_level, unit_cost, (quantity_on_hand * unit_cost) AS stock_value, CASE WHEN quantity_on_hand = 0 THEN 'out_of_stock' WHEN quantity_on_hand <= reorder_level THEN 'low_stock' ELSE 'in_stock' END AS stock_status, created_at, updated_at FROM ikai.inventory_items WHERE organization_id = ${user.organizationId}::uuid ORDER BY updated_at DESC LIMIT ${requestedLimit}`;
+            return json(request, { data: rows, count: rows.length, limit: requestedLimit });
+          }
+
+          if (url.pathname === "/api/inventory" && request.method === "POST") {
+            const body = await readJson(request);
+            const sku = String(body.sku || "").trim().slice(0, 100);
+            const name = String(body.name || "").trim().slice(0, 200);
+            const variant = String(body.variant || "").trim().slice(0, 160) || null;
+            const warehouse = String(body.warehouse || "Main warehouse").trim().slice(0, 160);
+            const quantity = Number(body.quantityOnHand ?? 0);
+            const reorderLevel = Number(body.reorderLevel ?? 0);
+            const unitCost = Number(body.unitCost ?? 0);
+            if (!sku || !name || !warehouse || !Number.isSafeInteger(quantity) || quantity < 0 ||
+                !Number.isSafeInteger(reorderLevel) || reorderLevel < 0 || !Number.isFinite(unitCost) || unitCost < 0) {
+              return json(request, { error: "Provide SKU, product name, warehouse, non-negative whole-number stock/reorder level and a valid unit cost." }, 400);
+            }
+            const rows = await sql`
+              INSERT INTO ikai.inventory_items
+                (organization_id, sku, name, variant, warehouse, quantity_on_hand, reorder_level, unit_cost, created_by, updated_by)
+              VALUES
+                (${user.organizationId}::uuid, ${sku}, ${name}, ${variant}, ${warehouse}, ${quantity}, ${reorderLevel}, ${unitCost}, ${user.id}::uuid, ${user.id}::uuid)
+              RETURNING id, sku, name, variant, warehouse, quantity_on_hand, reorder_level, unit_cost, created_at, updated_at
+            `;
+            if (quantity > 0) {
+              await sql`
+                INSERT INTO ikai.inventory_movements
+                  (organization_id, item_id, movement_type, quantity_delta, quantity_before, quantity_after, reason, actor_user_id)
+                VALUES
+                  (${user.organizationId}::uuid, ${rows[0].id}::uuid, 'opening_balance', ${quantity}, 0, ${quantity}, 'Opening stock recorded when item was created', ${user.id}::uuid)
+              `;
+            }
+            await sql`INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details) VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'inventory_item_created', 'inventory_item', ${sku}, jsonb_build_object('quantityOnHand', ${quantity}, 'warehouse', ${warehouse}))`;
+            return json(request, { data: rows[0] }, 201);
+          }
+
+          const adjustMatch = url.pathname.match(/^\/api\/inventory\/([0-9a-f-]{36})\/adjust$/i);
+          if (adjustMatch && request.method === "POST") {
+            const body = await readJson(request);
+            const delta = Number(body.quantityDelta);
+            const reason = String(body.reason || "").trim().slice(0, 500);
+            const reference = String(body.reference || "").trim().slice(0, 120) || null;
+            if (!Number.isSafeInteger(delta) || delta === 0 || !reason) {
+              return json(request, { error: "Enter a non-zero whole-number quantity change and a reason." }, 400);
+            }
+            const movementType = String(body.movementType || (delta > 0 ? "adjustment_in" : "adjustment_out"));
+            if (!["receipt", "adjustment_in", "adjustment_out", "correction"].includes(movementType) ||
+                (delta > 0 && movementType === "adjustment_out") || (delta < 0 && ["receipt", "adjustment_in"].includes(movementType))) {
+              return json(request, { error: "Movement type does not match the quantity change." }, 400);
+            }
+            const rows = await sql`
+              WITH changed AS (
+                UPDATE ikai.inventory_items
+                SET quantity_on_hand = quantity_on_hand + ${delta}, updated_by = ${user.id}::uuid, updated_at = now()
+                WHERE id = ${adjustMatch[1]}::uuid
+                  AND organization_id = ${user.organizationId}::uuid
+                  AND quantity_on_hand + ${delta} >= 0
+                RETURNING id, sku, name, warehouse, quantity_on_hand, reorder_level, unit_cost,
+                  quantity_on_hand - ${delta} AS quantity_before
+              ), logged AS (
+                INSERT INTO ikai.inventory_movements
+                  (organization_id, item_id, movement_type, quantity_delta, quantity_before, quantity_after, reason, reference, actor_user_id)
+                SELECT ${user.organizationId}::uuid, id, ${movementType}, ${delta}, quantity_before, quantity_on_hand, ${reason}, ${reference}, ${user.id}::uuid
+                FROM changed
+                RETURNING id, item_id, movement_type, quantity_delta, quantity_before, quantity_after, reason, reference, created_at
+              )
+              SELECT changed.*, logged.id AS movement_id, logged.movement_type, logged.quantity_delta, logged.quantity_before, logged.quantity_after
+              FROM changed JOIN logged ON logged.item_id = changed.id
+            `;
+            if (!rows[0]) {
+              const exists = await sql`SELECT id, quantity_on_hand FROM ikai.inventory_items WHERE id = ${adjustMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid LIMIT 1`;
+              if (!exists[0]) return json(request, { error: "Inventory item not found." }, 404);
+              return json(request, { error: "This adjustment would make stock negative. Current stock: " + exists[0].quantity_on_hand }, 409);
+            }
+            await sql`INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details) VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'inventory_stock_adjusted', 'inventory_item', ${rows[0].sku}, jsonb_build_object('delta', ${delta}, 'quantityBefore', ${rows[0].quantity_before}, 'quantityAfter', ${rows[0].quantity_after}, 'reason', ${reason}))`;
+            return json(request, { data: rows[0] });
+          }
+
+          const movementsMatch = url.pathname.match(/^\/api\/inventory\/([0-9a-f-]{36})\/movements$/i);
+          if (movementsMatch && request.method === "GET") {
+            const requestedLimit = Number(url.searchParams.get("limit") || "50");
+            if (!Number.isInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > 100) return json(request, { error: "limit must be an integer between 1 and 100." }, 400);
+            const rows = await sql`
+              SELECT m.id, m.movement_type, m.quantity_delta, m.quantity_before, m.quantity_after, m.reason, m.reference, m.created_at, u.full_name AS actor_name
+              FROM ikai.inventory_movements m
+              LEFT JOIN ikai.users u ON u.id = m.actor_user_id
+              WHERE m.organization_id = ${user.organizationId}::uuid AND m.item_id = ${movementsMatch[1]}::uuid
+              ORDER BY m.created_at DESC LIMIT ${requestedLimit}
+            `;
+            const item = await sql`SELECT id FROM ikai.inventory_items WHERE id = ${movementsMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid LIMIT 1`;
+            if (!item[0]) return json(request, { error: "Inventory item not found." }, 404);
+            return json(request, { data: rows, count: rows.length, limit: requestedLimit });
+          }
+          return json(request, { error: "Method or inventory route not supported." }, 405);
+        }
+
         if (url.pathname === "/api/cod-reconciliations" || url.pathname.startsWith("/api/cod-reconciliations/")) {
           const user = await authenticate(request, env);
           if (!user) return json(request, { error: "Authentication required." }, 401);
