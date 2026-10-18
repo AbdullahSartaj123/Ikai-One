@@ -164,3 +164,11 @@ test("COD remittance UI selects eligible saved delivered COD shipments instead o
   assert.match(billing, /No courier or payment provider is contacted/);
   assert.match(billing, /Number\(form\.amountRemitted\)>Number\(form\.codExpected\)/);
 });
+
+
+test("COD reconciliation action accurately describes moving a record into review", async () => {
+  const billing = await readFile(new URL("../../src/pages/Billing.jsx", import.meta.url), "utf8");
+  assert.match(billing, /Send to review/);
+  assert.match(billing, /submitted for review/);
+  assert.doesNotMatch(billing, /Mark reviewed|value="reviewed"|\['Matched','Resolved','Reviewed'\]/);
+});
