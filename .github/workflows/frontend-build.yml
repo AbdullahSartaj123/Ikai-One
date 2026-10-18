@@ -17,6 +17,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Install API test dependencies
+        run: npm install --prefix cloudflare-api
       - name: Run API and production SQL regression tests
         run: node --test cloudflare-api/tests/*.test.js
       - name: Install dependencies
