@@ -827,6 +827,104 @@ export default {
           return json(request, { error: "Method or reconciliation route not supported." }, 405);
         }
 
+        if (url.pathname === "/api/orders" || url.pathname.startsWith("/api/orders/")) {
+          const user = await authenticate(request, env);
+          if (!user) return json(request, { error: "Authentication required." }, 401);
+
+          if (url.pathname === "/api/orders" && request.method === "GET") {
+            const requestedLimit = Number(url.searchParams.get("limit") || "100");
+            if (!Number.isInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > 100) return json(request, { error: "limit must be an integer between 1 and 100." }, 400);
+            const search = String(url.searchParams.get("search") || "").trim().slice(0, 120);
+            const status = String(url.searchParams.get("status") || "").trim();
+            const rows = await sql`
+              SELECT o.id, o.order_number, o.customer_name, o.phone, o.email, o.address, o.pincode, o.city, o.state,
+                o.channel, o.payment_mode, o.courier, o.weight, o.length_cm, o.width_cm, o.height_cm, o.notes,
+                o.amount, o.status, o.created_at, o.updated_at,
+                COALESCE(jsonb_agg(jsonb_build_object('sku', i.sku, 'name', i.product_name, 'quantity', i.quantity, 'price', i.unit_price))
+                  FILTER (WHERE i.id IS NOT NULL), '[]'::jsonb) AS items
+              FROM ikai.orders o LEFT JOIN ikai.order_items i
+                ON i.order_id = o.id AND i.organization_id = o.organization_id
+              WHERE o.organization_id = ${user.organizationId}::uuid
+                AND (${search} = '' OR o.order_number ILIKE '%' || ${search} || '%' OR o.customer_name ILIKE '%' || ${search} || '%' OR o.phone ILIKE '%' || ${search} || '%' OR o.city ILIKE '%' || ${search} || '%')
+                AND (${status} = '' OR o.status = ${status})
+              GROUP BY o.id ORDER BY o.created_at DESC LIMIT ${requestedLimit}
+            `;
+            return json(request, { data: rows, count: rows.length, limit: requestedLimit });
+          }
+
+          if (url.pathname === "/api/orders" && request.method === "POST") {
+            const body = await readJson(request);
+            const customerName = String(body.customer || body.customerName || "").trim().slice(0, 200);
+            const phone = String(body.phone || "").trim().slice(0, 40);
+            const email = String(body.email || "").trim().slice(0, 254) || null;
+            const address = String(body.address || "").trim().slice(0, 2000);
+            const pincode = String(body.pincode || "").trim().slice(0, 12);
+            const city = String(body.city || "").trim().slice(0, 120);
+            const state = String(body.state || "").trim().slice(0, 120);
+            const channel = String(body.channel || "Manual").trim().slice(0, 40);
+            const paymentMode = String(body.paymentMode || "COD");
+            const courier = String(body.courier || "").trim().slice(0, 100) || null;
+            const weight = Number(body.weight);
+            const length = Number(body.length || 1), width = Number(body.width || 1), height = Number(body.height || 1);
+            const notes = String(body.notes || "").trim().slice(0, 2000) || null;
+            const items = Array.isArray(body.products) ? body.products : [];
+            if (!customerName || !phone || !address || !pincode || !city || !state ||
+                !["COD", "Prepaid"].includes(paymentMode) || !Number.isFinite(weight) || weight <= 0 ||
+                !Number.isFinite(length) || length <= 0 || !Number.isFinite(width) || width <= 0 ||
+                !Number.isFinite(height) || height <= 0 || !items.length || items.length > 100 ||
+                items.some(item => !String(item.name || "").trim() || !Number.isSafeInteger(Number(item.quantity)) || Number(item.quantity) < 1 || !Number.isFinite(Number(item.price)) || Number(item.price) < 0)) {
+              return json(request, { error: "Complete customer, address, package and product details with valid quantities and prices." }, 400);
+            }
+            if (email && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return json(request, { error: "Enter a valid email address." }, 400);
+            const total = items.reduce((sum, item) => sum + Number(item.quantity) * Number(item.price), 0);
+            const orderNumber = "IKO-" + Date.now().toString(36).toUpperCase() + "-" + Array.from(crypto.getRandomValues(new Uint8Array(3)), byte => byte.toString(16).padStart(2, "0")).join("").toUpperCase();
+            const itemJson = JSON.stringify(items.map(item => ({ sku: String(item.sku || "").trim().slice(0, 100) || null, name: String(item.name).trim().slice(0, 200), quantity: Number(item.quantity), price: Number(item.price) })));
+            const rows = await sql`
+              WITH new_order AS (
+                INSERT INTO ikai.orders
+                  (organization_id, order_number, customer_name, phone, email, address, pincode, city, state, channel, payment_mode, courier, weight, length_cm, width_cm, height_cm, notes, amount, created_by, updated_by)
+                VALUES
+                  (${user.organizationId}::uuid, ${orderNumber}, ${customerName}, ${phone}, ${email}, ${address}, ${pincode}, ${city}, ${state}, ${channel}, ${paymentMode}, ${courier}, ${weight}, ${length}, ${width}, ${height}, ${notes}, ${total}, ${user.id}::uuid, ${user.id}::uuid)
+                RETURNING *
+              ), new_items AS (
+                INSERT INTO ikai.order_items (organization_id, order_id, sku, product_name, quantity, unit_price)
+                SELECT n.organization_id, n.id, x.sku, x.name, x.quantity, x.price
+                FROM new_order n CROSS JOIN jsonb_to_recordset(${itemJson}::jsonb) AS x(sku text, name text, quantity integer, price numeric)
+                RETURNING order_id, sku, product_name, quantity, unit_price
+              ), audit AS (
+                INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
+                SELECT organization_id, ${user.id}::uuid, 'order_created', 'order', order_number,
+                  jsonb_build_object('amount', amount, 'itemCount', (SELECT count(*) FROM new_items))
+                FROM new_order RETURNING id
+              )
+              SELECT n.id, n.order_number, n.customer_name, n.phone, n.email, n.address, n.pincode, n.city, n.state,
+                n.channel, n.payment_mode, n.courier, n.weight, n.length_cm, n.width_cm, n.height_cm, n.notes,
+                n.amount, n.status, n.created_at, n.updated_at,
+                (SELECT jsonb_agg(jsonb_build_object('sku', sku, 'name', product_name, 'quantity', quantity, 'price', unit_price)) FROM new_items) AS items
+              FROM new_order n
+            `;
+            return json(request, { data: rows[0], message: "Order saved. Courier booking has not been performed." }, 201);
+          }
+
+          const statusMatch = url.pathname.match(/^\\/api\\/orders\\/([0-9a-f-]{36})\\/status$/i);
+          if (statusMatch && request.method === "POST") {
+            const body = await readJson(request);
+            const status = String(body.status || "");
+            const allowedStatuses = ["New", "Ready to Ship", "Processing", "Shipped", "Delivered", "Cancelled", "NDR raised", "RTO"];
+            if (!allowedStatuses.includes(status)) return json(request, { error: "Invalid order status." }, 400);
+            const rows = await sql`
+              UPDATE ikai.orders SET status = ${status}, updated_by = ${user.id}::uuid, updated_at = now()
+              WHERE id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+              RETURNING id, order_number, status, updated_at
+            `;
+            if (!rows[0]) return json(request, { error: "Order not found." }, 404);
+            await sql`INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
+              VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'order_status_changed', 'order', ${rows[0].order_number}, jsonb_build_object('status', ${status}))`;
+            return json(request, { data: rows[0] });
+          }
+          return json(request, { error: "Method or order route not supported." }, 405);
+        }
+
         if (url.pathname === "/api/shipments" && request.method === "GET") {
           const user = await authenticate(request, env);
           if (!user) return json(request, { error: "Authentication required." }, 401);
