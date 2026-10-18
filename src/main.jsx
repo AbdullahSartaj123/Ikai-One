@@ -2,7 +2,7 @@ import React, { Component, Suspense, lazy, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from 'react-router-dom'
 import { ArrowUpRight, Boxes } from 'lucide-react'
-import { AuthProvider } from './context/AuthContext.jsx'
+import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 import './styles.css'
 import './styles/theme.css'
 import './styles/dashboard.css'
@@ -51,7 +51,8 @@ function LoadingScreen() {
 
 function ShipperEntry() {
   const location = useLocation()
-  if (location.pathname !== '/') return null
+  const { isAuthenticated, authLoading } = useAuth()
+  if (location.pathname !== '/' || authLoading || isAuthenticated) return null
   return <Link to="/login" className="shipper-entry"><Boxes size={17}/> Seller Central <ArrowUpRight size={15}/></Link>
 }
 function Root() {
