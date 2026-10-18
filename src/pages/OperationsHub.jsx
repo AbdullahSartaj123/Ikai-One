@@ -102,6 +102,37 @@ function workflowRecordToRow(record,cfg,index){
  })
  return {id:record.id||('workflow-'+index),cells,createdAt:String(record.created_at||record.updated_at||'').slice(0,10)||new Date().toISOString().slice(0,10),region:payload['City']||payload['City / area']||payload['Destination']||'All regions',segment:payload['Sales channel']||payload['Channel']||'E-commerce',amount:Number(payload['Amount']||payload['Value']||0),raw:record}
 }
+const WORKFLOW_TRANSITIONS = {
+ returns: {'requested':'Pickup pending','pickup pending':'In transit','in transit':'Completed','completed':null},
+ ndr: {'needs action':'Action requested','action requested':'Delivered','delivered':null,'rto':null},
+ manifests: {'draft':'Pickup scheduled','pickup scheduled':'Acknowledged','acknowledged':'Completed','completed':null},
+ 'pickup-performance': {'scheduled':'Collected','collected':'Completed','missed':'Escalation requested','escalation requested':'Resolved','completed':null,'resolved':null},
+ support: {'open':'Awaiting reply','awaiting reply':'Resolved','resolved':null},
+ international: {'draft':'Documents pending','documents pending':'Ready for dispatch','ready for dispatch':'In transit','in transit':'Delivered','delivered':null},
+ 'channel-products': {'unmapped':'Mapped','sync error':'Needs review','needs review':'Mapped','mapped':null},
+ catalog: {'needs review':'Complete','incomplete':'Complete','complete':null},
+ products: {'needs details':'Active','low stock':'Needs review','active':null},
+ 'scheduled-reports': {'active':'Paused','paused':'Active','failed':'Needs review','needs review':'Active'},
+ 'post-ship': {'draft':'Active','active':'Paused','paused':'Active'},
+ 'tracking-page': {'draft':'Ready to publish','ready to publish':'Published','published':null},
+ 'courier-settings': {'paused':'Active','active':'Needs review','needs review':'Active'},
+ 'courier-priority': {'draft':'Active','needs review':'Active','active':null},
+ 'tax-classes': {'needs review':'Active','active':null},
+ warehouse: {'capacity alert':'Review required','review required':'Resolved','active':null},
+ 'bulk-actions': {'processing':'Completed','needs review':'Ready','ready':'Completed','completed':null,'failed':'Needs review'},
+}
+function nextWorkflowStatus(slug,currentStatus){
+ const transitions=WORKFLOW_TRANSITIONS[slug]
+ if(!transitions)return 'Reviewed'
+ const key=String(currentStatus||'').trim().toLowerCase()
+ if(Object.prototype.hasOwnProperty.call(transitions,key))return transitions[key]
+ return 'Reviewed'
+}
+function workflowActionLabel(slug,currentStatus){
+ const next=nextWorkflowStatus(slug,currentStatus)
+ if(!next)return 'Completed'
+ return next==='Reviewed'?'Mark reviewed':'Move to '+next
+}
 function ReportTooltip({active,payload,label}){if(!active||!payload?.length)return null;return <div className="chart-tooltip"><b>{label}</b>{payload.map(item=><div key={item.dataKey}><i style={{background:item.color}}/>{item.name||item.dataKey}: <strong>{Number(item.value).toLocaleString('en-PK')}</strong></div>)}</div>}
 export default function OperationsHub({slug}) {
  const navContext=useMemo(()=>{
@@ -144,7 +175,23 @@ export default function OperationsHub({slug}) {
  async function refreshWorkspace(){try{if(slug==='inventory'){const result=await apiRequest('/api/inventory?limit=100');setRows((result.data||[]).map((item,index)=>({id:item.id||index,cells:[item.sku,item.name,item.warehouse,String(item.quantity_on_hand),String(item.reorder_level),item.stock_status==='out_of_stock'?'Out of stock':item.stock_status==='low_stock'?'Low stock':'In stock'],createdAt:String(item.created_at||'').slice(0,10),region:item.warehouse,segment:'Inventory',amount:Number(item.stock_value||0),raw:item})));setInventoryMode('connected');setNotice('Inventory refreshed from the organization ledger.');return}const result=await apiRequest('/api/workflows?workflow='+encodeURIComponent(slug)+'&limit=100');setRows((result.data||[]).map((record,index)=>workflowRecordToRow(record,cfg,index)));setWorkflowMode('connected');setNotice('Refreshed '+(result.count||0)+' saved workspace records.')}catch(error){setNotice(error.message||'Could not refresh this workspace.')}}
  function exportRows(){downloadCsv(slug+'-filtered-report.csv',[['Created date',...cfg.columns,'Region','Segment','Illustrative amount (PKR)'],...filtered.map(r=>[r.createdAt,...r.cells,r.region,r.segment,r.amount])]);setNotice('Export ready: '+filtered.length+' filtered records downloaded as Excel-compatible CSV.')}
  function exportSummary(){downloadCsv(slug+'-report-summary.csv',[['Metric','Value'],['Page',cfg.title],['From date',fromDate],['To date',toDate],['Status filter',statusFilter],['Region filter',regionFilter],['Segment filter',segmentFilter],['Search query',query||'None'],['Filtered records',filtered.length],['Completed / active',reportSummary.active],['Needs attention',reportSummary.attention],['Completion rate',reportSummary.completion+'%'],['Average illustrative value (PKR)',reportSummary.averageValue],[],['Status','Records'],...reportSummary.statuses.map(x=>[x.name,x.count]),[],['Date','Records','Completed / active'],...reportSummary.trend.map(x=>[x.day,x.records,x.completed])]);setNotice('Report summary exported as CSV.')}
- async function act(row){if(workflowMode==='connected'&&slug!=='inventory'){try{const result=await apiRequest('/api/workflows/'+row.id+'/status',{method:'POST',body:{status:'Reviewed'}});setRows(old=>old.map(r=>r.id===row.id?workflowRecordToRow(result.data,cfg,0):r));setMenu(null);setNotice('Record status saved to your organization workspace.')}catch(error){setNotice(error.message||'Unable to update workflow record.')}return}setRows(old=>old.map(r=>r.id===row.id?{...r,cells:r.cells.map((v,i)=>i===r.cells.length-1?'Reviewed':v)}:r));setMenu(null);setNotice('Record marked reviewed in this demo session only.')}
+ async function act(row){
+  const currentStatus=String(row.cells.at(-1)||'Open')
+  const nextStatus=nextWorkflowStatus(slug,currentStatus)
+  if(!nextStatus){setMenu(null);setNotice('This workflow record is already in its final status.');return}
+  if(workflowMode==='connected'&&slug!=='inventory'){
+   try{
+    const result=await apiRequest('/api/workflows/'+row.id+'/status',{method:'POST',body:{status:nextStatus,payload:{lastAction:'Status changed from '+currentStatus+' to '+nextStatus,lastActionAt:new Date().toISOString()}}})
+    setRows(old=>old.map(r=>r.id===row.id?workflowRecordToRow(result.data,cfg,0):r))
+    setMenu(null)
+    setNotice('Status updated to '+nextStatus+' and saved to your organization workspace.')
+   }catch(error){setNotice(error.message||'Unable to update workflow record.')}
+   return
+  }
+  setRows(old=>old.map(r=>r.id===row.id?{...r,cells:r.cells.map((v,i)=>i===r.cells.length-1?nextStatus:v)}:r))
+  setMenu(null)
+  setNotice('Demo workflow status updated to '+nextStatus+' in this session only.')
+ }
  return <div className="page-stack ops-hub">
   <div className="page-heading"><div><div className="page-eyebrow"><span/> {cfg.eyebrow}</div><h1>{cfg.title}</h1><p>{cfg.subtitle}</p></div><div className="ops-heading-actions"><button className="outline-button" onClick={refreshWorkspace}><RefreshCw size={15}/> Refresh</button><button className="primary-button" onClick={()=>{setForm({});setModal(true)}}><Plus size={16}/> {cfg.action}</button></div></div>
   {navContext&&<nav className="ops-related-nav" aria-label="Related workspace pages"><span className="ops-related-label">{navContext.group}</span><div>{navContext.siblings.map(item=><Link key={item.to} to={item.to} className={item.to==='/app/'+slug?'active':''}>{item.label}<ArrowRight size={12}/></Link>)}</div></nav>}
@@ -174,7 +221,7 @@ export default function OperationsHub({slug}) {
   <section className="panel ops-panel"><div className="ops-panel-top"><div><span className="panel-eyebrow">WORKSPACE REGISTER</span><h2>{cfg.title} <span>{rows.length}</span></h2><p>{workflowMode==='connected'?'Search, filter and manage organization-scoped records.':'Search, filter and manage demo records; changes are not saved to the server.'}</p></div><button className="outline-button" onClick={exportRows}><Download size={15}/> Export CSV</button></div>
    <div className="ops-tabs">{cfg.tabs.map(t=><button key={t} className={tab===t?'active':''} onClick={()=>{setTab(t);setPage(1)}}>{t}</button>)}</div>
    <div className="ops-toolbar"><div className="ops-toolbar-caption"><Filter size={14}/><span>Filtered register</span><b>{filtered.length.toLocaleString('en-PK')} rows</b></div><div className="ops-export-actions"><button className="outline-button" onClick={exportSummary}><FileText size={14}/> Export summary</button><button className="outline-button" onClick={()=>window.print()}><Printer size={14}/> Print / PDF</button><button className="primary-button" onClick={exportRows}><Download size={14}/> Export data</button></div></div>
-   <div className="ops-bulkbar"><label><input type="checkbox" checked={currentPageSelected} onChange={togglePageSelection}/> Select page</label><span>{selected.length} selected</span>{selected.length>0&&<><button className="outline-button" onClick={exportSelected}><Download size={13}/> Export selected</button><button className="outline-button" onClick={()=>setSelected([])}>Clear selection</button></>}</div><div className="table-scroll"><table className="ops-table"><thead><tr><th className="ops-check-cell"><input type="checkbox" aria-label="Select current page" checked={currentPageSelected} onChange={togglePageSelection}/></th>{cfg.columns.map(c=><th key={c}>{c}</th>)}<th>Action</th></tr></thead><tbody>{visibleRows.map(row=><tr key={row.id} className={selected.includes(row.id)?'ops-row-selected':''}><td className="ops-check-cell"><input type="checkbox" aria-label={'Select '+row.cells[0]} checked={selected.includes(row.id)} onChange={()=>setSelected(old=>old.includes(row.id)?old.filter(id=>id!==row.id):[...old,row.id])}/></td>{cfg.columns.map((c,i)=><td key={c}>{i===row.cells.length-1?<StatusBadge status={row.cells[i]}/>:<span className={i===0?'ops-primary-cell':''}>{row.cells[i]||'—'}</span>}</td>)}<td><div className="ops-row-actions"><button title="Mark reviewed" onClick={()=>act(row)}><Check size={15}/></button><button title="More actions" onClick={()=>setMenu(menu===row.id?null:row.id)}><MoreHorizontal size={16}/></button>{menu===row.id&&<div className="ops-row-menu"><button onClick={()=>{setDetail(row);setMenu(null)}}>View details</button><button onClick={()=>act(row)}>Mark reviewed</button><button onClick={()=>{setSelected(old=>old.includes(row.id)?old: [...old,row.id]);setMenu(null);setNotice('Record selected for bulk export.')}}>Select record</button></div>}</div></td></tr>)}</tbody></table></div>
+   <div className="ops-bulkbar"><label><input type="checkbox" checked={currentPageSelected} onChange={togglePageSelection}/> Select page</label><span>{selected.length} selected</span>{selected.length>0&&<><button className="outline-button" onClick={exportSelected}><Download size={13}/> Export selected</button><button className="outline-button" onClick={()=>setSelected([])}>Clear selection</button></>}</div><div className="table-scroll"><table className="ops-table"><thead><tr><th className="ops-check-cell"><input type="checkbox" aria-label="Select current page" checked={currentPageSelected} onChange={togglePageSelection}/></th>{cfg.columns.map(c=><th key={c}>{c}</th>)}<th>Action</th></tr></thead><tbody>{visibleRows.map(row=><tr key={row.id} className={selected.includes(row.id)?'ops-row-selected':''}><td className="ops-check-cell"><input type="checkbox" aria-label={'Select '+row.cells[0]} checked={selected.includes(row.id)} onChange={()=>setSelected(old=>old.includes(row.id)?old.filter(id=>id!==row.id):[...old,row.id])}/></td>{cfg.columns.map((c,i)=><td key={c}>{i===row.cells.length-1?<StatusBadge status={row.cells[i]}/>:<span className={i===0?'ops-primary-cell':''}>{row.cells[i]||'—'}</span>}</td>)}<td><div className="ops-row-actions"><button title={workflowActionLabel(slug,row.cells.at(-1))} disabled={!nextWorkflowStatus(slug,row.cells.at(-1))} onClick={()=>act(row)}><Check size={15}/></button><button title="More actions" onClick={()=>setMenu(menu===row.id?null:row.id)}><MoreHorizontal size={16}/></button>{menu===row.id&&<div className="ops-row-menu"><button onClick={()=>{setDetail(row);setMenu(null)}}>View details</button><button disabled={!nextWorkflowStatus(slug,row.cells.at(-1))} onClick={()=>act(row)}>{workflowActionLabel(slug,row.cells.at(-1))}</button><button onClick={()=>{setSelected(old=>old.includes(row.id)?old: [...old,row.id]);setMenu(null);setNotice('Record selected for bulk export.')}}>Select record</button></div>}</div></td></tr>)}</tbody></table></div>
    {!filtered.length&&<div className="ops-empty"><Search size={22}/><b>No matching records</b><span>Change the search or choose another tab.</span></div>}
    <div className="ops-pagination"><span>Showing <b>{filtered.length?(currentPage-1)*pageSize+1:0}–{Math.min(currentPage*pageSize,filtered.length)}</b> of <b>{filtered.length}</b> filtered records</span><label>Rows per page <select value={pageSize} onChange={e=>{setPageSize(Number(e.target.value));setPage(1)}}><option value={10}>10</option><option value={20}>20</option><option value={50}>50</option></select></label><div><button disabled={currentPage===1} onClick={()=>setPage(currentPage-1)}>Previous</button><span>Page {currentPage} of {pageCount}</span><button disabled={currentPage===pageCount} onClick={()=>setPage(currentPage+1)}>Next</button></div></div><div className="ops-table-foot"><span>{rows.length} {workflowMode==='connected'?'saved organization records':'demo records in this workspace'}</span><span><i/> {workflowMode==='connected'?'Saved to Ikai.One workspace · external integrations remain separate':'Demo data · not saved to the server'}</span></div>
   </section>
