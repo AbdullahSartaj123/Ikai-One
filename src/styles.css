@@ -1210,3 +1210,31 @@
 @media(max-width:1080px){.pricing-hero{grid-template-columns:minmax(0,1fr) minmax(300px,.85fr);gap:25px;padding-top:58px}.pricing-plan-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.pricing-planner-panel{grid-template-columns:repeat(3,minmax(0,1fr))}.pricing-planner-result{grid-column:1/-1;min-height:0}.pricing-value-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.pricing-art-node{min-width:145px;padding:10px}}
 @media(max-width:760px){.pricing-hero{grid-template-columns:1fr;gap:18px;padding:48px 20px 34px}.pricing-hero-copy h1{font-size:clamp(39px,10vw,54px)}.pricing-hero-copy>p{font-size:13px}.pricing-trust-row{gap:10px;font-size:10px}.pricing-hero-art{min-height:350px;margin:0 -8px}.pricing-orbit-one{width:290px;height:290px}.pricing-orbit-two{width:220px;height:220px}.pricing-art-center{width:190px;padding:20px 12px}.pricing-art-center>span{width:44px;height:44px}.pricing-art-node{min-width:136px;grid-template-columns:30px 1fr;column-gap:7px;padding:9px;border-radius:11px}.pricing-art-node>span{width:30px;height:30px}.pricing-art-node b{font-size:9px}.pricing-art-node small{font-size:8px}.pricing-node-left{left:-1px;top:46%}.pricing-node-right{right:-1px;top:46%}.pricing-planner,.pricing-plans-section,.pricing-value-section,.pricing-compare-section,.pricing-faq-section{padding:45px 20px}.pricing-planner{padding-top:26px}.pricing-section-heading{margin-bottom:23px}.pricing-section-heading h2{font-size:31px}.pricing-section-heading>p{font-size:12px}.pricing-planner-panel{grid-template-columns:1fr;gap:13px;padding:15px}.pricing-planner-result{grid-column:auto}.pricing-plan-grid{grid-template-columns:1fr;gap:13px}.pricing-plan-card{padding:22px}.pricing-popular-ribbon{margin:-22px -22px 18px}.pricing-plan-desc,.pricing-plan-fit{min-height:0}.pricing-value-grid{grid-template-columns:1fr;gap:11px}.pricing-value-grid article{padding:19px}.pricing-compare-section{padding-top:25px}.pricing-compare-table th,.pricing-compare-table td{padding:12px 10px}.pricing-bottom-cta{align-items:flex-start;flex-direction:column;padding:23px 20px;gap:18px}.pricing-bottom-cta h2{font-size:23px}}
 @media(prefers-reduced-motion:reduce){.pricing-page *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+
+/* Pricing comparison table — clearer typography, spacing and scanability */
+.pricing-compare-section .pricing-section-heading h2{font-size:clamp(34px,4vw,48px);line-height:1.12;margin-bottom:18px}
+.pricing-compare-section .pricing-section-heading{max-width:850px;margin-bottom:34px}
+.pricing-compare-wrap{border:1px solid #dce3dc;border-radius:18px;box-shadow:0 14px 38px rgba(25,40,36,.06)}
+.pricing-compare-table{min-width:850px;border-collapse:separate;border-spacing:0}
+.pricing-compare-table th,.pricing-compare-table td{padding:18px 20px;font-size:14px;line-height:1.55;vertical-align:middle;border-bottom:1px solid #e7ece7}
+.pricing-compare-table thead th{padding-top:19px;padding-bottom:19px;background:#f1f3ff;color:#3545d7;font-size:13px;font-weight:800;letter-spacing:.01em;white-space:nowrap}
+.pricing-compare-table thead th:first-child{border-top-left-radius:16px}
+.pricing-compare-table thead th:last-child{border-top-right-radius:16px}
+.pricing-compare-table tbody th{width:31%;min-width:260px;color:#24372d;font-size:14px;font-weight:750}
+.pricing-compare-table tbody td{color:#53645a;font-size:14px}
+.pricing-compare-table tbody tr:nth-child(even){background:#fbfcfb}
+.pricing-compare-table tbody tr{transition:background-color .18s ease}
+.pricing-compare-table tbody tr:hover{background:#f4f6ff}
+.pricing-compare-table tbody tr:last-child th,.pricing-compare-table tbody tr:last-child td{border-bottom:0}
+.pricing-compare-note{display:block;margin-top:14px;color:#77857c;font-size:12px;line-height:1.7}
+@media(max-width:760px){
+ .pricing-compare-section .pricing-section-heading h2{font-size:clamp(30px,8vw,38px)}
+ .pricing-compare-wrap{border-radius:13px}
+ .pricing-compare-table{min-width:790px}
+ .pricing-compare-table th,.pricing-compare-table td{padding:15px 16px;font-size:13px}
+ .pricing-compare-table thead th{font-size:12px}
+ .pricing-compare-table tbody th{min-width:235px;font-size:13px}
+ .pricing-compare-table tbody td{font-size:13px}
+ .pricing-compare-note{font-size:11px}
+}
