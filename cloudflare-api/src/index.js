@@ -550,7 +550,7 @@ export default {
       }
     }
 
-    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments" || url.pathname === "/api/cod-reconciliations" || url.pathname.startsWith("/api/cod-reconciliations/") || url.pathname === "/api/testing/verify-email" || url.pathname === "/api/testing/check-password-reset") {
+    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments" || url.pathname === "/api/inventory" || url.pathname.startsWith("/api/inventory/") || url.pathname === "/api/orders" || url.pathname.startsWith("/api/orders/") || url.pathname === "/api/cod-reconciliations" || url.pathname.startsWith("/api/cod-reconciliations/") || url.pathname === "/api/testing/verify-email" || url.pathname === "/api/testing/check-password-reset") {
       if (!env.DATABASE_URL) return json(request, { error: "Database is not configured." }, 503);
       let sql;
       try {
