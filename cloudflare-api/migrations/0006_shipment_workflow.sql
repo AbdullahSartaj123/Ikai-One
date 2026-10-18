@@ -1,0 +1,1 @@
+-- Shipment workflow schema for Ikai.One.
