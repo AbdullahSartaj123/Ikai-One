@@ -63,7 +63,7 @@ test("returns must link to a saved order and persist the organization order UUID
 test("shipment exception panel is available for persisted Exception status", async () => {
   const shipments = await readFile(new URL("../../src/pages/Shipments.jsx", import.meta.url), "utf8");
   assert.match(shipments, /\['Exception','Undelivered','Lost\/Damaged'\]\.includes\(shipment\.status\)/);
-  assert.match(shipments, /exceptionAction==='Return to sender'\?'Returned':exceptionAction==='Reattempt delivery'\?'Ready to ship':'Exception'/);
+  assert.match(shipments, /const nextStatus=exceptionAction==='Return to sender'\?'Returned':'Ready to ship'/);
   assert.match(shipments, /No courier instruction was sent/);
   assert.match(shipments, /Action saved to shipment history/);
   assert.match(shipments, /Saved as an internal Ikai\.One event/);
