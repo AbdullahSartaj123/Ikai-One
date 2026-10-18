@@ -827,7 +827,7 @@ export default {
           return json(request, { error: "Method or reconciliation route not supported." }, 405);
         }
 
-        if (url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f-]{36}$/i.test(url.pathname)) {
+        if (url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f-]{36}(?:\/status)?$/i.test(url.pathname)) {
           const user = await authenticate(request, env);
           if (!user) return json(request, { error: "Authentication required." }, 401);
 
