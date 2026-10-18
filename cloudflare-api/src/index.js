@@ -550,7 +550,7 @@ export default {
       }
     }
 
-    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments" || url.pathname === "/api/inventory" || url.pathname.startsWith("/api/inventory/") || url.pathname === "/api/orders" || url.pathname.startsWith("/api/orders/") || url.pathname === "/api/cod-reconciliations" || url.pathname.startsWith("/api/cod-reconciliations/") || url.pathname === "/api/testing/verify-email" || url.pathname === "/api/testing/check-password-reset") {
+    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments" || url.pathname === "/api/inventory" || url.pathname.startsWith("/api/inventory/") || url.pathname === "/api/orders" || url.pathname.startsWith("/api/orders/") || url.pathname === "/api/cod-reconciliations" || url.pathname.startsWith("/api/cod-reconciliations/") || url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f-]{36}$/i.test(url.pathname) || url.pathname === "/api/testing/verify-email" || url.pathname === "/api/testing/check-password-reset") {
       if (!env.DATABASE_URL) return json(request, { error: "Database is not configured." }, 503);
       let sql;
       try {
@@ -825,6 +825,85 @@ export default {
             return json(request, { data: rows[0] });
           }
           return json(request, { error: "Method or reconciliation route not supported." }, 405);
+        }
+
+        if (url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f-]{36}$/i.test(url.pathname)) {
+          const user = await authenticate(request, env);
+          if (!user) return json(request, { error: "Authentication required." }, 401);
+
+          if (url.pathname === "/api/workflows" && request.method === "GET") {
+            const workflowKey = String(url.searchParams.get("workflow") || "").trim().toLowerCase();
+            const requestedLimit = Number(url.searchParams.get("limit") || "100");
+            const search = String(url.searchParams.get("search") || "").trim().slice(0, 120);
+            const status = String(url.searchParams.get("status") || "").trim();
+            if (!/^[a-z0-9-]{1,80}$/.test(workflowKey)) return json(request, { error: "A valid workflow key is required." }, 400);
+            if (!Number.isInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > 100) return json(request, { error: "limit must be an integer between 1 and 100." }, 400);
+            const rows = await sql`
+              SELECT id, workflow_key, reference, title, status, payload, created_at, updated_at
+              FROM ikai.workflow_records
+              WHERE organization_id = ${user.organizationId}::uuid
+                AND workflow_key = ${workflowKey}
+                AND (${search} = '' OR reference ILIKE '%' || ${search} || '%' OR title ILIKE '%' || ${search} || '%' OR payload::text ILIKE '%' || ${search} || '%')
+                AND (${status} = '' OR status = ${status})
+              ORDER BY updated_at DESC LIMIT ${requestedLimit}
+            `;
+            return json(request, { data: rows, count: rows.length, limit: requestedLimit, workflow: workflowKey });
+          }
+
+          if (url.pathname === "/api/workflows" && request.method === "POST") {
+            const body = await readJson(request);
+            const workflowKey = String(body.workflowKey || "").trim().toLowerCase();
+            const reference = String(body.reference || "").trim().slice(0, 160);
+            const title = String(body.title || "").trim().slice(0, 200);
+            const status = String(body.status || "Open").trim().slice(0, 60) || "Open";
+            const payload = body.payload && typeof body.payload === "object" && !Array.isArray(body.payload) ? body.payload : {};
+            if (!/^[a-z0-9-]{1,80}$/.test(workflowKey) || !reference || !title) {
+              return json(request, { error: "Provide a valid workflow key, reference and title." }, 400);
+            }
+            if (JSON.stringify(payload).length > 20000) return json(request, { error: "Workflow details are too large." }, 413);
+            const rows = await sql`
+              INSERT INTO ikai.workflow_records
+                (organization_id, workflow_key, reference, title, status, payload, created_by, updated_by)
+              VALUES
+                (${user.organizationId}::uuid, ${workflowKey}, ${reference}, ${title}, ${status}, ${JSON.stringify(payload)}::jsonb, ${user.id}::uuid, ${user.id}::uuid)
+              RETURNING id, workflow_key, reference, title, status, payload, created_at, updated_at
+            `;
+            await sql`
+              INSERT INTO ikai.organization_audit_events
+                (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
+              VALUES
+                (${user.organizationId}::uuid, ${user.id}::uuid, 'workflow_record_created', 'workflow_record', ${reference},
+                 jsonb_build_object('workflowKey', ${workflowKey}, 'status', ${status}))
+            `;
+            return json(request, { data: rows[0] }, 201);
+          }
+
+          const recordMatch = url.pathname.match(/^\/api\/workflows\/([0-9a-f-]{36})$/i);
+          if (recordMatch && request.method === "PATCH") {
+            const body = await readJson(request);
+            const status = String(body.status || "").trim().slice(0, 60);
+            const payload = body.payload && typeof body.payload === "object" && !Array.isArray(body.payload) ? body.payload : null;
+            if (!status) return json(request, { error: "A non-empty status is required." }, 400);
+            if (payload && JSON.stringify(payload).length > 20000) return json(request, { error: "Workflow details are too large." }, 413);
+            const rows = await sql`
+              UPDATE ikai.workflow_records
+              SET status = ${status},
+                  payload = CASE WHEN ${payload !== null} THEN payload || ${JSON.stringify(payload || {})}::jsonb ELSE payload END,
+                  updated_by = ${user.id}::uuid, updated_at = now()
+              WHERE id = ${recordMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+              RETURNING id, workflow_key, reference, title, status, payload, created_at, updated_at
+            `;
+            if (!rows[0]) return json(request, { error: "Workflow record not found." }, 404);
+            await sql`
+              INSERT INTO ikai.organization_audit_events
+                (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
+              VALUES
+                (${user.organizationId}::uuid, ${user.id}::uuid, 'workflow_record_updated', 'workflow_record', ${rows[0].reference},
+                 jsonb_build_object('workflowKey', ${rows[0].workflow_key}, 'status', ${status}))
+            `;
+            return json(request, { data: rows[0] });
+          }
+          return json(request, { error: "Method or workflow route not supported." }, 405);
         }
 
         if (url.pathname === "/api/orders" || url.pathname.startsWith("/api/orders/")) {
