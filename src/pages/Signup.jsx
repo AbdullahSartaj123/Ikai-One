@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { ArrowRight, Building2, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck, Store, UserRound } from 'lucide-react'
 import Logo from '../components/Logo.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -11,8 +11,11 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  const { beginSignup } = useAuth()
+  const { beginSignup, isAuthenticated, authLoading } = useAuth()
   const navigate = useNavigate()
+
+  if (authLoading) return <main className="app-loading" role="status" aria-live="polite" aria-label="Checking your secure session"><div className="app-loading-brand"><Store size={22}/><span>IKAI<span>One</span></span></div><p>Checking your secure session…</p></main>
+  if (isAuthenticated) return <Navigate to="/app/dashboard" replace />
 
   function update(field, value) {
     setForm(current => ({ ...current, [field]: value }))
