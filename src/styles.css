@@ -2394,3 +2394,104 @@ body{font-size:16px;-webkit-font-smoothing:antialiased}
  .feature-card p{font-size:15px!important;line-height:1.7!important}
  .feature-card>a{margin-top:17px!important;font-size:13px!important}
 }
+
+
+/* Targeted fix for the actual homepage audience cards (solution-card, not feature-card) */
+.solutions-section .solutions-heading{
+  align-items:flex-start!important;
+  gap:36px!important;
+  margin-bottom:34px!important;
+}
+.solutions-section .solutions-heading .section-title h2{
+  max-width:780px!important;
+  font-size:clamp(38px,4vw,54px)!important;
+  line-height:1.1!important;
+  letter-spacing:-.05em!important;
+}
+.solutions-section .solutions-heading .section-title>p{
+  max-width:660px!important;
+  margin-top:16px!important;
+  font-size:17px!important;
+  line-height:1.8!important;
+}
+.solutions-section .solution-side-note{
+  width:230px!important;
+  max-width:230px!important;
+  flex:0 0 230px!important;
+  padding:20px!important;
+  border-radius:16px!important;
+}
+.solutions-section .solution-side-note .side-note-icon{
+  width:38px!important;height:38px!important;
+  display:grid!important;place-items:center!important;
+  margin-bottom:13px!important;
+}
+.solutions-section .solution-side-note b{font-size:14px!important;line-height:1.45!important}
+.solutions-section .solution-side-note p{display:block!important;font-size:12px!important;line-height:1.65!important;margin-top:7px!important}
+.solutions-section .solutions-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:18px!important;
+}
+.solutions-section .solution-card{
+  min-height:292px!important;
+  padding:28px!important;
+  border-radius:19px!important;
+}
+.solutions-section .solution-card-top{margin-bottom:25px!important}
+.solutions-section .solution-card-top>span{
+  width:50px!important;height:50px!important;border-radius:14px!important;
+}
+.solutions-section .solution-card-top>span svg{width:25px!important;height:25px!important}
+.solutions-section .solution-card>small{
+  display:block!important;
+  margin-bottom:10px!important;
+  font-size:11px!important;
+  line-height:1.5!important;
+  letter-spacing:.09em!important;
+}
+.solutions-section .solution-card h3{
+  margin:0 0 11px!important;
+  font-size:clamp(21px,1.7vw,25px)!important;
+  line-height:1.28!important;
+  letter-spacing:-.035em!important;
+}
+.solutions-section .solution-card p{
+  max-width:340px!important;
+  min-height:0!important;
+  margin:0!important;
+  font-size:15px!important;
+  line-height:1.75!important;
+}
+.solutions-section .solution-card>a{
+  gap:8px!important;
+  margin-top:22px!important;
+  font-size:13px!important;
+  line-height:1.5!important;
+}
+.solutions-section .solution-watermark svg{width:120px!important;height:120px!important}
+@media(max-width:1080px){
+ .solutions-section .solutions-heading{gap:20px!important}
+ .solutions-section .solutions-heading .section-title h2{font-size:clamp(34px,4vw,46px)!important}
+ .solutions-section .solutions-heading .section-title>p{font-size:16px!important}
+ .solutions-section .solution-side-note{width:205px!important;flex-basis:205px!important;padding:16px!important}
+ .solutions-section .solution-card{padding:23px!important;min-height:280px!important}
+ .solutions-section .solution-card h3{font-size:21px!important}
+ .solutions-section .solution-card p{font-size:14px!important}
+}
+@media(max-width:760px){
+ .solutions-section .solutions-heading{display:block!important;margin-bottom:26px!important}
+ .solutions-section .solutions-heading .section-title h2{font-size:clamp(32px,7.5vw,43px)!important}
+ .solutions-section .solutions-heading .section-title>p{font-size:16px!important;margin-top:13px!important}
+ .solutions-section .solution-side-note{display:grid!important;width:100%!important;max-width:none!important;grid-template-columns:38px minmax(0,1fr)!important;column-gap:12px!important;row-gap:2px!important;align-items:center!important;margin-top:18px!important;padding:14px!important}
+ .solutions-section .solution-side-note .side-note-icon{grid-row:span 2!important;margin:0!important}
+ .solutions-section .solution-side-note b{font-size:14px!important}
+ .solutions-section .solution-side-note p{font-size:12px!important;margin:0!important}
+ .solutions-section .solutions-grid{grid-template-columns:minmax(0,1fr)!important;gap:14px!important}
+ .solutions-section .solution-card{min-height:0!important;padding:23px!important;border-radius:17px!important}
+ .solutions-section .solution-card-top{margin-bottom:20px!important}
+ .solutions-section .solution-card-top>span{width:46px!important;height:46px!important}
+ .solutions-section .solution-card>small{font-size:10px!important;margin-bottom:8px!important}
+ .solutions-section .solution-card h3{font-size:22px!important;margin-bottom:8px!important}
+ .solutions-section .solution-card p{font-size:15px!important;line-height:1.75!important}
+ .solutions-section .solution-card>a{font-size:13px!important;margin-top:17px!important}
+}
