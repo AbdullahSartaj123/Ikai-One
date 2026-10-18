@@ -51,3 +51,10 @@ test("shipment status UI only offers transitions allowed by the API", async () =
   assert.match(shipments, /'Delivered':\[\]/);
   assert.match(shipments, /'Returned':\[\]/);
 });
+
+test("shipment exception panel is available for persisted Exception status", async () => {
+  const shipments = await readFile(new URL("../../src/pages/Shipments.jsx", import.meta.url), "utf8");
+  assert.match(shipments, /\['Exception','Undelivered','Lost\/Damaged'\]\.includes\(shipment\.status\)/);
+  assert.match(shipments, /exceptionAction==='Return to sender'\?'Returned':exceptionAction==='Reattempt delivery'\?'Ready to ship':'Exception'/);
+  assert.match(shipments, /No courier instruction was sent/);
+});
