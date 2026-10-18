@@ -912,7 +912,7 @@ export default {
               const linkError = await validateReturnLinks(sql, user.organizationId, payload);
               if (linkError) return json(request, { error: linkError }, 400);
             }
-            if (workflowKey === "ndr") {
+            if (["ndr", "ndr-followups"].includes(workflowKey)) {
               const linkError = await validateNdrLinks(sql, user.organizationId, payload);
               if (linkError) return json(request, { error: linkError }, 400);
             }
@@ -956,7 +956,7 @@ export default {
               const linkError = await validateReturnLinks(sql, user.organizationId, mergedPayload);
               if (linkError) return json(request, { error: linkError }, 400);
             }
-            if (existingRows[0].workflow_key === "ndr") {
+            if (["ndr", "ndr-followups"].includes(existingRows[0].workflow_key)) {
               const mergedPayload = { ...(existingRows[0].payload || {}), ...(payload || {}) };
               const linkError = await validateNdrLinks(sql, user.organizationId, mergedPayload);
               if (linkError) return json(request, { error: linkError }, 400);
