@@ -42,3 +42,12 @@ test("shipment status endpoint enforces lifecycle transitions and terminal state
   assert.match(api, /Shipment changed concurrently/);
   assert.match(api, /'shipment_status_changed', 'shipment'/);
 });
+
+test("shipment status UI only offers transitions allowed by the API", async () => {
+  const shipments = await readFile(new URL("../../src/pages/Shipments.jsx", import.meta.url), "utf8");
+  assert.match(shipments, /const shipmentTransitions=\{/);
+  assert.match(shipments, /const allowedStatusOptions=\[shipment\?\.status,\.\.\.\(shipmentTransitions\[shipment\?\.status\]\|\|\[\]\)\]/);
+  assert.match(shipments, /statusDraft===shipment\.status\?'Choose next status':'Save internal status'/);
+  assert.match(shipments, /'Delivered':\[\]/);
+  assert.match(shipments, /'Returned':\[\]/);
+});
