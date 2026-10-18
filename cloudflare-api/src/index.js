@@ -550,7 +550,7 @@ export default {
       }
     }
 
-    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments" || url.pathname === "/api/inventory" || url.pathname.startsWith("/api/inventory/") || url.pathname === "/api/orders" || url.pathname.startsWith("/api/orders/") || url.pathname === "/api/cod-reconciliations" || url.pathname.startsWith("/api/cod-reconciliations/") || url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f-]{36}$/i.test(url.pathname) || url.pathname === "/api/testing/verify-email" || url.pathname === "/api/testing/check-password-reset") {
+    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments" || url.pathname === "/api/inventory" || url.pathname.startsWith("/api/inventory/") || url.pathname === "/api/orders" || url.pathname.startsWith("/api/orders/") || url.pathname === "/api/cod-reconciliations" || url.pathname.startsWith("/api/cod-reconciliations/") || url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f-]{36}(?:\/status)?$/i.test(url.pathname) || url.pathname === "/api/testing/verify-email" || url.pathname === "/api/testing/check-password-reset") {
       if (!env.DATABASE_URL) return json(request, { error: "Database is not configured." }, 503);
       let sql;
       try {
@@ -878,8 +878,8 @@ export default {
             return json(request, { data: rows[0] }, 201);
           }
 
-          const recordMatch = url.pathname.match(/^\/api\/workflows\/([0-9a-f-]{36})$/i);
-          if (recordMatch && request.method === "PATCH") {
+          const recordMatch = url.pathname.match(/^\/api\/workflows\/([0-9a-f-]{36})\/status$/i);
+          if (recordMatch && request.method === "POST") {
             const body = await readJson(request);
             const status = String(body.status || "").trim().slice(0, 60);
             const payload = body.payload && typeof body.payload === "object" && !Array.isArray(body.payload) ? body.payload : null;
