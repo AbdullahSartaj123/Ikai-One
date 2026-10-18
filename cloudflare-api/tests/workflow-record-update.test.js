@@ -65,6 +65,10 @@ test("shipment exception panel is available for persisted Exception status", asy
   assert.match(shipments, /\['Exception','Undelivered','Lost\/Damaged'\]\.includes\(shipment\.status\)/);
   assert.match(shipments, /exceptionAction==='Return to sender'\?'Returned':exceptionAction==='Reattempt delivery'\?'Ready to ship':'Exception'/);
   assert.match(shipments, /No courier instruction was sent/);
+  assert.match(shipments, /Action saved to shipment history/);
+  assert.match(shipments, /Saved as an internal Ikai\.One event/);
+  assert.match(shipments, /source:event\.source\|\|'internal'/);
+  assert.match(shipments, /event\.source==='courier'\?'Courier-reported event':'Internal Ikai\.One event'/);
 });
 
 test("return workflow validates saved order and shipment links within the same organization", () => {
