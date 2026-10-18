@@ -135,3 +135,9 @@ test("contact customer exception creates a saved internal customer follow-up lin
   assert.match(shipments, /No customer message or call was sent/);
   assert.match(shipments, /Saved to Customer Follow-ups\. No customer was contacted\./);
 });
+
+test("customer follow-ups have an explicit persisted lifecycle instead of generic Reviewed status", () => {
+  assert.match(frontend, /'ndr-followups': \{'open':'In progress','in progress':'Awaiting response','awaiting response':'Reattempt scheduled','reattempt scheduled':'Resolved','resolved':null\}/);
+  assert.match(frontend, /apiRequest\('\/api\/workflows\/'\+row\.id\+'\/status'/);
+  assert.match(frontend, /Status updated to '\+nextStatus\+' and saved to your organization workspace\./);
+});
