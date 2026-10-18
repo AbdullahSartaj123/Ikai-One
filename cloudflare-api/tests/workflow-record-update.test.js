@@ -52,7 +52,7 @@ test("shipment status UI only offers transitions allowed by the API", async () =
   assert.match(shipments, /'Returned':\[\]/);
 });
 
-test("shipment exception panel is available for persisted Exception status", async () => {
+test("returns must link to a saved order and persist the organization order UUID", async () => {\n  const hub = await readFile(new URL("../../src/pages/OperationsHub.jsx", import.meta.url), "utf8");\n  assert.ok(hub.includes("/api/orders?limit=100"));\n  assert.ok(hub.includes("Source order UUID"));\n  assert.ok(hub.includes("Select a saved order before creating a return request."));\n  assert.ok(hub.includes("no courier pickup is triggered"));\n});\n\ntest("shipment exception panel is available for persisted Exception status", async () => {
   const shipments = await readFile(new URL("../../src/pages/Shipments.jsx", import.meta.url), "utf8");
   assert.match(shipments, /\['Exception','Undelivered','Lost\/Damaged'\]\.includes\(shipment\.status\)/);
   assert.match(shipments, /exceptionAction==='Return to sender'\?'Returned':exceptionAction==='Reattempt delivery'\?'Ready to ship':'Exception'/);
