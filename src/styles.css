@@ -2338,3 +2338,59 @@ body{font-size:16px;-webkit-font-smoothing:antialiased}
  .hero-4pl h1{font-size:clamp(39px,9.6vw,51px)!important;line-height:1.06!important}
  .hero-4pl .hero-description{font-size:15px!important;line-height:1.7!important}
 }
+
+
+/* Public homepage use-case cards: larger, clearer type and more balanced card spacing */
+.feature-grid{gap:18px!important}
+.feature-card{
+  min-height:310px!important;
+  padding:30px!important;
+  border-radius:19px!important;
+}
+.feature-card>span:first-child,.feature-card .feature-icon{
+  width:48px!important;height:48px!important;flex-basis:48px!important;
+  border-radius:14px!important;
+}
+.feature-card .feature-eyebrow,.feature-eyebrow{
+  margin-top:23px!important;
+  font-size:11px!important;
+  line-height:1.4!important;
+  letter-spacing:.09em!important;
+  font-weight:800!important;
+}
+.feature-card h3{
+  margin-top:10px!important;
+  margin-bottom:9px!important;
+  font-size:clamp(21px,1.75vw,25px)!important;
+  line-height:1.25!important;
+  letter-spacing:-.035em!important;
+}
+.feature-card p{
+  min-height:0!important;
+  max-width:340px!important;
+  font-size:15px!important;
+  line-height:1.75!important;
+}
+.feature-card>a{
+  margin-top:22px!important;
+  font-size:13px!important;
+  font-weight:750!important;
+}
+.section-title h2,.network-copy h2,.tracking-copy h2,.calculator-copy h2,.early-access-copy h2{
+  line-height:1.12!important;
+  letter-spacing:-.045em!important;
+}
+@media(max-width:1080px){
+ .feature-card{padding:24px!important;min-height:285px!important}
+ .feature-card h3{font-size:22px!important}
+ .feature-card p{font-size:14px!important}
+}
+@media(max-width:760px){
+ .feature-grid{gap:14px!important}
+ .feature-card{padding:23px!important;min-height:0!important}
+ .feature-card>span:first-child,.feature-card .feature-icon{width:44px!important;height:44px!important;flex-basis:44px!important}
+ .feature-card .feature-eyebrow,.feature-eyebrow{margin-top:18px!important;font-size:10px!important}
+ .feature-card h3{font-size:21px!important;line-height:1.3!important}
+ .feature-card p{font-size:15px!important;line-height:1.7!important}
+ .feature-card>a{margin-top:17px!important;font-size:13px!important}
+}
