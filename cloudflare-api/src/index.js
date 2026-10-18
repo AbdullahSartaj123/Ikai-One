@@ -928,6 +928,7 @@ export default {
             }
             if (JSON.stringify(payload).length > 20000) return json(request, { error: "Workflow details are too large." }, 413);
             if (workflowKey === "returns") {
+              if (status !== "Requested") return json(request, { error: "New return requests must start in Requested status." }, 400);
               const linkError = await validateReturnLinks(sql, user.organizationId, payload);
               if (linkError) return json(request, { error: linkError }, 400);
             }
@@ -964,13 +965,23 @@ export default {
             if (title !== null && !title) return json(request, { error: "Title cannot be empty." }, 400);
             if (payload && JSON.stringify(payload).length > 20000) return json(request, { error: "Workflow details are too large." }, 413);
             const existingRows = await sql`
-              SELECT workflow_key, payload
+              SELECT workflow_key, status, payload
               FROM ikai.workflow_records
               WHERE id = ${recordMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
               LIMIT 1
             `;
             if (!existingRows[0]) return json(request, { error: "Workflow record not found." }, 404);
             if (existingRows[0].workflow_key === "returns") {
+              const allowedNext = {
+                "Requested": ["Pickup pending"],
+                "Pickup pending": ["In transit"],
+                "In transit": ["Completed"],
+                "Completed": []
+              };
+              const currentStatus = existingRows[0].status;
+              if (!(allowedNext[currentStatus] || []).includes(status)) {
+                return json(request, { error: `Return status cannot move from "${currentStatus}" to "${status}". Refresh the return and choose the next allowed step.` }, 409);
+              }
               const mergedPayload = { ...(existingRows[0].payload || {}), ...(payload || {}) };
               const linkError = await validateReturnLinks(sql, user.organizationId, mergedPayload);
               if (linkError) return json(request, { error: linkError }, 400);
@@ -988,9 +999,10 @@ export default {
                   payload = CASE WHEN ${payload !== null} THEN payload || ${JSON.stringify(payload || {})}::jsonb ELSE payload END,
                   updated_by = ${user.id}::uuid, updated_at = now()
               WHERE id = ${recordMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+                AND (${existingRows[0].workflow_key !== "returns"} OR status = ${existingRows[0].status})
               RETURNING id, workflow_key, reference, title, status, payload, created_at, updated_at
             `;
-            if (!rows[0]) return json(request, { error: "Workflow record not found." }, 404);
+            if (!rows[0]) return json(request, { error: existingRows[0].workflow_key === "returns" ? "Return status changed concurrently. Refresh and try again." : "Workflow record not found." }, 409);
             await sql`
               INSERT INTO ikai.organization_audit_events
                 (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
