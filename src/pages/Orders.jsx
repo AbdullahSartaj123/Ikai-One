@@ -32,15 +32,42 @@ function OrdersList() {
   const [orders,setOrders] = useState([])
   const [ordersSource,setOrdersSource] = useState('loading')
   const [loadError,setLoadError] = useState('')
+  const [refreshing,setRefreshing] = useState(false)
+  async function loadOrders(showLoading = false) {
+    if (showLoading) setRefreshing(true)
+    try {
+      const payload = await apiRequest('/api/orders?limit=100')
+      setOrders((payload.data || []).map(mapApiOrder))
+      setOrdersSource('database')
+      setLoadError('')
+    } catch (error) {
+      setOrdersSource('unavailable')
+      setLoadError(error.message || 'Orders could not be loaded.')
+    } finally {
+      setRefreshing(false)
+    }
+  }
   useEffect(() => {
     let active = true
     apiRequest('/api/orders?limit=100').then(payload => {
       if (active) { setOrders((payload.data || []).map(mapApiOrder)); setOrdersSource('database'); setLoadError('') }
     }).catch(error => {
-      if (active) { setOrders([]); setOrdersSource('unavailable'); setLoadError(error.message || 'Orders could not be loaded.') }
+      if (active) { setOrdersSource('unavailable'); setLoadError(error.message || 'Orders could not be loaded.') }
     })
     return () => { active = false }
   }, [])
+  async function updateOrderStatus(order, status) {
+    if (!order.uuid) { showToast('This order has no saved database ID.'); return }
+    const previousStatus = order.status
+    setOrders(current => current.map(item => item.id === order.id ? {...item,status} : item))
+    try {
+      await apiRequest('/api/orders/' + order.uuid + '/status', {method:'POST', body:{status}})
+      showToast(order.id + ' status saved as ' + status + '.')
+    } catch (error) {
+      setOrders(current => current.map(item => item.id === order.id ? {...item,status:previousStatus} : item))
+      showToast(error.message || 'Order status could not be saved.')
+    }
+  }
   const activeOrders = orders
   const [activeTab,setActiveTab] = useState('All')
   const [search,setSearch] = useState('')
@@ -86,7 +113,7 @@ function OrdersList() {
     const headings=['Order ID','Channel','Customer','Phone','Product','SKU','Payment Mode','Amount PKR','Weight kg','Date','Status','Courier','City','State','Pincode']
     const csv=[headings,...orders.map(o=>[o.id,o.channel,o.customer,o.phone,o.product,o.sku,o.paymentMode,o.amount,o.weight,o.date,o.status,o.courier,o.city,o.state,o.pincode])].map(row=>row.map(value=>'"'+String(value ?? '').replaceAll('"','""')+'"').join(',')).join('\n')
     const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));const a=document.createElement('a');a.href=url;a.download='ikai-orders-'+new Date().toISOString().slice(0,10)+'.csv';a.click();URL.revokeObjectURL(url)
-    showToast('Exported '+orders.length+' mock order(s) to CSV.')
+    showToast('Exported '+orders.length+' saved order(s) to CSV.')
   }
   function bulkAction(action) {
     if (!selected.length && !['Export CSV'].includes(action)) { showToast('Select at least one order first.');return }
@@ -103,7 +130,7 @@ function OrdersList() {
   const actionOptions=[['Ship Now',Truck],['Cancel',Ban],['Export CSV',Download],['Print Label',Printer],['Print Manifest',ClipboardList]]
   const tabs=orderStatuses.map(status=>({label:status,count:status==='All'?activeOrders.length:activeOrders.filter(order=>order.status===status).length}))
   return <div className="orders-page page-stack">
-    <div className="page-heading orders-page-heading"><div><div className="page-eyebrow"><span/> ORDER MANAGEMENT</div><h1>Orders</h1><p>Manage orders from every sales channel in one place.</p><small className={'orders-data-state '+(ordersSource==='database'?'connected':'')}>{ordersSource==='database'?'Connected to saved organization orders':ordersSource==='loading'?'Loading saved orders…':'Saved orders unavailable — '+loadError}</small></div><div className="heading-actions"><button className="secondary-button" onClick={()=>exportCsv(filtered)}><Download size={15}/> Export view</button><button className="primary-button" onClick={()=>navigate('/app/orders/new')}><Plus size={17}/> Create order</button></div></div>
+    <div className="page-heading orders-page-heading"><div><div className="page-eyebrow"><span/> ORDER MANAGEMENT</div><h1>Orders</h1><p>Manage orders from every sales channel in one place.</p><small className={'orders-data-state '+(ordersSource==='database'?'connected':'')}>{ordersSource==='database'?'Connected to saved organization orders':ordersSource==='loading'?'Loading saved orders…':'Saved orders unavailable — '+loadError}</small></div><div className="heading-actions"><button className="secondary-button" onClick={()=>loadOrders(true)} disabled={refreshing}><RotateCcw size={15}/>{refreshing?'Refreshing…':'Refresh'}</button><button className="secondary-button" onClick={()=>exportCsv(filtered)}><Download size={15}/> Export view</button><button className="primary-button" onClick={()=>navigate('/app/orders/new')}><Plus size={17}/> Create order</button></div></div>
     {toast&&<div className="orders-toast"><Check size={16}/>{toast}<button onClick={()=>setToast('')}><X size={15}/></button></div>}
     <div className="orders-summary-strip"><div><span className="orders-summary-icon blue"><ShoppingCart size={17}/></span><span><small>Total orders</small><b>{activeOrders.length.toLocaleString('en-PK')}</b></span></div><div><span className="orders-summary-icon orange"><Clock3 size={17}/></span><span><small>Ready to ship</small><b>{activeOrders.filter(order=>order.status==='Ready to Ship').length}</b></span></div><div><span className="orders-summary-icon green"><PackageCheck size={17}/></span><span><small>Delivered</small><b>{activeOrders.filter(order=>order.status==='Delivered').length}</b></span></div><div><span className="orders-summary-icon violet"><Wallet size={17}/></span><span><small>COD orders</small><b>{activeOrders.filter(order=>order.paymentMode==='COD').length}</b></span></div></div>
     <section className="panel orders-list-panel">
@@ -115,7 +142,7 @@ function OrdersList() {
         <button className={'outline-button orders-flag-button'+(showOnlyFlagged?' active':'')} onClick={()=>{setShowOnlyFlagged(!showOnlyFlagged);setPage(1)}}><CircleAlert size={15}/> Exceptions</button>
       </div>
       {selected.length>0&&<div className="orders-bulkbar"><span><CheckCheck size={16}/><b>{selected.length}</b> selected</span><button onClick={()=>setBulkMenuOpen(!bulkMenuOpen)}>Bulk actions <ChevronDown size={14}/></button>{bulkMenuOpen&&<div className="orders-bulk-menu">{actionOptions.map(([label,Icon])=><button key={label} onClick={()=>{setBulkMenuOpen(false);bulkAction(label)}}><Icon size={15}/>{label}</button>)}</div>}<button className="bulk-clear" onClick={()=>setSelected([])}>Clear selection</button></div>}
-      <div className="orders-table-scroll"><table className="orders-table"><thead><tr><th className="orders-check-cell"><input type="checkbox" checked={allPageSelected} onChange={togglePage} aria-label="Select all orders on this page"/></th>{columnDefinitions.filter(column=>visibleColumns.includes(column.key)).map(column=><th key={column.key}>{column.label}</th>)}<th className="orders-action-head">Actions</th></tr></thead><tbody>{pageRows.map(order=><tr key={order.id}><td className="orders-check-cell"><input type="checkbox" checked={selected.includes(order.id)} onChange={()=>toggleOne(order.id)} aria-label={'Select '+order.id}/></td>{visibleColumns.includes('id')&&<td><Link className="orders-id-link" to={'/app/orders/'+order.id}>{order.id}</Link><small className="orders-subline">#{order.id.slice(-4)}</small></td>}{visibleColumns.includes('channel')&&<td><span className={'orders-channel channel-'+order.channel.toLowerCase().replace(/[^a-z]/g,'')}>{order.channel}</span></td>}{visibleColumns.includes('customer')&&<td><span className="orders-customer"><i>{order.customer.split(' ').map(part=>part[0]).join('').slice(0,2)}</i><span><b>{order.customer}</b><small>{order.phone}</small></span></span></td>}{visibleColumns.includes('product')&&<td><span className="orders-product"><b>{order.product}</b><small>SKU: {order.sku} · Qty {order.quantity}</small></span></td>}{visibleColumns.includes('paymentMode')&&<td><span className={'payment-chip '+(order.paymentMode==='COD'?'cod':'prepaid')}>{order.paymentMode}</span></td>}{visibleColumns.includes('amount')&&<td className="orders-amount">{fmtMoney(order.amount)}</td>}{visibleColumns.includes('weight')&&<td>{order.weight.toFixed(2)} kg</td>}{visibleColumns.includes('date')&&<td><span className="orders-date">{fmtDate(order.date)}</span><small className="orders-subline">{new Date(order.date).toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'})}</small></td>}{visibleColumns.includes('status')&&<td><StatusPill status={order.status}/></td>}{visibleColumns.includes('courier')&&<td><span className="orders-courier"><Truck size={13}/>{order.courier}</span></td>}<td className="orders-row-action"><button onClick={()=>setMenuId(menuId===order.id?'':order.id)} aria-label={'Actions for '+order.id}><MoreHorizontal size={18}/></button>{menuId===order.id&&<div className="orders-row-menu"><Link to={'/app/orders/'+order.id}><Eye size={14}/>View details</Link><button onClick={()=>{setSelected([order.id]);setMenuId('');showToast('Selected '+order.id+' for bulk actions.')}}><CheckCheck size={14}/>Select order</button><button onClick={()=>{setMenuId('');showToast('Label prepared for '+order.id);window.print()}}><Printer size={14}/>Print label</button><button onClick={()=>{setMenuId('');showToast('Demo: cancellation requested for '+order.id)}}><Ban size={14}/>Cancel order</button></div>}</td></tr>)}</tbody></table>
+      <div className="orders-table-scroll"><table className="orders-table"><thead><tr><th className="orders-check-cell"><input type="checkbox" checked={allPageSelected} onChange={togglePage} aria-label="Select all orders on this page"/></th>{columnDefinitions.filter(column=>visibleColumns.includes(column.key)).map(column=><th key={column.key}>{column.label}</th>)}<th className="orders-action-head">Actions</th></tr></thead><tbody>{pageRows.map(order=><tr key={order.id}><td className="orders-check-cell"><input type="checkbox" checked={selected.includes(order.id)} onChange={()=>toggleOne(order.id)} aria-label={'Select '+order.id}/></td>{visibleColumns.includes('id')&&<td><Link className="orders-id-link" to={'/app/orders/'+order.id}>{order.id}</Link><small className="orders-subline">#{order.id.slice(-4)}</small></td>}{visibleColumns.includes('channel')&&<td><span className={'orders-channel channel-'+order.channel.toLowerCase().replace(/[^a-z]/g,'')}>{order.channel}</span></td>}{visibleColumns.includes('customer')&&<td><span className="orders-customer"><i>{order.customer.split(' ').map(part=>part[0]).join('').slice(0,2)}</i><span><b>{order.customer}</b><small>{order.phone}</small></span></span></td>}{visibleColumns.includes('product')&&<td><span className="orders-product"><b>{order.product}</b><small>SKU: {order.sku} · Qty {order.quantity}</small></span></td>}{visibleColumns.includes('paymentMode')&&<td><span className={'payment-chip '+(order.paymentMode==='COD'?'cod':'prepaid')}>{order.paymentMode}</span></td>}{visibleColumns.includes('amount')&&<td className="orders-amount">{fmtMoney(order.amount)}</td>}{visibleColumns.includes('weight')&&<td>{order.weight.toFixed(2)} kg</td>}{visibleColumns.includes('date')&&<td><span className="orders-date">{fmtDate(order.date)}</span><small className="orders-subline">{new Date(order.date).toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'})}</small></td>}{visibleColumns.includes('status')&&<td>{order.uuid?<select aria-label={'Update status for '+order.id} value={order.status} onChange={event=>updateOrderStatus(order,event.target.value)} className="orders-status-select">{orderStatuses.filter(status=>status!=='All').map(status=><option key={status} value={status}>{status}</option>)}</select>:<StatusPill status={order.status}/>}</td>}{visibleColumns.includes('courier')&&<td><span className="orders-courier"><Truck size={13}/>{order.courier}</span></td>}<td className="orders-row-action"><button onClick={()=>setMenuId(menuId===order.id?'':order.id)} aria-label={'Actions for '+order.id}><MoreHorizontal size={18}/></button>{menuId===order.id&&<div className="orders-row-menu"><Link to={'/app/orders/'+order.id}><Eye size={14}/>View details</Link><button onClick={()=>{setSelected([order.id]);setMenuId('');showToast('Selected '+order.id+' for bulk actions.')}}><CheckCheck size={14}/>Select order</button><button onClick={()=>{setMenuId('');showToast('Label prepared for '+order.id);window.print()}}><Printer size={14}/>Print label</button><button onClick={()=>{setMenuId('');showToast('Demo: cancellation requested for '+order.id)}}><Ban size={14}/>Cancel order</button></div>}</td></tr>)}</tbody></table>
         {pageRows.length===0&&<div className="orders-empty"><Package size={28}/><b>No orders found</b><span>Change your search or filters and try again.</span><button className="outline-button" onClick={()=>{setSearch('');resetFilters();setTab('All')}}>Clear all filters</button></div>}
       </div>
       <div className="orders-pagination"><span>Showing <b>{filtered.length?((currentPage-1)*pageSize+1):0}–{Math.min(currentPage*pageSize,filtered.length)}</b> of <b>{filtered.length}</b> orders</span><div className="orders-page-size"><label>Rows per page<select value={pageSize} onChange={event=>{setPageSize(Number(event.target.value));setPage(1)}}><option value={10}>10</option><option value={20}>20</option><option value={50}>50</option></select></label></div><div className="orders-page-controls"><button disabled={currentPage===1} onClick={()=>setPage(currentPage-1)} aria-label="Previous page"><ChevronLeft size={16}/></button><span>Page <b>{currentPage}</b> of <b>{totalPages}</b></span><button disabled={currentPage===totalPages} onClick={()=>setPage(currentPage+1)} aria-label="Next page"><ChevronRight size={16}/></button></div></div>
