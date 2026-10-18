@@ -2140,3 +2140,120 @@ body{font-size:16px;-webkit-font-smoothing:antialiased}
 @media(prefers-reduced-motion:reduce){
  .hero-4pl-copy,.hero-network-art,.network-art-lines path,.control-tower-card{animation:none!important}
 }
+
+
+/* Public pages finishing pass — stronger top-of-page hierarchy and legible footer */
+.site-header,.site-header.header-scrolled{height:86px!important;min-height:86px}
+.nav-shell{width:min(1440px,calc(100% - 80px))!important;gap:30px!important}
+.brand-symbol{width:42px!important;height:42px!important}
+.brand-word{font-size:30px!important;letter-spacing:-1.6px!important}
+.main-nav{gap:clamp(18px,2.1vw,32px)!important}
+.main-nav>a,.main-nav .mega-nav-item>button,.nav-login{font-size:14px!important;font-weight:700!important}
+.nav-actions{gap:13px!important}
+.nav-actions .button,.nav-account-trigger{min-height:46px!important;font-size:14px!important}
+.nav-account-avatar{width:36px!important;height:36px!important;font-size:13px!important}
+.mega-site-header .mega-nav-item>button{padding:10px 0!important}
+.hero-4pl-layout{padding-top:12px!important}
+.hero-4pl .eyebrow{font-size:12px!important;padding:9px 14px 9px 9px!important}
+.hero-4pl h1{font-size:clamp(58px,5vw,78px)!important;line-height:1.015!important}
+.hero-4pl .hero-description{font-size:18px!important;line-height:1.78!important;max-width:620px!important}
+.hero-4pl .hero-buttons .button-large{font-size:15px!important;min-height:58px!important}
+.hero-coverage-note b{font-size:14px!important}
+.hero-coverage-note small{font-size:12px!important}
+.hero-4pl .hero-mini-points span{font-size:13px!important}
+.section-kicker,.section-title .section-kicker{font-size:12px!important}
+.section-title h2,.network-copy h2,.tracking-copy h2,.calculator-copy h2,.early-access-copy h2{font-size:clamp(38px,4.2vw,56px)!important}
+.section-title>p,.network-copy>p,.tracking-copy>p,.calculator-copy>p,.early-access-copy>p{font-size:16px!important;line-height:1.85!important}
+.feature-card h3{font-size:22px!important}
+.feature-card p{font-size:15px!important;line-height:1.8!important}
+.feature-card>a,.feature-eyebrow{font-size:13px!important}
+.network-checks b{font-size:15px!important}
+.network-checks small{font-size:13px!important}
+.network-label{font-size:11px!important}
+.network-node b{font-size:14px!important}
+.network-node small{font-size:12px!important}
+.tracking-card-header,.tracking-form label,.tracking-result,.tracking-demo-note{font-size:13px}
+.site-footer{padding-top:58px!important;padding-bottom:28px!important}
+.footer-main{gap:clamp(30px,5vw,70px)!important;padding-bottom:38px!important}
+.footer-brand-column .brand-word{font-size:29px!important}
+.footer-brand-column p{max-width:360px!important;font-size:14px!important;line-height:1.85!important}
+.footer-col h4{margin-bottom:17px!important;font-size:15px!important;font-weight:800!important}
+.footer-col a{display:inline-flex!important;align-items:center;min-height:34px!important;font-size:14px!important;line-height:1.55!important}
+.footer-made,.footer-status{font-size:13px!important}
+.footer-bottom{padding-top:20px!important;font-size:13px!important;line-height:1.6!important}
+.public-header{min-height:84px!important}
+.public-header-inner{min-height:84px!important;padding-left:clamp(22px,4vw,48px)!important;padding-right:clamp(22px,4vw,48px)!important}
+.public-brand{font-size:27px!important}
+.public-brand-mark{width:42px!important;height:42px!important}
+.public-nav-group{gap:clamp(16px,2vw,27px)!important}
+.public-nav-group a{font-size:14px!important;font-weight:650!important}
+.public-nav-actions .button,.public-nav-actions a{font-size:14px!important}
+.public-page{padding-top:clamp(36px,4.5vw,60px)!important}
+.public-page>.public-eyebrow,.public-page .public-eyebrow{font-size:13px!important}
+.public-page .public-hero{padding-top:clamp(24px,3vw,42px)!important;gap:clamp(30px,4vw,58px)!important}
+.public-page .public-hero h1,.public-page .public-pricing-hero>h1,.public-page .public-tracking-hero h1{font-size:clamp(42px,4.8vw,66px)!important;line-height:1.06!important}
+.public-page .public-hero-copy>p,.public-page .public-pricing-hero>p,.public-page .public-tracking-hero>p{font-size:17px!important;line-height:1.85!important}
+.public-page .public-section-heading{margin-bottom:30px!important}
+.public-page .public-section-heading h2{font-size:clamp(30px,3.4vw,44px)!important}
+.public-page .public-section-heading p{font-size:16px!important}
+.public-page .public-benefit-grid article{padding:26px!important}
+.public-page .public-benefit-grid article h3{font-size:21px!important}
+.public-page .public-benefit-grid article p{font-size:15px!important}
+.public-page .public-cta-band{padding:clamp(24px,3vw,38px)!important}
+.public-page .public-cta-band h2{font-size:clamp(25px,3vw,34px)!important}
+.public-page .public-cta-band p{font-size:15px!important;line-height:1.8!important}
+.public-footer{padding:48px clamp(22px,4vw,48px) 24px!important}
+.public-footer-top{gap:24px!important;padding-bottom:30px!important}
+.public-footer .public-brand{font-size:27px!important}
+.public-footer-top>p{font-size:15px!important;line-height:1.8!important}
+.public-footer-actions{gap:20px!important}
+.public-footer-actions a,.public-footer-bottom a{font-size:14px!important;min-height:34px}
+.public-footer-bottom{padding-top:22px!important;font-size:13px!important;line-height:1.7!important}
+.blog-site .blog-index-main,.blog-site .blog-article-main{padding-top:clamp(34px,4.5vw,60px)!important}
+.blog-site h1{font-size:clamp(42px,4.8vw,66px)!important;line-height:1.07!important}
+.blog-site h2{font-size:clamp(30px,3.5vw,44px)!important}
+.blog-site .blog-article-deck,.blog-site .blog-article-lead{font-size:19px!important;line-height:1.85!important}
+.blog-site .blog-article-body{font-size:17px!important;line-height:1.9!important}
+.blog-site .blog-post-meta,.blog-site .blog-author,.blog-site .blog-read-link{font-size:13px!important}
+@media(max-width:1080px){
+ .nav-shell{width:calc(100% - 48px)!important}
+ .main-nav{gap:16px!important}
+ .main-nav>a,.main-nav .mega-nav-item>button{font-size:13px!important}
+ .footer-main{gap:28px!important}
+ .public-header-inner{padding-left:24px!important;padding-right:24px!important}
+}
+@media(max-width:760px){
+ .site-header,.site-header.header-scrolled{min-height:72px!important;height:auto!important}
+ .nav-shell{width:calc(100% - 32px)!important}
+ .brand-symbol{width:38px!important;height:38px!important}
+ .brand-word{font-size:26px!important}
+ .public-header-inner{min-height:0!important;padding:13px 18px!important}
+ .public-brand{font-size:23px!important}
+ .public-nav-group a{font-size:13px!important}
+ .hero-4pl h1{font-size:clamp(44px,9.5vw,64px)!important}
+ .hero-4pl .hero-description{font-size:16px!important}
+ .section-title h2,.network-copy h2,.tracking-copy h2,.calculator-copy h2,.early-access-copy h2{font-size:clamp(32px,7.5vw,44px)!important}
+ .section-title>p,.network-copy>p,.tracking-copy>p,.calculator-copy>p,.early-access-copy>p{font-size:15px!important}
+ .footer-main{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:28px 20px!important}
+ .footer-brand-column p{font-size:13px!important}
+ .footer-col h4{font-size:14px!important}
+ .footer-col a{font-size:13px!important;min-height:32px!important}
+ .footer-bottom{font-size:12px!important}
+ .public-page{padding-top:28px!important}
+ .public-page .public-hero h1,.public-page .public-pricing-hero>h1,.public-page .public-tracking-hero h1{font-size:clamp(36px,8.8vw,50px)!important}
+ .public-page .public-hero-copy>p,.public-page .public-pricing-hero>p,.public-page .public-tracking-hero>p{font-size:15px!important}
+ .public-footer{padding:32px 20px 20px!important}
+ .public-footer-top{gap:12px!important;flex-wrap:wrap!important}
+ .public-footer-top>p{font-size:13px!important;width:100%;order:3}
+ .public-footer-actions{gap:15px!important}
+ .public-footer-actions a,.public-footer-bottom a{font-size:12px!important}
+ .blog-site h1{font-size:clamp(36px,8.8vw,50px)!important}
+ .blog-site .blog-article-deck,.blog-site .blog-article-lead{font-size:17px!important}
+ .blog-site .blog-article-body{font-size:16px!important}
+}
+@media(max-width:420px){
+ .footer-main{gap:24px 14px!important}
+ .footer-col a{font-size:12px!important}
+ .footer-brand-column p{font-size:12px!important}
+ .public-footer-actions a,.public-footer-bottom a{font-size:12px!important}
+}
