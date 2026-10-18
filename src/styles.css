@@ -2257,3 +2257,33 @@ body{font-size:16px;-webkit-font-smoothing:antialiased}
  .footer-brand-column p{font-size:12px!important}
  .public-footer-actions a,.public-footer-bottom a{font-size:12px!important}
 }
+
+
+/* Homepage control-tower visual: modestly enlarge the right-side feature without crowding the copy */
+@media(min-width:901px){
+ .hero-4pl-layout{
+   grid-template-columns:minmax(0,.91fr) minmax(0,1.09fr)!important;
+   gap:clamp(24px,3vw,44px)!important;
+ }
+ .hero-network-art{
+   width:calc(100% + 24px)!important;
+   height:min(560px,calc(100svh - 150px))!important;
+   min-height:470px!important;
+   margin-left:-8px!important;
+   transform:scale(1.025)!important;
+   transform-origin:center center!important;
+ }
+ .control-tower-card{width:min(540px,91%)!important}
+}
+@media(min-width:901px) and (max-height:780px){
+ .hero-network-art{height:min(510px,calc(100svh - 140px))!important;min-height:430px!important}
+ .control-tower-card{width:min(520px,90%)!important}
+}
+@media(max-width:900px){
+ .hero-network-art{width:min(100%,760px)!important;height:530px!important;min-height:470px!important}
+ .control-tower-card{width:min(540px,91%)!important}
+}
+@media(max-width:600px){
+ .hero-network-art{width:100%!important;height:410px!important;min-height:370px!important;transform:none!important}
+ .control-tower-card{width:96%!important}
+}
