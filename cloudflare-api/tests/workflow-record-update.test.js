@@ -141,3 +141,21 @@ test("customer follow-ups have an explicit persisted lifecycle instead of generi
   assert.match(frontend, /apiRequest\('\/api\/workflows\/'\+row\.id\+'\/status'/);
   assert.match(frontend, /Status updated to '\+nextStatus\+' and saved to your organization workspace\./);
 });
+
+test("COD reconciliation is restricted to a saved delivered COD shipment in the same organization", () => {
+  assert.match(worker, /o\.organization_id = \$\{user\.organizationId\}::uuid/);
+  assert.match(worker, /o\.order_number = \$\{orderReference\}/);
+  assert.match(worker, /s\.shipment_number = \$\{awb\} OR s\.tracking_number = \$\{awb\}/);
+  assert.match(worker, /linked\.payment_mode !== "COD"/);
+  assert.match(worker, /linked\.shipment_status !== "Delivered"/);
+  assert.match(worker, /linked\.shipment_courier !== courierName/);
+  assert.match(worker, /Number\(linked\.order_amount\) !== codExpected/);
+  assert.match(worker, /amountRemitted > codExpected/);
+  assert.match(worker, /const effectiveDeliveredAt = linked\.shipment_delivered_at \|\| deliveredAt/);
+});
+
+test("COD remittance UI explains saved delivered COD shipment requirements", async () => {
+  const billing = await readFile(new URL("../../src/pages/Billing.jsx", import.meta.url), "utf8");
+  assert.match(billing, /saved COD order whose linked shipment is Delivered/);
+  assert.match(billing, /API verifies the order, AWB, courier and expected amount/);
+});
