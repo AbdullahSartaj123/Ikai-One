@@ -124,7 +124,8 @@ const WORKFLOW_TRANSITIONS = {
 function nextWorkflowStatus(slug,currentStatus){
  const transitions=WORKFLOW_TRANSITIONS[slug]
  const key=String(currentStatus||'').trim().toLowerCase()
- if(!transitions)return key==='reviewed'?null:'Reviewed'
+ if(key==='reviewed')return null
+ if(!transitions)return 'Reviewed'
  if(Object.prototype.hasOwnProperty.call(transitions,key))return transitions[key]
  return 'Reviewed'
 }
