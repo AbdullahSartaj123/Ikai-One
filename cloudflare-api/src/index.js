@@ -1097,10 +1097,33 @@ export default {
             if (!allowed.includes(status)) return json(request, { error: "Invalid internal shipment status." }, 400);
             const description = String(body.description || "Internal status updated. This does not contact a courier.").trim().slice(0,500);
             const location = String(body.location || "").trim().slice(0,200);
+            const currentRows = await sql`
+              SELECT id, status FROM ikai.shipment_records
+              WHERE id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+              LIMIT 1
+            `;
+            if (!currentRows[0]) return json(request, { error: "Shipment not found." }, 404);
+            const currentStatus = currentRows[0].status;
+            const transitions = {
+              "Label pending": ["Ready to ship", "Booked", "Exception"],
+              "Ready to ship": ["Booked", "Picked up", "Exception"],
+              "Booked": ["Picked up", "In transit", "Exception"],
+              "Picked up": ["In transit", "Out for delivery", "Exception", "Returned"],
+              "In transit": ["Out for delivery", "Delivered", "Exception", "Returned"],
+              "Out for delivery": ["Delivered", "Exception", "Returned"],
+              "Exception": ["Ready to ship", "Booked", "Picked up", "In transit", "Out for delivery", "Returned"],
+              "Delivered": [],
+              "Returned": []
+            };
+            if (status !== currentStatus && !(transitions[currentStatus] || []).includes(status)) {
+              return json(request, { error: `Shipment status cannot move from "${currentStatus}" to "${status}". Refresh the shipment and choose a valid next step.` }, 409);
+            }
             const rows = await sql`
               WITH changed AS (
                 UPDATE ikai.shipment_records SET status = ${status}, updated_at = now()
-                WHERE id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+                WHERE id = ${statusMatch[1]}::uuid
+                  AND organization_id = ${user.organizationId}::uuid
+                  AND status = ${currentStatus}
                 RETURNING *
               ), event AS (
                 INSERT INTO ikai.shipment_events (organization_id, shipment_id, status, description, location, source, created_by)
@@ -1109,7 +1132,7 @@ export default {
               )
               SELECT changed.* FROM changed
             `;
-            if (!rows[0]) return json(request, { error: "Shipment not found." }, 404);
+            if (!rows[0]) return json(request, { error: "Shipment changed concurrently. Refresh and try again." }, 409);
             await sql`INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
               VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'shipment_status_changed', 'shipment', ${rows[0].shipment_number}, jsonb_build_object('status', ${status}, 'courierBookingConfirmed', false))`;
             return json(request, { data: rows[0], message: "Internal status saved. No courier was contacted." });
