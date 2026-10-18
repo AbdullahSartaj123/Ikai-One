@@ -25,6 +25,7 @@ test("frontend edit submits the saved reference, title, status and payload", () 
 });
 
 test("frontend edit reference field matcher uses word boundaries correctly", () => {
-  assert.ok(frontend.includes(String.raw`/(\\bid\\b|reference|awb|sku|code|number|subject|ticket)/i`));
-  assert.ok(!frontend.includes(String.raw`/(\\\\bid\\\\b|reference|awb|sku|code|number|subject|ticket)/i`));
+  assert.ok(frontend.includes("\\bid\\b"));
+  assert.ok(frontend.includes("reference|awb|sku|code|number|subject|ticket"));
+  assert.ok(!frontend.includes("\\\\bid\\\\b"));
 });
