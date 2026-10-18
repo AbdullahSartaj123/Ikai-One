@@ -503,3 +503,14 @@
   .dashboard-shell .sidebar-edge-toggle svg,
   .dashboard-shell .sidebar-edge-toggle-grip{transition:none!important}
 }
+
+
+/* Order-to-shipment handoff */
+.orders-next-shipment{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;margin-top:22px;padding:18px;border:1px solid #dce4ff;border-radius:16px;background:linear-gradient(135deg,#f7f8ff,#fff)}
+.orders-next-shipment>div:first-child{display:flex;align-items:flex-start;gap:12px;min-width:0}
+.orders-next-shipment .orders-success-icon{display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;border-radius:12px;background:#e7eaff;color:#4557d8}
+.orders-next-shipment b{display:block;color:#172033;font-size:14px}
+.orders-next-shipment p{margin:5px 0 0;color:#647087;font-size:12px;line-height:1.6}
+.orders-next-shipment .primary-button{white-space:nowrap}
+.orders-next-shipment .orders-form-error{grid-column:1/-1;margin:0}
+@media(max-width:640px){.orders-next-shipment{grid-template-columns:1fr}.orders-next-shipment .primary-button{width:100%;justify-content:center}}
