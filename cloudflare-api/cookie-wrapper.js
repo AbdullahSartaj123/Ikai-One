@@ -53,7 +53,9 @@ export default {
       (url.pathname === "/api/auth/logout" && request.method === "POST") ||
       (url.pathname === "/api/shipments" && request.method === "GET") ||
       url.pathname === "/api/cod-reconciliations" ||
-      url.pathname.startsWith("/api/cod-reconciliations/");
+      url.pathname.startsWith("/api/cod-reconciliations/") ||
+      url.pathname === "/api/inventory" ||
+      url.pathname.startsWith("/api/inventory/");
 
     let upstreamRequest = request;
     if (isSessionRoute && cookieToken) {
