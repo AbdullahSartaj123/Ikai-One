@@ -51,7 +51,8 @@ export default {
     const isSessionRoute =
       (url.pathname === "/api/auth/me" && request.method === "GET") ||
       (url.pathname === "/api/auth/logout" && request.method === "POST") ||
-      (url.pathname === "/api/shipments" && request.method === "GET") ||
+      (url.pathname === "/api/shipments" && ["GET", "POST"].includes(request.method)) ||
+      /^\/api\/shipments\/[0-9a-f-]{36}\/(?:status|events)$/i.test(url.pathname) ||
       url.pathname === "/api/cod-reconciliations" ||
       url.pathname.startsWith("/api/cod-reconciliations/") ||
       url.pathname === "/api/inventory" ||
