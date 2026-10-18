@@ -932,6 +932,9 @@ export default {
               const linkError = await validateReturnLinks(sql, user.organizationId, payload);
               if (linkError) return json(request, { error: linkError }, 400);
             }
+            if (workflowKey === "ndr-followups" && status !== "Open") {
+              return json(request, { error: "New customer follow-ups must start in Open status." }, 400);
+            }
             if (["ndr", "ndr-followups"].includes(workflowKey)) {
               const linkError = await validateNdrLinks(sql, user.organizationId, payload);
               if (linkError) return json(request, { error: linkError }, 400);
@@ -971,20 +974,30 @@ export default {
               LIMIT 1
             `;
             if (!existingRows[0]) return json(request, { error: "Workflow record not found." }, 404);
-            if (existingRows[0].workflow_key === "returns") {
-              const allowedNext = {
+            if (["returns", "ndr-followups"].includes(existingRows[0].workflow_key)) {
+              const isReturn = existingRows[0].workflow_key === "returns";
+              const allowedNext = isReturn ? {
                 "Requested": ["Pickup pending"],
                 "Pickup pending": ["In transit"],
                 "In transit": ["Completed"],
                 "Completed": []
+              } : {
+                "Open": ["In progress"],
+                "In progress": ["Awaiting response"],
+                "Awaiting response": ["Reattempt scheduled"],
+                "Reattempt scheduled": ["Resolved"],
+                "Resolved": []
               };
               const currentStatus = existingRows[0].status;
               if (status !== currentStatus && !(allowedNext[currentStatus] || []).includes(status)) {
-                return json(request, { error: `Return status cannot move from "${currentStatus}" to "${status}". Refresh the return and choose the next allowed step.` }, 409);
+                const label = isReturn ? "Return" : "Customer follow-up";
+                return json(request, { error: `${label} status cannot move from "${currentStatus}" to "${status}". Refresh the record and choose the next allowed step.` }, 409);
               }
-              const mergedPayload = { ...(existingRows[0].payload || {}), ...(payload || {}) };
-              const linkError = await validateReturnLinks(sql, user.organizationId, mergedPayload);
-              if (linkError) return json(request, { error: linkError }, 400);
+              if (isReturn) {
+                const mergedPayload = { ...(existingRows[0].payload || {}), ...(payload || {}) };
+                const linkError = await validateReturnLinks(sql, user.organizationId, mergedPayload);
+                if (linkError) return json(request, { error: linkError }, 400);
+              }
             }
             if (["ndr", "ndr-followups"].includes(existingRows[0].workflow_key)) {
               const mergedPayload = { ...(existingRows[0].payload || {}), ...(payload || {}) };
@@ -999,10 +1012,10 @@ export default {
                   payload = CASE WHEN ${payload !== null} THEN payload || ${JSON.stringify(payload || {})}::jsonb ELSE payload END,
                   updated_by = ${user.id}::uuid, updated_at = now()
               WHERE id = ${recordMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
-                AND (${existingRows[0].workflow_key !== "returns"} OR status = ${existingRows[0].status})
+                AND (${!["returns", "ndr-followups"].includes(existingRows[0].workflow_key)} OR status = ${existingRows[0].status})
               RETURNING id, workflow_key, reference, title, status, payload, created_at, updated_at
             `;
-            if (!rows[0]) return json(request, { error: existingRows[0].workflow_key === "returns" ? "Return status changed concurrently. Refresh and try again." : "Workflow record not found." }, 409);
+            if (!rows[0]) return json(request, { error: ["returns", "ndr-followups"].includes(existingRows[0].workflow_key) ? "Workflow status changed concurrently. Refresh and try again." : "Workflow record not found." }, 409);
             await sql`
               INSERT INTO ikai.organization_audit_events
                 (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
