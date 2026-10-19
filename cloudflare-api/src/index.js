@@ -739,6 +739,11 @@ export default {
               LEFT JOIN ikai.auth_identities ai ON ai.user_id = u.id
               WHERE (${requestedStatus} = 'all' OR o.approval_status = ${requestedStatus})
                 AND o.organization_type = 'shipper'
+                AND NOT EXISTS (
+                  SELECT 1 FROM ikai.users pu
+                  JOIN ikai.platform_admins pa ON pa.user_id = pu.id
+                  WHERE pu.organization_id = o.id
+                )
               ORDER BY CASE WHEN o.approval_status = 'pending' THEN 0 ELSE 1 END, o.created_at DESC
               LIMIT 100
             `;
