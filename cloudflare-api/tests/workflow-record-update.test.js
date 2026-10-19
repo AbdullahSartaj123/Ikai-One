@@ -179,8 +179,8 @@ test("return workflow enforces allowed lifecycle transitions server-side", () =>
   assert.match(worker, /"Requested": \["Pickup pending"\]/);
   assert.match(worker, /"Pickup pending": \["In transit"\]/);
   assert.match(worker, /"In transit": \["Completed"\]/);
-  assert.match(worker, /Return status cannot move from/);
-  assert.match(worker, /AND \(\$\{existingRows\[0\]\.workflow_key !== "returns"\} OR status = \$\{existingRows\[0\]\.status\}\)/);
+  assert.match(worker, /const label = isReturn \? "Return" : "Customer follow-up"/);
+  assert.match(worker, /AND \(\$\{!\["returns", "ndr-followups"\]\.includes\(existingRows\[0\]\.workflow_key\)\} OR status = \$\{existingRows\[0\]\.status\}\)/);
   assert.match(worker, /Return status changed concurrently/);
 });
 
@@ -196,4 +196,23 @@ test("return details can be edited without changing lifecycle status", () => {
   assert.match(worker, /if \(status !== currentStatus && !\(allowedNext\[currentStatus\] \|\| \[\]\)\.includes\(status\)\)/);
   assert.match(worker, /SET status = \$\{status\},[\s\S]*payload = CASE WHEN \$\{payload !== null\}/);
   assert.match(worker, /'workflow_record_updated', 'workflow_record'/);
+});
+
+
+test("customer follow-up lifecycle is enforced server-side and permits same-status detail edits", () => {
+  assert.match(worker, /New customer follow-ups must start in Open status/);
+  assert.match(worker, /"Open": \["In progress"\]/);
+  assert.match(worker, /"In progress": \["Awaiting response"\]/);
+  assert.match(worker, /"Awaiting response": \["Reattempt scheduled"\]/);
+  assert.match(worker, /"Reattempt scheduled": \["Resolved"\]/);
+  assert.match(worker, /const label = isReturn \? "Return" : "Customer follow-up"/);
+  assert.match(worker, /existingRows\[0\]\.workflow_key === "ndr-followups" \? "Customer follow-up status changed concurrently/);
+  assert.match(worker, /AND \(\$\{!\["returns", "ndr-followups"\]\.includes\(existingRows\[0\]\.workflow_key\)\} OR status = \$\{existingRows\[0\]\.status\}\)/);
+  assert.match(worker, /'workflow_record_updated', 'workflow_record'/);
+});
+
+test("customer follow-up transitions retain shipment link validation and organization isolation", () => {
+  assert.match(worker, /async function validateNdrLinks\(sql, organizationId, payload\)/);
+  assert.match(worker, /\["ndr", "ndr-followups"\]\.includes\(existingRows\[0\]\.workflow_key\)/);
+  assert.match(worker, /WHERE id = \$\{recordMatch\[1\]\}::uuid AND organization_id = \$\{user\.organizationId\}::uuid/);
 });
