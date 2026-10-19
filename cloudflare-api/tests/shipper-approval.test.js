@@ -91,6 +91,7 @@ test("platform admins can browse bounded operational records across shipper orga
   assert.match(worker, /Math\.min\(100, Math\.max\(1/);
   assert.match(worker, /Math\.min\(100000, Math\.max\(0/);
   assert.match(worker, /platform_records_viewed/);
+  assert.match(worker, /INSERT INTO ikai\.platform_audit_events \(actor_user_id, target_organization_id, event_type, details\)[\s\S]*?\$\{organizationId \|\| null\}::uuid, 'platform_records_viewed'/);
   assert.match(worker, /organization_type = 'shipper'/);
   assert.match(worker, /tracking_number/);
   assert.match(adminPage, /Operational records/);
