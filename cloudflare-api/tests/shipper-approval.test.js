@@ -50,3 +50,15 @@ test("platform-admin-owned organizations are excluded from both the queue and di
   assert.match(worker, /AS has_platform_admin_owner/);
   assert.match(worker, /if \(applicant\[0\]\.has_platform_admin_owner\) \{[\s\S]*?Platform administrator organizations cannot be reviewed/);
 });
+
+
+test("platform overview exposes aggregate operations metrics only to platform admins", () => {
+  assert.match(worker, /url\.pathname === "\/api\/admin\/overview"/);
+  assert.match(worker, /total_shippers/);
+  assert.match(worker, /total_orders/);
+  assert.match(worker, /total_shipments/);
+  assert.match(worker, /confirmed_courier_bookings/);
+  assert.match(worker, /cod_attention_records/);
+  assert.match(worker, /if \(!user\.isPlatformAdmin\) return json\(request, \{ error: "Platform administrator access is required\." \}, 403\)/);
+  assert.match(worker, /Customer-level PII is deliberately not included/);
+});
