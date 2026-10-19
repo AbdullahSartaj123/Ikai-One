@@ -34,13 +34,13 @@ Do not expose this SQL as an API or allow a user to grant themselves platform ac
 ## Behavior
 
 - New shipper registrations start with `approval_status = 'pending'`; verifying an email does not create an authenticated dashboard session.
-- Only explicitly provisioned platform administrators can use `/api/admin/organizations`, the decision endpoint, `/api/admin/overview`, and `/api/admin/records`.
+- Only explicitly provisioned platform administrators can use `/api/admin/organizations`, the decision endpoint, `/api/admin/overview`, `/api/admin/records`, and `/api/admin/audit`.
 - The platform overview reports aggregate shipper/order/shipment/COD/inventory counts and per-organization activity counts, using the same exclusion of platform-admin-owned workspaces. The read-only operational records browser supports orders, shipments, COD reconciliation, inventory, and workflow records with bounded pagination, search, and an optional shipper-organisation filter. Orders may include customer names and phone numbers because the two platform administrators are intended to oversee operational records; access is server-side admin-only and each records view is written to `ikai.platform_audit_events`. Platform-admin-owned organizations are excluded.
 - Courier booking counts include only rows explicitly marked `courier_booking_confirmed = true`; a shipment record by itself is not proof that a courier accepted a booking.
 - Administrators can approve a pending application, or reject it with a reason. Decisions are conditional on the application still being pending and are written to `ikai.platform_audit_events`.
 - Rejected and pending shipper accounts cannot log in or use existing sessions. Existing organizations are backfilled as approved by the migration to avoid interrupting current customers.
 - Platform admin workspaces are excluded from the shipper review queue to prevent self-review.
-- The admin console includes an aggregate operations overview and a read-only cross-shipper records browser. It does not trigger courier bookings, payments, COD payouts, or record mutations.
+- The admin console includes an aggregate operations overview, a read-only cross-shipper records browser, and a searchable, paginated audit-history viewer for administrative decisions and operational record access. Audit history is read-only and restricted to platform administrators. The console does not trigger courier bookings, payments, COD payouts, or record mutations.
 
 ## Deployment safety
 
