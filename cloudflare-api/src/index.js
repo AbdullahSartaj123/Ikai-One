@@ -778,12 +778,22 @@ export default {
                   SELECT 1 FROM ikai.users u
                   JOIN ikai.auth_identities ai ON ai.user_id = u.id
                   WHERE u.organization_id = o.id AND ai.email_verified_at IS NOT NULL
-                ) AS email_verified
+                ) AS email_verified,
+                EXISTS (
+                  SELECT 1 FROM ikai.users pu
+                  JOIN ikai.platform_admins pa ON pa.user_id = pu.id
+                  WHERE pu.organization_id = o.id
+                ) AS has_platform_admin_owner
               FROM ikai.organizations o
               WHERE o.id = ${decisionMatch[1]}::uuid AND o.organization_type = 'shipper'
               LIMIT 1
             `;
             if (!applicant[0]) return json(request, { error: "Shipper application not found." }, 404);
+            // Defense in depth: platform-admin-owned organizations are never eligible for shipper review,
+            // even if an administrator manually calls this endpoint with a known organization UUID.
+            if (applicant[0].has_platform_admin_owner) {
+              return json(request, { error: "Platform administrator organizations cannot be reviewed as shipper applications." }, 403);
+            }
             if (applicant[0].approval_status !== "pending") {
               return json(request, { error: "This application is no longer pending. Refresh the list before taking another action.", approvalStatus: applicant[0].approval_status }, 409);
             }
