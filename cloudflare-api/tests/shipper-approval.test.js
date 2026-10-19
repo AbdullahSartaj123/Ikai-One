@@ -31,6 +31,7 @@ test("login and existing sessions enforce approval status server-side", () => {
 });
 
 test("admin console route redirects authenticated non-admins away from platform controls", () => {
+  assert.match(router, /import \{[^}]*Outlet[^}]*\} from 'react-router-dom'/);
   assert.match(router, /function PlatformAdminRoute\(\)/);
   assert.match(router, /if \(!user\?\.isPlatformAdmin\) return <Navigate to="\/app\/dashboard" replace \/>/);
   assert.match(router, /<Route element={<PlatformAdminRoute\/>}>[\s\S]*?<Route path="\/admin" element={<AdminConsole\/>}\/>/);
