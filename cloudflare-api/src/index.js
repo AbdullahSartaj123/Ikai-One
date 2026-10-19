@@ -653,7 +653,18 @@ export default {
             SET consumed_at = COALESCE(consumed_at, now())
             WHERE user_id = ${rows[0].user_id} AND purpose = 'verify_email' AND consumed_at IS NULL
           `;
-          return json(request, { message: "Testing account email verified." });
+          // This secret-gated helper is available only on isolated test/staging Workers.
+          // It simulates an administrator approval so auth E2E tests can continue past signup.
+          await sql`
+            UPDATE ikai.organizations o
+            SET approval_status = 'approved', approval_reviewed_at = now(),
+                approval_note = 'Approved by isolated test helper'
+            FROM ikai.users u
+            WHERE u.id = ${rows[0].user_id}::uuid
+              AND u.organization_id = o.id
+              AND o.organization_type = 'shipper'
+          `;
+          return json(request, { message: "Testing account email verified and test approval applied." });
         }
         if (url.pathname === "/api/testing/check-password-reset" && request.method === "POST") {
           if (env.ENABLE_TEST_HELPERS !== "true" || env.DISABLE_EMAIL !== "true" || !env.TEST_HELPER_SECRET) {
