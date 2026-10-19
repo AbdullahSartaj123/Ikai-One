@@ -29,6 +29,14 @@ const metricCards = [
 ]
 
 const numberFormat = value => Number(value || 0).toLocaleString()
+const recordTypes = [['orders', 'Orders'], ['shipments', 'Shipments'], ['cod', 'COD reconciliation'], ['inventory', 'Inventory'], ['workflow', 'Workflow records']]
+const recordColumns = {
+  orders: ['organization_name', 'order_number', 'customer_name', 'phone', 'city', 'payment_mode', 'amount', 'status', 'created_at'],
+  shipments: ['organization_name', 'shipment_number', 'order_number', 'courier', 'status', 'tracking_number', 'courier_booking_confirmed', 'created_at'],
+  cod: ['organization_name', 'order_reference', 'awb', 'courier_name', 'cod_expected', 'amount_remitted', 'status', 'updated_at'],
+  inventory: ['organization_name', 'sku', 'name', 'variant', 'warehouse', 'quantity_on_hand', 'reorder_level', 'unit_cost', 'updated_at'],
+  workflow: ['organization_name', 'workflow_key', 'reference', 'title', 'status', 'updated_at'],
+}
 
 export default function AdminConsole() {
   const { user } = useAuth()
@@ -42,6 +50,14 @@ export default function AdminConsole() {
   const [overview, setOverview] = useState(null)
   const [overviewLoading, setOverviewLoading] = useState(true)
   const [overviewError, setOverviewError] = useState('')
+  const [recordType, setRecordType] = useState('orders')
+  const [recordSearch, setRecordSearch] = useState('')
+  const [recordQuery, setRecordQuery] = useState('')
+  const [recordOffset, setRecordOffset] = useState(0)
+  const [recordData, setRecordData] = useState([])
+  const [recordTotal, setRecordTotal] = useState(0)
+  const [recordLoading, setRecordLoading] = useState(false)
+  const [recordError, setRecordError] = useState('')
 
   const loadOverview = useCallback(async () => {
     setOverviewLoading(true)
@@ -74,7 +90,26 @@ export default function AdminConsole() {
     }
   }, [status])
 
+  const loadRecords = useCallback(async () => {
+    setRecordLoading(true)
+    setRecordError('')
+    try {
+      const params = new URLSearchParams({ type: recordType, limit: '25', offset: String(recordOffset) })
+      if (recordQuery) params.set('q', recordQuery)
+      const result = await apiRequest('/api/admin/records?' + params.toString())
+      setRecordData(Array.isArray(result.data) ? result.data : [])
+      setRecordTotal(Number(result.pagination?.total || 0))
+    } catch (requestError) {
+      setRecordError(requestError.message || 'Unable to load operational records.')
+      setRecordData([])
+      setRecordTotal(0)
+    } finally {
+      setRecordLoading(false)
+    }
+  }, [recordType, recordQuery, recordOffset])
+
   useEffect(() => { loadApplications(); loadOverview() }, [loadApplications, loadOverview])
+  useEffect(() => { loadRecords() }, [loadRecords])
 
   async function decide(application, decision) {
     const note = String(notes[application.id] || '').trim()
@@ -127,6 +162,21 @@ export default function AdminConsole() {
           </tr>)}</tbody>
         </table>}
       </div>
+    </section>
+
+    <section className="admin-overview-section" aria-label="Cross-organization operational records">
+      <div className="admin-section-heading"><div><span className="admin-console-eyebrow">READ-ONLY OPERATIONS</span><h2>Operational records</h2><p>Search records across shipper workspaces. Access is restricted to platform administrators and views are audit-logged.</p></div></div>
+      <div className="admin-record-controls">
+        <label>Record type<select value={recordType} onChange={event => { setRecordType(event.target.value); setRecordOffset(0) }}>{recordTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+        <form onSubmit={event => { event.preventDefault(); setRecordOffset(0); setRecordQuery(recordSearch.trim()) }} className="admin-record-search"><label>Search records<input value={recordSearch} onChange={event => setRecordSearch(event.target.value)} placeholder="Order, tracking, SKU, reference…" maxLength={100}/></label><button type="submit" disabled={recordLoading}>Search</button></form>
+        <button type="button" className="admin-refresh-button" onClick={loadRecords} disabled={recordLoading}><RefreshCw size={15}/> Refresh records</button>
+      </div>
+      {recordError && <p className="admin-alert admin-alert-error" role="alert">{recordError}</p>}
+      {recordLoading ? <div className="admin-empty compact"><RefreshCw size={20}/><b>Loading operational records…</b></div> : recordData.length === 0 ? <div className="admin-empty compact"><b>No matching records</b><span>Try another search or record type.</span></div> : <div className="admin-org-table-wrap"><table className="admin-org-table">
+        <thead><tr>{(recordColumns[recordType] || []).map(column => <th key={column}>{column.replaceAll('_', ' ')}</th>)}</tr></thead>
+        <tbody>{recordData.map(record => <tr key={record.id}>{(recordColumns[recordType] || []).map(column => <td key={column}>{record[column] == null ? '—' : typeof record[column] === 'object' ? JSON.stringify(record[column]) : String(record[column]).length > 90 ? String(record[column]).slice(0, 87) + '…' : String(record[column])}</td>)}</tr>)}</tbody>
+      </table></div>}
+      <div className="admin-record-pagination"><span>{recordTotal.toLocaleString()} records</span><div><button type="button" onClick={() => setRecordOffset(Math.max(0, recordOffset - 25))} disabled={recordLoading || recordOffset === 0}>Previous</button><span>{recordTotal === 0 ? 0 : recordOffset + 1}–{Math.min(recordOffset + 25, recordTotal)}</span><button type="button" onClick={() => setRecordOffset(recordOffset + 25)} disabled={recordLoading || recordOffset + 25 >= recordTotal}>Next</button></div></div>
     </section>
 
     <section className="admin-console-panel">
