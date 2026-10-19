@@ -174,7 +174,7 @@ export default function AdminConsole() {
     </header>
 
     <section className="admin-overview-section" aria-label="Platform-wide operations overview">
-      <div className="admin-section-heading"><div><span className="admin-console-eyebrow">PLATFORM-WIDE VISIBILITY</span><h2>Operations overview</h2><p>Read-only totals across shipper workspaces. Customer-level personal information is not shown here.</p></div></div>
+      <div className="admin-section-heading"><div><span className="admin-console-eyebrow">PLATFORM-WIDE VISIBILITY</span><h2>Operations overview</h2><p>Read-only totals across shipper workspaces. Order records may include customer contact details; access is restricted to platform administrators and record views are audit-logged.</p></div></div>
       {overviewError && <p className="admin-alert admin-alert-error" role="alert">{overviewError}</p>}
       {overviewLoading ? <div className="admin-empty compact"><RefreshCw size={20}/><b>Loading platform metrics…</b></div> : overview && <div className="admin-metric-grid">
         {metricCards.map(([key, label]) => <article className="admin-metric-card" key={key}><span>{label}</span><strong>{numberFormat(overview[key])}</strong></article>)}
