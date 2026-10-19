@@ -925,6 +925,43 @@ export default {
             return json(request, { type, data: rows, pagination: { total: Number(countRows[0]?.total || 0), limit, offset, has_more: offset + rows.length < Number(countRows[0]?.total || 0) } });
           }
 
+          if (url.pathname === "/api/admin/audit" && request.method === "GET") {
+            // Read-only administrative history. The admin route guard above protects this endpoint.
+            const search = String(url.searchParams.get("q") || "").trim().slice(0, 100);
+            const limit = Math.min(100, Math.max(1, Number.parseInt(url.searchParams.get("limit") || "50", 10) || 50));
+            const offset = Math.min(100000, Math.max(0, Number.parseInt(url.searchParams.get("offset") || "0", 10) || 0));
+            const rows = await sql`
+              SELECT e.id, e.event_type, e.created_at, e.details, e.target_organization_id,
+                org.name AS organization_name, u.full_name AS actor_name, ai.email AS actor_email
+              FROM ikai.platform_audit_events e
+              JOIN ikai.users u ON u.id = e.actor_user_id
+              LEFT JOIN LATERAL (
+                SELECT email FROM ikai.auth_identities WHERE user_id = u.id ORDER BY created_at ASC LIMIT 1
+              ) ai ON true
+              LEFT JOIN ikai.organizations org ON org.id = e.target_organization_id
+              WHERE (${search} = ''
+                OR e.event_type ILIKE '%' || ${search} || '%'
+                OR COALESCE(org.name, '') ILIKE '%' || ${search} || '%'
+                OR COALESCE(ai.email, '') ILIKE '%' || ${search} || '%')
+              ORDER BY e.created_at DESC, e.id DESC
+              LIMIT ${limit} OFFSET ${offset}
+            `;
+            const countRows = await sql`
+              SELECT COUNT(*)::int AS total
+              FROM ikai.platform_audit_events e
+              JOIN ikai.users u ON u.id = e.actor_user_id
+              LEFT JOIN LATERAL (
+                SELECT email FROM ikai.auth_identities WHERE user_id = u.id ORDER BY created_at ASC LIMIT 1
+              ) ai ON true
+              LEFT JOIN ikai.organizations org ON org.id = e.target_organization_id
+              WHERE (${search} = ''
+                OR e.event_type ILIKE '%' || ${search} || '%'
+                OR COALESCE(org.name, '') ILIKE '%' || ${search} || '%'
+                OR COALESCE(ai.email, '') ILIKE '%' || ${search} || '%')
+            `;
+            return json(request, { data: rows, pagination: { total: Number(countRows[0]?.total || 0), limit, offset, has_more: offset + rows.length < Number(countRows[0]?.total || 0) } });
+          }
+
           if (url.pathname === "/api/admin/organizations" && request.method === "GET") {
             const requestedStatus = String(url.searchParams.get("status") || "pending");
             if (!["pending", "approved", "rejected", "all"].includes(requestedStatus)) {
