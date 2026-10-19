@@ -56,7 +56,7 @@ test("platform approval routes require an explicitly provisioned platform admin"
 });
 
 test("admin approval decisions refresh both the application queue and platform overview", () => {
-  assert.match(adminPage, /await Promise\.all\(\[loadApplications\(\), loadOverview\(\)\]\)/);
+  assert.match(adminPage, /await Promise\.all\(\[loadApplications\(\), loadOverview\(\), loadAudit\(\)\]\)/);
 });
 
 test("admin decision requires a rejection reason and rejects duplicate or stale decisions", () => {
