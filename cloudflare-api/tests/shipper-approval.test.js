@@ -7,6 +7,7 @@ const migration = await readFile(new URL("../migrations/0008_shipper_approval.sq
 const authContext = await readFile(new URL("../../src/context/AuthContext.jsx", import.meta.url), "utf8");
 const verifyPage = await readFile(new URL("../../src/pages/VerifyOTP.jsx", import.meta.url), "utf8");
 const adminPage = await readFile(new URL("../../src/pages/AdminConsole.jsx", import.meta.url), "utf8");
+const router = await readFile(new URL("../../src/main.jsx", import.meta.url), "utf8");
 
 test("new shipper applications start pending while existing organizations remain approved by default", () => {
   assert.match(migration, /ADD COLUMN IF NOT EXISTS approval_status text NOT NULL DEFAULT 'approved'/);
@@ -27,6 +28,12 @@ test("login and existing sessions enforce approval status server-side", () => {
   assert.match(worker, /code: "ACCOUNT_PENDING_APPROVAL"/);
   assert.match(worker, /code: "ACCOUNT_REJECTED"/);
   assert.match(worker, /o\.approval_status = 'approved' OR EXISTS \(SELECT 1 FROM ikai\.platform_admins/);
+});
+
+test("admin console route redirects authenticated non-admins away from platform controls", () => {
+  assert.match(router, /function PlatformAdminRoute\(\)/);
+  assert.match(router, /if \(!user\?\.isPlatformAdmin\) return <Navigate to="\/app\/dashboard" replace \/>/);
+  assert.match(router, /<Route element={<PlatformAdminRoute\/>}>[\s\S]*?<Route path="\/admin" element={<AdminConsole\/>}\/>/);
 });
 
 test("platform approval routes require an explicitly provisioned platform admin", () => {
