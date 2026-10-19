@@ -56,6 +56,7 @@ test("platform overview exposes aggregate operations metrics only to platform ad
   assert.match(worker, /url\.pathname === "\/api\/admin\/overview"/);
   assert.match(worker, /total_shippers/);
   assert.match(worker, /total_orders/);
+  assert.match(worker, /total_shippers[\s\S]*?NOT EXISTS \(SELECT 1 FROM ikai\.users pu JOIN ikai\.platform_admins pa/);
   assert.match(worker, /total_shipments/);
   assert.match(worker, /confirmed_courier_bookings/);
   assert.match(worker, /cod_attention_records/);
@@ -74,5 +75,7 @@ test("platform admins can browse bounded operational records across shipper orga
   assert.match(worker, /tracking_number/);
   assert.match(adminPage, /Operational records/);
   assert.match(adminPage, /recordTypes\.map/);
+  assert.match(adminPage, /Shipper organisation/);
+  assert.match(adminPage, /organization_id/);
   assert.match(adminPage, /recordPagination|recordTotal/);
 });
