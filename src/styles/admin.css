@@ -1,0 +1,47 @@
+.admin-console-page{min-height:100vh;padding:36px 22px 56px;background:#f5f7f6;color:#172b24}
+.admin-console-header,.admin-console-panel,.admin-console-footnote{width:min(1040px,100%);margin-inline:auto}
+.admin-console-header{margin-bottom:24px}
+.admin-back-link{display:inline-flex;align-items:center;gap:8px;color:#53665c;text-decoration:none;font-size:13px;font-weight:700;margin-bottom:24px}
+.admin-console-mark{display:flex;align-items:center;gap:8px;color:#4659f5;font-size:11px;font-weight:800;letter-spacing:.1em}
+.admin-console-title-row{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-top:14px}
+.admin-console-eyebrow{color:#7b8981;font-size:10px;font-weight:800;letter-spacing:.13em}
+.admin-console-title-row h1{margin:7px 0 8px;font-size:clamp(28px,4vw,38px);letter-spacing:-.04em;line-height:1.1}
+.admin-console-title-row p{margin:0;color:#65746b;font-size:14px;line-height:1.6}
+.admin-refresh-button{display:inline-flex;align-items:center;gap:8px;padding:11px 14px;border:1px solid #dbe3dd;border-radius:11px;background:#fff;color:#25382e;font-size:13px;font-weight:700;cursor:pointer}
+.admin-refresh-button:disabled{opacity:.6;cursor:wait}
+.admin-console-identity{display:flex;align-items:center;gap:9px;margin-top:22px;padding:12px 14px;border:1px solid #e1e8e2;border-radius:12px;background:#fff;color:#5c6c62;font-size:12px}
+.admin-console-identity>svg{color:#4659f5}.admin-console-identity b{color:#24372d}
+.admin-secure-pill{margin-left:auto;padding:5px 9px;border-radius:999px;background:#edf0ff;color:#3547d7;font-size:10px;font-weight:800}
+.admin-console-panel{overflow:hidden;border:1px solid #e0e7e1;border-radius:17px;background:#fff;box-shadow:0 12px 38px rgba(24,42,32,.045)}
+.admin-status-tabs{display:flex;gap:5px;overflow-x:auto;padding:13px;border-bottom:1px solid #e9eeea}
+.admin-status-tabs button{flex:0 0 auto;padding:10px 13px;border:1px solid transparent;border-radius:9px;background:transparent;color:#64736a;font-size:12px;font-weight:700;cursor:pointer}
+.admin-status-tabs button.active{border-color:#dfe3ff;background:#f0f2ff;color:#3547d7}
+.admin-application-list{display:grid;gap:0}
+.admin-application-card{padding:23px;border-bottom:1px solid #edf1ed}
+.admin-application-card:last-child{border-bottom:0}
+.admin-application-top{display:flex;align-items:center;gap:13px}
+.admin-company-icon{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;border-radius:13px;background:#edf3ee;color:#2d5a43}
+.admin-company-heading{flex:1;min-width:0}
+.admin-company-heading h2{margin:0 0 5px;font-size:17px;letter-spacing:-.02em;overflow-wrap:anywhere}
+.admin-company-heading span{color:#718078;font-size:12px;overflow-wrap:anywhere}
+.admin-status-badge{padding:6px 9px;border-radius:999px;text-transform:capitalize;font-size:10px;font-weight:800}
+.admin-status-badge.status-pending{background:#fff5df;color:#8c5c00}.admin-status-badge.status-approved{background:#e4f6eb;color:#206b41}.admin-status-badge.status-rejected{background:#fdebe8;color:#9d3027}
+.admin-application-meta{display:flex;flex-wrap:wrap;gap:15px;margin:17px 0 0 57px;color:#75837a;font-size:11px}
+.admin-application-meta span{display:inline-flex;align-items:center;gap:6px}.admin-application-meta .verified{color:#237349}.admin-application-meta .unverified{color:#9a6a16}
+.admin-existing-note{margin:16px 0 0 57px;padding:10px 12px;border-radius:9px;background:#f7f8f7;color:#59685f;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.admin-decision-area{margin:20px 0 0 57px;padding:16px;border:1px solid #e8ede8;border-radius:12px;background:#fafbfa}
+.admin-decision-area label{display:block;margin-bottom:8px;color:#33463a;font-size:11px;font-weight:800}
+.admin-decision-area label span{color:#7c8981;font-weight:500}
+.admin-decision-area textarea{box-sizing:border-box;width:100%;resize:vertical;padding:11px 12px;border:1px solid #dce4dd;border-radius:9px;background:#fff;color:#20332a;font:inherit;font-size:12px;line-height:1.5;outline:none}
+.admin-decision-area textarea:focus{border-color:#8e9aff;box-shadow:0 0 0 3px rgba(70,89,245,.09)}
+.admin-decision-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}
+.admin-approve-button,.admin-reject-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 12px;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer}
+.admin-approve-button{border:1px solid #23623e;background:#23623e;color:#fff}.admin-reject-button{border:1px solid #f0d4d0;background:#fff7f6;color:#a2382e}
+.admin-approve-button:disabled,.admin-reject-button:disabled{opacity:.45;cursor:not-allowed}
+.admin-review-hint{display:block;margin-top:10px;color:#8a6a27;font-size:11px;line-height:1.5}
+.admin-alert{display:flex;align-items:flex-start;gap:8px;margin:16px;padding:12px 14px;border-radius:10px;font-size:12px;line-height:1.5}
+.admin-alert-error{background:#fff0ef;color:#9d3027}.admin-alert-success{background:#eaf8ef;color:#206b41}
+.admin-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;min-height:230px;padding:24px;text-align:center;color:#718078}
+.admin-empty>svg{color:#87958c}.admin-empty b{color:#2a3d32;font-size:14px}.admin-empty span{font-size:12px;line-height:1.6}
+.admin-console-footnote{margin-top:16px;color:#7b8981;font-size:11px;line-height:1.6}
+@media(max-width:620px){.admin-console-page{padding:22px 12px 38px}.admin-console-title-row{align-items:flex-start}.admin-console-title-row h1{font-size:28px}.admin-refresh-button{padding:10px}.admin-console-identity{flex-wrap:wrap}.admin-secure-pill{margin-left:0}.admin-application-card{padding:17px 13px}.admin-application-top{align-items:flex-start;flex-wrap:wrap}.admin-company-heading{width:calc(100% - 60px)}.admin-status-badge{margin-left:57px}.admin-application-meta,.admin-decision-area,.admin-existing-note{margin-left:0}.admin-decision-area{padding:12px}.admin-approve-button,.admin-reject-button{flex:1}}
