@@ -772,6 +772,24 @@ export default {
             if (decision === "rejected" && !note) {
               return json(request, { error: "Add a reason before rejecting an application." }, 400);
             }
+            const applicant = await sql`
+              SELECT o.approval_status,
+                EXISTS (
+                  SELECT 1 FROM ikai.users u
+                  JOIN ikai.auth_identities ai ON ai.user_id = u.id
+                  WHERE u.organization_id = o.id AND ai.email_verified_at IS NOT NULL
+                ) AS email_verified
+              FROM ikai.organizations o
+              WHERE o.id = ${decisionMatch[1]}::uuid AND o.organization_type = 'shipper'
+              LIMIT 1
+            `;
+            if (!applicant[0]) return json(request, { error: "Shipper application not found." }, 404);
+            if (applicant[0].approval_status !== "pending") {
+              return json(request, { error: "This application is no longer pending. Refresh the list before taking another action.", approvalStatus: applicant[0].approval_status }, 409);
+            }
+            if (!applicant[0].email_verified) {
+              return json(request, { error: "The applicant must verify their email before an approval decision can be recorded." }, 409);
+            }
             const rows = await sql`
               WITH changed AS (
                 UPDATE ikai.organizations
