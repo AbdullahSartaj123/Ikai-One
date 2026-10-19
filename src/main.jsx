@@ -1,6 +1,6 @@
 import React, { Component, Suspense, lazy, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, Link, Outlet } from 'react-router-dom'
 import { ArrowUpRight, Boxes } from 'lucide-react'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 import './styles.css'
