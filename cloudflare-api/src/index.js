@@ -792,6 +792,127 @@ export default {
             return json(request, { metrics: rows[0] || {}, organizations });
           }
 
+          if (url.pathname === "/api/admin/records" && request.method === "GET") {
+            // Read-only, bounded cross-organization browsing for explicitly provisioned platform admins.
+            const type = String(url.searchParams.get("type") || "orders");
+            const allowedTypes = ["orders", "shipments", "cod", "inventory", "workflow"];
+            if (!allowedTypes.includes(type)) {
+              return json(request, { error: "type must be orders, shipments, cod, inventory, or workflow." }, 400);
+            }
+            const organizationId = String(url.searchParams.get("organization_id") || "").trim();
+            if (organizationId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(organizationId)) {
+              return json(request, { error: "organization_id must be a valid UUID." }, 400);
+            }
+            const search = String(url.searchParams.get("q") || "").trim().slice(0, 100);
+            const limit = Math.min(100, Math.max(1, Number.parseInt(url.searchParams.get("limit") || "25", 10) || 25));
+            const offset = Math.min(100000, Math.max(0, Number.parseInt(url.searchParams.get("offset") || "0", 10) || 0));
+            let rows;
+            let countRows;
+            if (type === "orders") {
+              rows = await sql`
+                SELECT o.id, o.organization_id, org.name AS organization_name, o.order_number,
+                  o.customer_name, o.phone, o.email, o.city, o.state, o.pincode, o.payment_mode,
+                  o.amount, o.status, o.courier, o.created_at, o.updated_at
+                FROM ikai.orders o JOIN ikai.organizations org ON org.id = o.organization_id
+                WHERE org.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
+                  AND (${organizationId} = '' OR o.organization_id = ${organizationId}::uuid)
+                  AND (${search} = '' OR o.order_number ILIKE '%' || ${search} || '%' OR o.customer_name ILIKE '%' || ${search} || '%' OR o.phone ILIKE '%' || ${search} || '%' OR o.city ILIKE '%' || ${search} || '%')
+                ORDER BY o.created_at DESC LIMIT ${limit} OFFSET ${offset}
+              `;
+              countRows = await sql`
+                SELECT COUNT(*)::int AS total FROM ikai.orders o JOIN ikai.organizations org ON org.id = o.organization_id
+                WHERE org.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
+                  AND (${organizationId} = '' OR o.organization_id = ${organizationId}::uuid)
+                  AND (${search} = '' OR o.order_number ILIKE '%' || ${search} || '%' OR o.customer_name ILIKE '%' || ${search} || '%' OR o.phone ILIKE '%' || ${search} || '%' OR o.city ILIKE '%' || ${search} || '%')
+              `;
+            } else if (type === "shipments") {
+              rows = await sql`
+                SELECT s.id, s.organization_id, org.name AS organization_name, s.shipment_number,
+                  s.order_id, o.order_number, s.courier, s.status, s.origin, s.destination,
+                  s.destination_postal_code, s.weight, s.amount, s.payment_mode, s.tracking_number,
+                  s.courier_booking_confirmed, s.created_at, s.updated_at
+                FROM ikai.shipment_records s JOIN ikai.organizations org ON org.id = s.organization_id
+                JOIN ikai.orders o ON o.id = s.order_id AND o.organization_id = s.organization_id
+                WHERE org.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
+                  AND (${organizationId} = '' OR s.organization_id = ${organizationId}::uuid)
+                  AND (${search} = '' OR s.shipment_number ILIKE '%' || ${search} || '%' OR s.tracking_number ILIKE '%' || ${search} || '%' OR o.order_number ILIKE '%' || ${search} || '%')
+                ORDER BY s.created_at DESC LIMIT ${limit} OFFSET ${offset}
+              `;
+              countRows = await sql`
+                SELECT COUNT(*)::int AS total FROM ikai.shipment_records s JOIN ikai.organizations org ON org.id = s.organization_id
+                JOIN ikai.orders o ON o.id = s.order_id AND o.organization_id = s.organization_id
+                WHERE org.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
+                  AND (${organizationId} = '' OR s.organization_id = ${organizationId}::uuid)
+                  AND (${search} = '' OR s.shipment_number ILIKE '%' || ${search} || '%' OR s.tracking_number ILIKE '%' || ${search} || '%' OR o.order_number ILIKE '%' || ${search} || '%')
+              `;
+            } else if (type === "cod") {
+              rows = await sql`
+                SELECT c.id, c.organization_id, org.name AS organization_name, c.order_reference, c.awb,
+                  c.courier_name, c.delivered_at, c.cod_expected, c.amount_remitted, c.status,
+                  c.follow_up_note, c.remittance_reference, c.created_at, c.updated_at
+                FROM ikai.cod_reconciliations c JOIN ikai.organizations org ON org.id = c.organization_id
+                WHERE org.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
+                  AND (${organizationId} = '' OR c.organization_id = ${organizationId}::uuid)
+                  AND (${search} = '' OR c.order_reference ILIKE '%' || ${search} || '%' OR c.awb ILIKE '%' || ${search} || '%' OR c.courier_name ILIKE '%' || ${search} || '%')
+                ORDER BY c.updated_at DESC LIMIT ${limit} OFFSET ${offset}
+              `;
+              countRows = await sql`
+                SELECT COUNT(*)::int AS total FROM ikai.cod_reconciliations c JOIN ikai.organizations org ON org.id = c.organization_id
+                WHERE org.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
+                  AND (${organizationId} = '' OR c.organization_id = ${organizationId}::uuid)
+                  AND (${search} = '' OR c.order_reference ILIKE '%' || ${search} || '%' OR c.awb ILIKE '%' || ${search} || '%' OR c.courier_name ILIKE '%' || ${search} || '%')
+              `;
+            } else if (type === "inventory") {
+              rows = await sql`
+                SELECT i.id, i.organization_id, org.name AS organization_name, i.sku, i.name,
+                  i.variant, i.warehouse, i.quantity_on_hand, i.reorder_level, i.unit_cost,
+                  i.created_at, i.updated_at
+                FROM ikai.inventory_items i JOIN ikai.organizations org ON org.id = i.organization_id
+                WHERE org.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
+                  AND (${organizationId} = '' OR i.organization_id = ${organizationId}::uuid)
+                  AND (${search} = '' OR i.sku ILIKE '%' || ${search} || '%' OR i.name ILIKE '%' || ${search} || '%' OR i.warehouse ILIKE '%' || ${search} || '%')
+                ORDER BY i.updated_at DESC LIMIT ${limit} OFFSET ${offset}
+              `;
+              countRows = await sql`
+                SELECT COUNT(*)::int AS total FROM ikai.inventory_items i JOIN ikai.organizations org ON org.id = i.organization_id
+                WHERE org.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
+                  AND (${organizationId} = '' OR i.organization_id = ${organizationId}::uuid)
+                  AND (${search} = '' OR i.sku ILIKE '%' || ${search} || '%' OR i.name ILIKE '%' || ${search} || '%' OR i.warehouse ILIKE '%' || ${search} || '%')
+              `;
+            } else {
+              rows = await sql`
+                SELECT w.id, w.organization_id, org.name AS organization_name, w.workflow_key,
+                  w.reference, w.title, w.status, w.payload, w.created_at, w.updated_at
+                FROM ikai.workflow_records w JOIN ikai.organizations org ON org.id = w.organization_id
+                WHERE org.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
+                  AND (${organizationId} = '' OR w.organization_id = ${organizationId}::uuid)
+                  AND (${search} = '' OR w.workflow_key ILIKE '%' || ${search} || '%' OR w.reference ILIKE '%' || ${search} || '%' OR w.title ILIKE '%' || ${search} || '%' OR w.status ILIKE '%' || ${search} || '%')
+                ORDER BY w.updated_at DESC LIMIT ${limit} OFFSET ${offset}
+              `;
+              countRows = await sql`
+                SELECT COUNT(*)::int AS total FROM ikai.workflow_records w JOIN ikai.organizations org ON org.id = w.organization_id
+                WHERE org.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
+                  AND (${organizationId} = '' OR w.organization_id = ${organizationId}::uuid)
+                  AND (${search} = '' OR w.workflow_key ILIKE '%' || ${search} || '%' OR w.reference ILIKE '%' || ${search} || '%' OR w.title ILIKE '%' || ${search} || '%' OR w.status ILIKE '%' || ${search} || '%')
+              `;
+            }
+            await sql`
+              INSERT INTO ikai.platform_audit_events (actor_user_id, event_type, details)
+              VALUES (${user.id}::uuid, 'platform_records_viewed', ${JSON.stringify({ type, organizationId: organizationId || null, searchUsed: Boolean(search), limit, offset })}::jsonb)
+            `;
+            return json(request, { type, data: rows, pagination: { total: Number(countRows[0]?.total || 0), limit, offset, has_more: offset + rows.length < Number(countRows[0]?.total || 0) } });
+          }
+
           if (url.pathname === "/api/admin/organizations" && request.method === "GET") {
             const requestedStatus = String(url.searchParams.get("status") || "pending");
             if (!["pending", "approved", "rejected", "all"].includes(requestedStatus)) {
