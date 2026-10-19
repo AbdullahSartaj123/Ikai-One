@@ -1042,6 +1042,12 @@ export default {
                 WHERE id = ${decisionMatch[1]}::uuid
                   AND organization_type = 'shipper'
                   AND approval_status = 'pending'
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM ikai.users pu
+                    JOIN ikai.platform_admins pa ON pa.user_id = pu.id
+                    WHERE pu.organization_id = ikai.organizations.id
+                  )
                 RETURNING id, name, approval_status
               ), audited AS (
                 INSERT INTO ikai.platform_audit_events
