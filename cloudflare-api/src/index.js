@@ -816,7 +816,7 @@ export default {
                 FROM ikai.orders o JOIN ikai.organizations org ON org.id = o.organization_id
                 WHERE org.organization_type = 'shipper'
                   AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
-                  AND (${organizationId} = '' OR o.organization_id = ${organizationId}::uuid)
+                  AND (${organizationId || null}::uuid IS NULL OR o.organization_id = ${organizationId || null}::uuid)
                   AND (${search} = '' OR o.order_number ILIKE '%' || ${search} || '%' OR o.customer_name ILIKE '%' || ${search} || '%' OR o.phone ILIKE '%' || ${search} || '%' OR o.city ILIKE '%' || ${search} || '%')
                 ORDER BY o.created_at DESC LIMIT ${limit} OFFSET ${offset}
               `;
@@ -824,7 +824,7 @@ export default {
                 SELECT COUNT(*)::int AS total FROM ikai.orders o JOIN ikai.organizations org ON org.id = o.organization_id
                 WHERE org.organization_type = 'shipper'
                   AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
-                  AND (${organizationId} = '' OR o.organization_id = ${organizationId}::uuid)
+                  AND (${organizationId || null}::uuid IS NULL OR o.organization_id = ${organizationId || null}::uuid)
                   AND (${search} = '' OR o.order_number ILIKE '%' || ${search} || '%' OR o.customer_name ILIKE '%' || ${search} || '%' OR o.phone ILIKE '%' || ${search} || '%' OR o.city ILIKE '%' || ${search} || '%')
               `;
             } else if (type === "shipments") {
@@ -837,7 +837,7 @@ export default {
                 JOIN ikai.orders o ON o.id = s.order_id AND o.organization_id = s.organization_id
                 WHERE org.organization_type = 'shipper'
                   AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
-                  AND (${organizationId} = '' OR s.organization_id = ${organizationId}::uuid)
+                  AND (${organizationId || null}::uuid IS NULL OR s.organization_id = ${organizationId || null}::uuid)
                   AND (${search} = '' OR s.shipment_number ILIKE '%' || ${search} || '%' OR s.tracking_number ILIKE '%' || ${search} || '%' OR o.order_number ILIKE '%' || ${search} || '%')
                 ORDER BY s.created_at DESC LIMIT ${limit} OFFSET ${offset}
               `;
@@ -846,7 +846,7 @@ export default {
                 JOIN ikai.orders o ON o.id = s.order_id AND o.organization_id = s.organization_id
                 WHERE org.organization_type = 'shipper'
                   AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
-                  AND (${organizationId} = '' OR s.organization_id = ${organizationId}::uuid)
+                  AND (${organizationId || null}::uuid IS NULL OR s.organization_id = ${organizationId || null}::uuid)
                   AND (${search} = '' OR s.shipment_number ILIKE '%' || ${search} || '%' OR s.tracking_number ILIKE '%' || ${search} || '%' OR o.order_number ILIKE '%' || ${search} || '%')
               `;
             } else if (type === "cod") {
@@ -857,7 +857,7 @@ export default {
                 FROM ikai.cod_reconciliations c JOIN ikai.organizations org ON org.id = c.organization_id
                 WHERE org.organization_type = 'shipper'
                   AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
-                  AND (${organizationId} = '' OR c.organization_id = ${organizationId}::uuid)
+                  AND (${organizationId || null}::uuid IS NULL OR c.organization_id = ${organizationId || null}::uuid)
                   AND (${search} = '' OR c.order_reference ILIKE '%' || ${search} || '%' OR c.awb ILIKE '%' || ${search} || '%' OR c.courier_name ILIKE '%' || ${search} || '%')
                 ORDER BY c.updated_at DESC LIMIT ${limit} OFFSET ${offset}
               `;
@@ -865,7 +865,7 @@ export default {
                 SELECT COUNT(*)::int AS total FROM ikai.cod_reconciliations c JOIN ikai.organizations org ON org.id = c.organization_id
                 WHERE org.organization_type = 'shipper'
                   AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
-                  AND (${organizationId} = '' OR c.organization_id = ${organizationId}::uuid)
+                  AND (${organizationId || null}::uuid IS NULL OR c.organization_id = ${organizationId || null}::uuid)
                   AND (${search} = '' OR c.order_reference ILIKE '%' || ${search} || '%' OR c.awb ILIKE '%' || ${search} || '%' OR c.courier_name ILIKE '%' || ${search} || '%')
               `;
             } else if (type === "inventory") {
@@ -876,7 +876,7 @@ export default {
                 FROM ikai.inventory_items i JOIN ikai.organizations org ON org.id = i.organization_id
                 WHERE org.organization_type = 'shipper'
                   AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
-                  AND (${organizationId} = '' OR i.organization_id = ${organizationId}::uuid)
+                  AND (${organizationId || null}::uuid IS NULL OR i.organization_id = ${organizationId || null}::uuid)
                   AND (${search} = '' OR i.sku ILIKE '%' || ${search} || '%' OR i.name ILIKE '%' || ${search} || '%' OR i.warehouse ILIKE '%' || ${search} || '%')
                 ORDER BY i.updated_at DESC LIMIT ${limit} OFFSET ${offset}
               `;
@@ -884,7 +884,7 @@ export default {
                 SELECT COUNT(*)::int AS total FROM ikai.inventory_items i JOIN ikai.organizations org ON org.id = i.organization_id
                 WHERE org.organization_type = 'shipper'
                   AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
-                  AND (${organizationId} = '' OR i.organization_id = ${organizationId}::uuid)
+                  AND (${organizationId || null}::uuid IS NULL OR i.organization_id = ${organizationId || null}::uuid)
                   AND (${search} = '' OR i.sku ILIKE '%' || ${search} || '%' OR i.name ILIKE '%' || ${search} || '%' OR i.warehouse ILIKE '%' || ${search} || '%')
               `;
             } else {
@@ -894,7 +894,7 @@ export default {
                 FROM ikai.workflow_records w JOIN ikai.organizations org ON org.id = w.organization_id
                 WHERE org.organization_type = 'shipper'
                   AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
-                  AND (${organizationId} = '' OR w.organization_id = ${organizationId}::uuid)
+                  AND (${organizationId || null}::uuid IS NULL OR w.organization_id = ${organizationId || null}::uuid)
                   AND (${search} = '' OR w.workflow_key ILIKE '%' || ${search} || '%' OR w.reference ILIKE '%' || ${search} || '%' OR w.title ILIKE '%' || ${search} || '%' OR w.status ILIKE '%' || ${search} || '%')
                 ORDER BY w.updated_at DESC LIMIT ${limit} OFFSET ${offset}
               `;
@@ -902,7 +902,7 @@ export default {
                 SELECT COUNT(*)::int AS total FROM ikai.workflow_records w JOIN ikai.organizations org ON org.id = w.organization_id
                 WHERE org.organization_type = 'shipper'
                   AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
-                  AND (${organizationId} = '' OR w.organization_id = ${organizationId}::uuid)
+                  AND (${organizationId || null}::uuid IS NULL OR w.organization_id = ${organizationId || null}::uuid)
                   AND (${search} = '' OR w.workflow_key ILIKE '%' || ${search} || '%' OR w.reference ILIKE '%' || ${search} || '%' OR w.title ILIKE '%' || ${search} || '%' OR w.status ILIKE '%' || ${search} || '%')
               `;
             }
