@@ -62,3 +62,17 @@ test("platform overview exposes aggregate operations metrics only to platform ad
   assert.match(worker, /if \(!user\.isPlatformAdmin\) return json\(request, \{ error: "Platform administrator access is required\." \}, 403\)/);
   assert.match(worker, /Customer-level PII is deliberately not included/);
 });
+
+
+test("platform admins can browse bounded operational records across shipper organisations", () => {
+  assert.match(worker, /url\.pathname === "\/api\/admin\/records"/);
+  assert.match(worker, /const allowedTypes = \["orders", "shipments", "cod", "inventory", "workflow"\]/);
+  assert.match(worker, /Math\.min\(100, Math\.max\(1/);
+  assert.match(worker, /Math\.min\(100000, Math\.max\(0/);
+  assert.match(worker, /platform_records_viewed/);
+  assert.match(worker, /organization_type = 'shipper'/);
+  assert.match(worker, /tracking_number/);
+  assert.match(adminPage, /Operational records/);
+  assert.match(adminPage, /recordTypes\.map/);
+  assert.match(adminPage, /recordPagination|recordTotal/);
+});
