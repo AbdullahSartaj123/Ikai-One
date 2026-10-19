@@ -34,7 +34,9 @@ Do not expose this SQL as an API or allow a user to grant themselves platform ac
 ## Behavior
 
 - New shipper registrations start with `approval_status = 'pending'`; verifying an email does not create an authenticated dashboard session.
-- Only explicitly provisioned platform administrators can use `/api/admin/organizations` and the decision endpoint.
+- Only explicitly provisioned platform administrators can use `/api/admin/organizations`, the decision endpoint, and `/api/admin/overview`.
+- The platform overview reports aggregate shipper/order/shipment/COD/inventory counts and per-organization activity counts. It does not expose customer names, phone numbers, delivery addresses, or other customer-level personal data.
+- Courier booking counts include only rows explicitly marked `courier_booking_confirmed = true`; a shipment record by itself is not proof that a courier accepted a booking.
 - Administrators can approve a pending application, or reject it with a reason. Decisions are conditional on the application still being pending and are written to `ikai.platform_audit_events`.
 - Rejected and pending shipper accounts cannot log in or use existing sessions. Existing organizations are backfilled as approved by the migration to avoid interrupting current customers.
 - Platform admin workspaces are excluded from the shipper review queue to prevent self-review.
