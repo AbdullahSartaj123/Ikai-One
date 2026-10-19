@@ -41,6 +41,10 @@ test("platform approval routes require an explicitly provisioned platform admin"
   assert.match(migration, /CREATE TABLE IF NOT EXISTS ikai\.platform_admins/);
   assert.match(worker, /if \(!user\.isPlatformAdmin\) return json\(request, \{ error: "Platform administrator access is required\." \}, 403\)/);
   assert.match(worker, /\/api\/admin\/organizations/);
+  assert.match(worker, /const limit = Math\.min\(100, Math\.max\(1, Number\.parseInt\(url\.searchParams\.get\("limit"\) \|\| "25"/);
+  assert.match(worker, /pagination: \{ total, limit, offset, has_more:/);
+  assert.match(adminPage, /applicationTotal\.toLocaleString\(\)/);
+  assert.match(adminPage, /setApplicationOffset\(applicationOffset \+ 25\)/);
   assert.match(worker, /approval_status = 'pending'/);
   assert.match(worker, /INSERT INTO ikai\.platform_audit_events/);
   assert.match(adminPage, /Approve shipper/);
