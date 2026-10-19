@@ -967,6 +967,8 @@ export default {
             if (!["pending", "approved", "rejected", "all"].includes(requestedStatus)) {
               return json(request, { error: "status must be pending, approved, rejected, or all." }, 400);
             }
+            const limit = Math.min(100, Math.max(1, Number.parseInt(url.searchParams.get("limit") || "25", 10) || 25));
+            const offset = Math.min(100000, Math.max(0, Number.parseInt(url.searchParams.get("offset") || "0", 10) || 0));
             const rows = await sql`
               SELECT o.id, o.name, o.slug, o.organization_type, o.approval_status,
                 o.approval_note, o.created_at, o.approval_reviewed_at,
@@ -987,9 +989,21 @@ export default {
                   WHERE pu.organization_id = o.id
                 )
               ORDER BY CASE WHEN o.approval_status = 'pending' THEN 0 ELSE 1 END, o.created_at DESC
-              LIMIT 100
+              LIMIT ${limit} OFFSET ${offset}
             `;
-            return json(request, { data: rows });
+            const countRows = await sql`
+              SELECT COUNT(*)::int AS total
+              FROM ikai.organizations o
+              WHERE (${requestedStatus} = 'all' OR o.approval_status = ${requestedStatus})
+                AND o.organization_type = 'shipper'
+                AND NOT EXISTS (
+                  SELECT 1 FROM ikai.users pu
+                  JOIN ikai.platform_admins pa ON pa.user_id = pu.id
+                  WHERE pu.organization_id = o.id
+                )
+            `;
+            const total = Number(countRows[0]?.total || 0);
+            return json(request, { data: rows, pagination: { total, limit, offset, has_more: offset + rows.length < total } });
           }
 
           const decisionMatch = url.pathname.match(/^\/api\/admin\/organizations\/([0-9a-f-]{36})\/decision$/i);
