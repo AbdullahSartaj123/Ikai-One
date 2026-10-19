@@ -85,3 +85,9 @@
 .admin-record-pagination>div{display:flex;align-items:center;gap:12px}
 .admin-org-table td{max-width:260px;overflow-wrap:anywhere}
 @media(max-width:700px){.admin-record-controls,.admin-record-search{align-items:stretch;flex-direction:column}.admin-record-controls select,.admin-record-controls input{width:100%;min-width:0}.admin-record-pagination{align-items:flex-start;flex-direction:column}.admin-org-table-wrap{overflow-x:auto}}
+
+.admin-audit-search-label{flex:1;min-width:240px}
+.admin-audit-search-label input{display:block;width:100%;min-width:0;margin-top:6px;min-height:40px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#0f172a;padding:8px 10px;font:inherit}
+.admin-record-search-button{min-height:40px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;padding:8px 13px;font-weight:700;color:#1e293b;cursor:pointer}
+.admin-record-search-button:disabled{opacity:.5;cursor:not-allowed}
+.admin-audit-details{min-width:220px;white-space:normal!important;overflow-wrap:anywhere;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px}
