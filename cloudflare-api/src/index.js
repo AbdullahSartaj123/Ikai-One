@@ -919,8 +919,8 @@ export default {
               `;
             }
             await sql`
-              INSERT INTO ikai.platform_audit_events (actor_user_id, event_type, details)
-              VALUES (${user.id}::uuid, 'platform_records_viewed', ${JSON.stringify({ type, organizationId: organizationId || null, searchUsed: Boolean(search), limit, offset })}::jsonb)
+              INSERT INTO ikai.platform_audit_events (actor_user_id, target_organization_id, event_type, details)
+              VALUES (${user.id}::uuid, ${organizationId || null}::uuid, 'platform_records_viewed', ${JSON.stringify({ type, organizationId: organizationId || null, searchUsed: Boolean(search), limit, offset })}::jsonb)
             `;
             return json(request, { type, data: rows, pagination: { total: Number(countRows[0]?.total || 0), limit, offset, has_more: offset + rows.length < Number(countRows[0]?.total || 0) } });
           }
