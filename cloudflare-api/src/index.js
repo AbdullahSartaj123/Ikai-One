@@ -731,6 +731,67 @@ export default {
           if (!user) return json(request, { error: "Authentication required." }, 401);
           if (!user.isPlatformAdmin) return json(request, { error: "Platform administrator access is required." }, 403);
 
+          if (url.pathname === "/api/admin/overview" && request.method === "GET") {
+            // Platform-wide read-only aggregates. Customer-level PII is deliberately not included.
+            const rows = await sql`
+              SELECT
+                (SELECT COUNT(*)::int FROM ikai.organizations WHERE organization_type = 'shipper') AS total_shippers,
+                (SELECT COUNT(*)::int FROM ikai.organizations WHERE organization_type = 'shipper' AND approval_status = 'pending') AS pending_shippers,
+                (SELECT COUNT(*)::int FROM ikai.organizations WHERE organization_type = 'shipper' AND approval_status = 'approved') AS approved_shippers,
+                (SELECT COUNT(*)::int FROM ikai.organizations WHERE organization_type = 'shipper' AND approval_status = 'rejected') AS rejected_shippers,
+                (SELECT COUNT(*)::int FROM ikai.orders) AS total_orders,
+                (SELECT COUNT(*)::int FROM ikai.shipment_records) AS total_shipments,
+                (SELECT COUNT(*)::int FROM ikai.shipment_records WHERE courier_booking_confirmed = true) AS confirmed_courier_bookings,
+                (SELECT COUNT(*)::int FROM ikai.cod_reconciliations) AS cod_records,
+                (SELECT COUNT(*)::int FROM ikai.cod_reconciliations WHERE status IN ('pending', 'under_review', 'short_paid')) AS cod_attention_records,
+                (SELECT COUNT(*)::int FROM ikai.inventory_items) AS inventory_items
+            `;
+            const organizations = await sql`
+              SELECT o.id, o.name, o.slug, o.approval_status, o.created_at,
+                COALESCE(order_stats.order_count, 0)::int AS order_count,
+                COALESCE(shipment_stats.shipment_count, 0)::int AS shipment_count,
+                COALESCE(shipment_stats.confirmed_booking_count, 0)::int AS confirmed_booking_count,
+                COALESCE(cod_stats.cod_count, 0)::int AS cod_count,
+                COALESCE(cod_stats.cod_attention_count, 0)::int AS cod_attention_count,
+                GREATEST(
+                  COALESCE(order_stats.last_order_at, 'epoch'::timestamptz),
+                  COALESCE(shipment_stats.last_shipment_at, 'epoch'::timestamptz),
+                  COALESCE(cod_stats.last_cod_at, 'epoch'::timestamptz)
+                ) AS last_activity_at
+              FROM ikai.organizations o
+              LEFT JOIN LATERAL (
+                SELECT COUNT(*) AS order_count, MAX(created_at) AS last_order_at
+                FROM ikai.orders WHERE organization_id = o.id
+              ) order_stats ON true
+              LEFT JOIN LATERAL (
+                SELECT COUNT(*) AS shipment_count,
+                  COUNT(*) FILTER (WHERE courier_booking_confirmed = true) AS confirmed_booking_count,
+                  MAX(updated_at) AS last_shipment_at
+                FROM ikai.shipment_records WHERE organization_id = o.id
+              ) shipment_stats ON true
+              LEFT JOIN LATERAL (
+                SELECT COUNT(*) AS cod_count,
+                  COUNT(*) FILTER (WHERE status IN ('pending', 'under_review', 'short_paid')) AS cod_attention_count,
+                  MAX(updated_at) AS last_cod_at
+                FROM ikai.cod_reconciliations WHERE organization_id = o.id
+              ) cod_stats ON true
+              WHERE o.organization_type = 'shipper'
+                AND NOT EXISTS (
+                  SELECT 1 FROM ikai.users pu
+                  JOIN ikai.platform_admins pa ON pa.user_id = pu.id
+                  WHERE pu.organization_id = o.id
+                )
+              ORDER BY GREATEST(
+                COALESCE(order_stats.last_order_at, 'epoch'::timestamptz),
+                COALESCE(shipment_stats.last_shipment_at, 'epoch'::timestamptz),
+                COALESCE(cod_stats.last_cod_at, 'epoch'::timestamptz),
+                o.created_at
+              ) DESC
+              LIMIT 100
+            `;
+            return json(request, { metrics: rows[0] || {}, organizations });
+          }
+
           if (url.pathname === "/api/admin/organizations" && request.method === "GET") {
             const requestedStatus = String(url.searchParams.get("status") || "pending");
             if (!["pending", "approved", "rejected", "all"].includes(requestedStatus)) {
