@@ -98,3 +98,29 @@ test("platform admins can browse bounded operational records across shipper orga
   assert.match(adminPage, /organization_id/);
   assert.match(adminPage, /recordPagination|recordTotal/);
 });
+
+
+test("approval checks happen before session creation in both login and email verification", () => {
+  const loginStart = worker.indexOf("async function login(");
+  const loginEnd = worker.indexOf("\nasync function forgotPassword(", loginStart);
+  const loginBody = worker.slice(loginStart, loginEnd);
+  assert.ok(loginStart >= 0 && loginEnd > loginStart);
+  assert.ok(loginBody.indexOf("if (!row.email_verified_at)") < loginBody.indexOf("if (!user.isPlatformAdmin && user.approvalStatus !== \"approved\")"));
+  assert.ok(loginBody.indexOf("if (!user.isPlatformAdmin && user.approvalStatus !== \"approved\")") < loginBody.indexOf("const session = await createSession(sql, user)"));
+
+  const verifyStart = worker.indexOf("async function verifyEmail(");
+  const verifyEnd = worker.indexOf("\nasync function resendVerification(", verifyStart);
+  const verifyBody = worker.slice(verifyStart, verifyEnd);
+  assert.ok(verifyStart >= 0 && verifyEnd > verifyStart);
+  assert.ok(verifyBody.indexOf("if (!user.isPlatformAdmin && user.approvalStatus !== \"approved\") < verifyBody.indexOf("const session = await createSession(sql, user)"));
+});
+
+test("authenticated sessions are rejected immediately when shipper approval is revoked", () => {
+  const authStart = worker.indexOf("async function authenticate(");
+  const authEnd = worker.indexOf("\nexport async function readJson(", authStart);
+  const authBody = worker.slice(authStart, authEnd);
+  assert.ok(authStart >= 0 && authEnd > authStart);
+  assert.match(authBody, /AND \(o\.approval_status = 'approved' OR EXISTS \(SELECT 1 FROM ikai\.platform_admins pa WHERE pa\.user_id = u\.id\)\)/);
+  assert.match(authBody, /AND s\.revoked_at IS NULL/);
+  assert.match(authBody, /AND s\.expires_at > now\(\)/);
+});
