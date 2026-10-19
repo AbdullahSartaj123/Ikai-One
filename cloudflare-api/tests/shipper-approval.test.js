@@ -45,6 +45,8 @@ test("admin decision requires a rejection reason and rejects duplicate or stale 
   assert.match(worker, /approval_reviewed_by = \$\{user\.id\}::uuid/);
 });
 
-test("the admin approval queue excludes organizations owned by platform admins", () => {
+test("platform-admin-owned organizations are excluded from both the queue and direct decisions", () => {
   assert.match(worker, /NOT EXISTS \([\s\S]*?FROM ikai\.users pu[\s\S]*?JOIN ikai\.platform_admins pa ON pa\.user_id = pu\.id[\s\S]*?WHERE pu\.organization_id = o\.id[\s\S]*?\)/);
+  assert.match(worker, /AS has_platform_admin_owner/);
+  assert.match(worker, /if \(applicant\[0\]\.has_platform_admin_owner\) \{[\s\S]*?Platform administrator organizations cannot be reviewed/);
 });
