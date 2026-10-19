@@ -77,7 +77,7 @@ export function AuthProvider({ children }) {
       method: 'POST',
       body: { token },
     })
-    setSession({ user: result.user })
+    setSession(result.token && result.user ? { user: result.user } : null)
     window.sessionStorage.removeItem(PENDING_KEY)
     setPendingSignup(null)
     setAuthMessage('')
