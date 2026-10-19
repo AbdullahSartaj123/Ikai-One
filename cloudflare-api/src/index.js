@@ -732,7 +732,7 @@ export default {
           if (!user.isPlatformAdmin) return json(request, { error: "Platform administrator access is required." }, 403);
 
           if (url.pathname === "/api/admin/overview" && request.method === "GET") {
-            // Platform-wide read-only aggregates. Customer-level PII is deliberately not included.
+            // Platform-wide read-only aggregates. Customer-level PII is excluded from the overview; the separate admin-only records endpoint may expose operational contact details.
             const rows = await sql`
               SELECT
                 (SELECT COUNT(*)::int FROM ikai.organizations o WHERE o.organization_type = 'shipper'
