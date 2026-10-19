@@ -144,7 +144,7 @@ async function sendVerificationEmail(env, email, name, token) {
   return sendEmail(env, {
     to: email,
     subject: "Verify your Ikai.One account",
-    html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#15212b"><h1>Welcome to Ikai.One</h1><p>Hello ${safeName(name)},</p><p>Confirm your email address to activate your workspace.</p><p><a href="${link}" style="display:inline-block;padding:13px 20px;background:#173f35;color:#fff;text-decoration:none;border-radius:8px">Verify email address</a></p><p>This link expires in 30 minutes and can only be used once.</p><p>If you did not create this account, you can ignore this message.</p></div>`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#15212b"><h1>Welcome to Ikai.One</h1><p>Hello ${safeName(name)},</p><p>Verify your email address to complete signup. Your shipper dashboard will be available after Ikai.One administrator approval.</p><p><a href="${link}" style="display:inline-block;padding:13px 20px;background:#173f35;color:#fff;text-decoration:none;border-radius:8px">Verify email address</a></p><p>This link expires in 30 minutes and can only be used once.</p><p>If you did not create this account, you can ignore this message.</p></div>`,
   });
 }
 
