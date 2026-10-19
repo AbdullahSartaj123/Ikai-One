@@ -42,6 +42,8 @@ export default function AdminConsole() {
   const { user } = useAuth()
   const [status, setStatus] = useState('pending')
   const [applications, setApplications] = useState([])
+  const [applicationTotal, setApplicationTotal] = useState(0)
+  const [applicationOffset, setApplicationOffset] = useState(0)
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState('')
   const [notes, setNotes] = useState({})
@@ -88,15 +90,18 @@ export default function AdminConsole() {
     setLoading(true)
     setError('')
     try {
-      const result = await apiRequest('/api/admin/organizations?status=' + encodeURIComponent(status))
+      const params = new URLSearchParams({ status, limit: '25', offset: String(applicationOffset) })
+      const result = await apiRequest('/api/admin/organizations?' + params.toString())
       setApplications(Array.isArray(result.data) ? result.data : [])
+      setApplicationTotal(Number(result.pagination?.total || 0))
     } catch (requestError) {
       setError(requestError.message || 'Unable to load shipper applications.')
       setApplications([])
+      setApplicationTotal(0)
     } finally {
       setLoading(false)
     }
-  }, [status])
+  }, [status, applicationOffset])
 
   const loadRecords = useCallback(async () => {
     setRecordLoading(true)
@@ -233,7 +238,7 @@ export default function AdminConsole() {
     <section className="admin-console-panel">
       <div className="admin-panel-heading"><div><span className="admin-console-eyebrow">ACCOUNT LIFECYCLE</span><h2>Shipper applications</h2><p>Review verified business registrations before enabling seller dashboard access.</p></div></div>
       <nav className="admin-status-tabs" aria-label="Application status">
-        {filters.map(([value, label]) => <button key={value} type="button" className={status === value ? 'active' : ''} onClick={() => setStatus(value)}>{label}</button>)}
+        {filters.map(([value, label]) => <button key={value} type="button" className={status === value ? 'active' : ''} onClick={() => { setApplicationOffset(0); setStatus(value) }}>{label}</button>)}
       </nav>
       {error && <p className="admin-alert admin-alert-error" role="alert">{error}</p>}
       {notice && <p className="admin-alert admin-alert-success" role="status"><CheckCircle2 size={16}/>{notice}</p>}
@@ -262,6 +267,14 @@ export default function AdminConsole() {
             </div>}
           </article>)}
         </div>}
+      <div className="admin-record-pagination">
+        <span>{applicationTotal.toLocaleString()} applications</span>
+        <div>
+          <button type="button" onClick={() => setApplicationOffset(Math.max(0, applicationOffset - 25))} disabled={loading || applicationOffset === 0}>Previous</button>
+          <span>{applicationTotal === 0 ? 0 : applicationOffset + 1}–{Math.min(applicationOffset + 25, applicationTotal)}</span>
+          <button type="button" onClick={() => setApplicationOffset(applicationOffset + 25)} disabled={loading || applicationOffset + 25 >= applicationTotal}>Next</button>
+        </div>
+      </div>
     </section>
     <p className="admin-console-footnote">Approval changes are enforced by the API and recorded in the platform audit log. This page does not create courier bookings or trigger payments.</p>
   </main>
