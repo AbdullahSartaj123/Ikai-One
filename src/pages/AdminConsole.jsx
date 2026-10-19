@@ -44,6 +44,8 @@ export default function AdminConsole() {
   const [applications, setApplications] = useState([])
   const [applicationTotal, setApplicationTotal] = useState(0)
   const [applicationOffset, setApplicationOffset] = useState(0)
+  const [applicationSearch, setApplicationSearch] = useState('')
+  const [applicationQuery, setApplicationQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState('')
   const [notes, setNotes] = useState({})
@@ -91,6 +93,7 @@ export default function AdminConsole() {
     setError('')
     try {
       const params = new URLSearchParams({ status, limit: '25', offset: String(applicationOffset) })
+      if (applicationQuery) params.set('q', applicationQuery)
       const result = await apiRequest('/api/admin/organizations?' + params.toString())
       setApplications(Array.isArray(result.data) ? result.data : [])
       setApplicationTotal(Number(result.pagination?.total || 0))
@@ -101,7 +104,7 @@ export default function AdminConsole() {
     } finally {
       setLoading(false)
     }
-  }, [status, applicationOffset])
+  }, [status, applicationOffset, applicationQuery])
 
   const loadRecords = useCallback(async () => {
     setRecordLoading(true)
@@ -237,6 +240,11 @@ export default function AdminConsole() {
 
     <section className="admin-console-panel">
       <div className="admin-panel-heading"><div><span className="admin-console-eyebrow">ACCOUNT LIFECYCLE</span><h2>Shipper applications</h2><p>Review verified business registrations before enabling seller dashboard access.</p></div></div>
+      <form className="admin-record-controls" onSubmit={event => { event.preventDefault(); setApplicationOffset(0); setApplicationQuery(applicationSearch.trim()) }}>
+        <label>Search shipper organisations<input value={applicationSearch} onChange={event => setApplicationSearch(event.target.value)} maxLength={100} placeholder="Organisation name or slug…"/></label>
+        <button type="submit" className="admin-record-search-button" disabled={loading}>Search applications</button>
+        {applicationQuery && <button type="button" className="admin-refresh-button" onClick={() => { setApplicationSearch(""); setApplicationQuery(""); setApplicationOffset(0) }}>Clear search</button>}
+      </form>
       <nav className="admin-status-tabs" aria-label="Application status">
         {filters.map(([value, label]) => <button key={value} type="button" className={status === value ? 'active' : ''} onClick={() => { setApplicationOffset(0); setStatus(value) }}>{label}</button>)}
       </nav>
