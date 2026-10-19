@@ -166,6 +166,8 @@ function userFromRow(row) {
     organizationId: row.organization_id,
     organizationName: row.organization_name,
     organizationSlug: row.organization_slug,
+    isPlatformAdmin: row.is_platform_admin === true,
+    approvalStatus: row.approval_status || "approved",
   };
 }
 
@@ -188,7 +190,8 @@ async function authenticate(request, env) {
   const sql = neon(env.DATABASE_URL);
   const rows = await sql`
     SELECT u.id AS user_id, u.organization_id, u.full_name, u.email, u.role,
-      o.name AS organization_name, o.slug AS organization_slug
+      o.name AS organization_name, o.slug AS organization_slug, o.approval_status,
+      EXISTS (SELECT 1 FROM ikai.platform_admins pa WHERE pa.user_id = u.id) AS is_platform_admin
     FROM ikai.auth_sessions s
     JOIN ikai.users u ON u.id = s.user_id
     JOIN ikai.organizations o ON o.id = u.organization_id
@@ -199,6 +202,7 @@ async function authenticate(request, env) {
       AND ai.email_verified_at IS NOT NULL
       AND u.status = 'active'
       AND o.status = 'active'
+      AND (o.approval_status = 'approved' OR EXISTS (SELECT 1 FROM ikai.platform_admins pa WHERE pa.user_id = u.id))
     LIMIT 1
   `;
   return rows[0] ? userFromRow(rows[0]) : null;
@@ -318,8 +322,8 @@ async function register(request, env, sql) {
   try {
     rows = await sql`
       WITH new_org AS (
-        INSERT INTO ikai.organizations (name, slug, organization_type, status)
-        VALUES (${companyName}, ${slug}, 'shipper', 'active')
+        INSERT INTO ikai.organizations (name, slug, organization_type, status, approval_status)
+        VALUES (${companyName}, ${slug}, 'shipper', 'active', 'pending')
         RETURNING id, name, slug
       ),
       new_user AS (
@@ -368,9 +372,12 @@ async function register(request, env, sql) {
   const user = userFromRow(rows[0]);
   const emailSent = await sendVerificationEmail(env, email, fullName, rawToken);
   return json(request, {
-    message: emailSent ? "Account created. Check your email to verify your address." : "Account created, but the verification email could not be delivered. Request a new verification email after the mail service is checked.",
+    message: emailSent
+      ? "Application received. Verify your email; an Ikai.One administrator must approve your shipper account before dashboard access is enabled."
+      : "Application received, but the verification email could not be delivered. Request a new verification email after the mail service is checked. Dashboard access remains blocked until verification and admin approval.",
     emailSent,
     email: user.email,
+    approvalStatus: "pending",
   }, 201);
 }
 
@@ -397,15 +404,27 @@ async function verifyEmail(request, env, sql) {
       RETURNING ai.user_id
     )
     SELECT u.id AS user_id, u.organization_id, u.full_name, u.email, u.role,
-      o.name AS organization_name, o.slug AS organization_slug
+      o.name AS organization_name, o.slug AS organization_slug, o.approval_status,
+      EXISTS (SELECT 1 FROM ikai.platform_admins pa WHERE pa.user_id = u.id) AS is_platform_admin
     FROM verified v
     JOIN ikai.users u ON u.id = v.user_id
     JOIN ikai.organizations o ON o.id = u.organization_id
     LIMIT 1
   `;
   if (!rows[0]) return json(request, { error: "This verification link is invalid, expired, or already used. Request a new one." }, 400);
-  const session = await createSession(sql, userFromRow(rows[0]));
-  return json(request, { message: "Email verified successfully.", ...session });
+  const user = userFromRow(rows[0]);
+  if (!user.isPlatformAdmin && user.approvalStatus !== "approved") {
+    const rejected = user.approvalStatus === "rejected";
+    return json(request, {
+      message: rejected
+        ? "Your email is verified, but your shipper application was not approved. Contact Ikai.One support for next steps."
+        : "Your email is verified. Your shipper application is awaiting Ikai.One administrator approval. You can sign in after approval.",
+      approvalStatus: user.approvalStatus,
+      emailVerified: true,
+    });
+  }
+  const session = await createSession(sql, user);
+  return json(request, { message: "Email verified successfully.", ...session, approvalStatus: user.approvalStatus });
 }
 
 async function resendVerification(request, env, sql) {
@@ -439,8 +458,9 @@ async function login(request, env, sql) {
   if (!email || !password || password.length > 128) return json(request, { error: "Enter your email and password." }, 400);
   const rows = await sql`
     SELECT u.id AS user_id, u.organization_id, u.full_name, u.email, u.role,
-      o.name AS organization_name, o.slug AS organization_slug,
-      ai.password_hash, ai.email_verified_at
+      o.name AS organization_name, o.slug AS organization_slug, o.approval_status,
+      ai.password_hash, ai.email_verified_at,
+      EXISTS (SELECT 1 FROM ikai.platform_admins pa WHERE pa.user_id = u.id) AS is_platform_admin
     FROM ikai.auth_identities ai
     JOIN ikai.users u ON u.id = ai.user_id
     JOIN ikai.organizations o ON o.id = u.organization_id
@@ -455,6 +475,12 @@ async function login(request, env, sql) {
   }
   if (!row.email_verified_at) return json(request, { error: "Verify your email before signing in.", code: "EMAIL_NOT_VERIFIED", email: row.email }, 403);
   const user = userFromRow(row);
+  if (!user.isPlatformAdmin && user.approvalStatus !== "approved") {
+    if (user.approvalStatus === "rejected") {
+      return json(request, { error: "Your shipper application was not approved. Contact Ikai.One support for next steps.", code: "ACCOUNT_REJECTED" }, 403);
+    }
+    return json(request, { error: "Your email is verified, but your shipper account is awaiting administrator approval.", code: "ACCOUNT_PENDING_APPROVAL", approvalStatus: user.approvalStatus }, 403);
+  }
   const session = await createSession(sql, user);
   return json(request, session);
 }
@@ -597,7 +623,7 @@ export default {
       }
     }
 
-    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments" || url.pathname === "/api/inventory" || url.pathname.startsWith("/api/inventory/") || url.pathname === "/api/orders" || url.pathname.startsWith("/api/orders/") || url.pathname === "/api/cod-reconciliations" || url.pathname.startsWith("/api/cod-reconciliations/") || url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f-]{36}(?:\/status)?$/i.test(url.pathname) || url.pathname === "/api/testing/verify-email" || url.pathname === "/api/testing/check-password-reset") {
+    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments" || url.pathname === "/api/inventory" || url.pathname.startsWith("/api/inventory/") || url.pathname === "/api/orders" || url.pathname.startsWith("/api/orders/") || url.pathname === "/api/cod-reconciliations" || url.pathname.startsWith("/api/cod-reconciliations/") || url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f-]{36}(?:\/status)?$/i.test(url.pathname) || url.pathname.startsWith("/api/admin/") || url.pathname === "/api/testing/verify-email" || url.pathname === "/api/testing/check-password-reset") {
       if (!env.DATABASE_URL) return json(request, { error: "Database is not configured." }, 503);
       let sql;
       try {
@@ -689,6 +715,84 @@ export default {
           }
           return json(request, { message: "Signed out." });
         }
+        if (url.pathname.startsWith("/api/admin/")) {
+          const user = await authenticate(request, env);
+          if (!user) return json(request, { error: "Authentication required." }, 401);
+          if (!user.isPlatformAdmin) return json(request, { error: "Platform administrator access is required." }, 403);
+
+          if (url.pathname === "/api/admin/organizations" && request.method === "GET") {
+            const requestedStatus = String(url.searchParams.get("status") || "pending");
+            if (!["pending", "approved", "rejected", "all"].includes(requestedStatus)) {
+              return json(request, { error: "status must be pending, approved, rejected, or all." }, 400);
+            }
+            const rows = await sql`
+              SELECT o.id, o.name, o.slug, o.organization_type, o.approval_status,
+                o.approval_note, o.created_at, o.approval_reviewed_at,
+                u.full_name AS applicant_name, ai.email AS applicant_email,
+                (ai.email_verified_at IS NOT NULL) AS email_verified
+              FROM ikai.organizations o
+              LEFT JOIN LATERAL (
+                SELECT id, full_name FROM ikai.users
+                WHERE organization_id = o.id
+                ORDER BY created_at ASC LIMIT 1
+              ) u ON true
+              LEFT JOIN ikai.auth_identities ai ON ai.user_id = u.id
+              WHERE (${requestedStatus} = 'all' OR o.approval_status = ${requestedStatus})
+                AND o.organization_type = 'shipper'
+              ORDER BY CASE WHEN o.approval_status = 'pending' THEN 0 ELSE 1 END, o.created_at DESC
+              LIMIT 100
+            `;
+            return json(request, { data: rows });
+          }
+
+          const decisionMatch = url.pathname.match(/^\/api\/admin\/organizations\/([0-9a-f-]{36})\/decision$/i);
+          if (decisionMatch && request.method === "POST") {
+            const body = await readJson(request);
+            const decision = String(body.decision || "");
+            const note = String(body.note || "").trim().slice(0, 1000) || null;
+            if (!["approved", "rejected"].includes(decision)) {
+              return json(request, { error: "Decision must be approved or rejected." }, 400);
+            }
+            if (decision === "rejected" && !note) {
+              return json(request, { error: "Add a reason before rejecting an application." }, 400);
+            }
+            const rows = await sql`
+              WITH changed AS (
+                UPDATE ikai.organizations
+                SET approval_status = ${decision},
+                    approval_reviewed_by = ${user.id}::uuid,
+                    approval_reviewed_at = now(),
+                    approval_note = ${note},
+                    updated_at = now()
+                WHERE id = ${decisionMatch[1]}::uuid
+                  AND organization_type = 'shipper'
+                  AND approval_status = 'pending'
+                RETURNING id, name, approval_status
+              ), audited AS (
+                INSERT INTO ikai.platform_audit_events
+                  (actor_user_id, target_organization_id, event_type, details)
+                SELECT ${user.id}::uuid, id, 'shipper_application_' || approval_status,
+                  jsonb_build_object('organizationName', name, 'note', ${note})
+                FROM changed
+                RETURNING id
+              )
+              SELECT changed.id, changed.name, changed.approval_status
+              FROM changed CROSS JOIN (SELECT count(*) FROM audited) audit_count
+            `;
+            if (!rows[0]) {
+              const exists = await sql`
+                SELECT id, approval_status FROM ikai.organizations
+                WHERE id = ${decisionMatch[1]}::uuid AND organization_type = 'shipper'
+                LIMIT 1
+              `;
+              if (!exists[0]) return json(request, { error: "Shipper application not found." }, 404);
+              return json(request, { error: "This application is no longer pending. Refresh the list before taking another action.", approvalStatus: exists[0].approval_status }, 409);
+            }
+            return json(request, { message: `Shipper application ${decision} successfully.`, data: rows[0] });
+          }
+          return json(request, { error: "Admin route not found." }, 404);
+        }
+
         if (url.pathname === "/api/inventory" || url.pathname.startsWith("/api/inventory/")) {
           const user = await authenticate(request, env);
           if (!user) return json(request, { error: "Authentication required." }, 401);
