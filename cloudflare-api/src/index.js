@@ -969,6 +969,7 @@ export default {
             }
             const limit = Math.min(100, Math.max(1, Number.parseInt(url.searchParams.get("limit") || "25", 10) || 25));
             const offset = Math.min(100000, Math.max(0, Number.parseInt(url.searchParams.get("offset") || "0", 10) || 0));
+            const search = String(url.searchParams.get("q") || "").trim().slice(0, 100);
             const rows = await sql`
               SELECT o.id, o.name, o.slug, o.organization_type, o.approval_status,
                 o.approval_note, o.created_at, o.approval_reviewed_at,
@@ -982,6 +983,7 @@ export default {
               ) u ON true
               LEFT JOIN ikai.auth_identities ai ON ai.user_id = u.id
               WHERE (${requestedStatus} = 'all' OR o.approval_status = ${requestedStatus})
+                AND (${search} = '' OR o.name ILIKE '%' || ${search} || '%' OR o.slug ILIKE '%' || ${search} || '%')
                 AND o.organization_type = 'shipper'
                 AND NOT EXISTS (
                   SELECT 1 FROM ikai.users pu
@@ -995,6 +997,7 @@ export default {
               SELECT COUNT(*)::int AS total
               FROM ikai.organizations o
               WHERE (${requestedStatus} = 'all' OR o.approval_status = ${requestedStatus})
+                AND (${search} = '' OR o.name ILIKE '%' || ${search} || '%' OR o.slug ILIKE '%' || ${search} || '%')
                 AND o.organization_type = 'shipper'
                 AND NOT EXISTS (
                   SELECT 1 FROM ikai.users pu
