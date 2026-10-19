@@ -8,6 +8,7 @@ import './styles/theme.css'
 import './styles/dashboard.css'
 import './styles/auth.css'
 import './styles/ui.css'
+import './styles/admin.css'
 
 // Keep route modules in separate chunks so an issue in a dashboard-only page
 // cannot prevent the public landing page from starting.
@@ -24,6 +25,7 @@ const DashboardLayout = lazy(() => import('./layouts/DashboardLayout.jsx'))
 const Blog = lazy(() => import('./pages/Blog.jsx'))
 const PublicPages = lazy(() => import('./pages/PublicPages.jsx'))
 const NotFound = lazy(() => import('./pages/NotFound.jsx'))
+const AdminConsole = lazy(() => import('./pages/AdminConsole.jsx'))
 
 class AppErrorBoundary extends Component {
   constructor(props) {
@@ -89,7 +91,10 @@ function Root() {
     <Route path="/signup" element={<Signup/>}/>
     <Route path="/verify-otp" element={<VerifyOTP/>}/>
     <Route path="/onboarding" element={<Onboarding/>}/>
-    <Route element={<ProtectedRoute/>}><Route path="/dashboard" element={<DashboardLayout/>}><Route index element={<DashboardHome/>}/></Route></Route>
+    <Route element={<ProtectedRoute/>}>
+      <Route path="/admin" element={<AdminConsole/>}/>
+      <Route path="/dashboard" element={<DashboardLayout/>}><Route index element={<DashboardHome/>}/></Route>
+    </Route>
     <Route path="/app" element={<ProtectedRoute/>}>
       <Route index element={<Navigate to="dashboard" replace/>}/>
       <Route path="*" element={<Dashboard/>}/>
