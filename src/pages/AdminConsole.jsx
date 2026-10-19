@@ -52,6 +52,7 @@ export default function AdminConsole() {
   const [overviewError, setOverviewError] = useState('')
   const [recordType, setRecordType] = useState('orders')
   const [recordSearch, setRecordSearch] = useState('')
+  const [recordOrganization, setRecordOrganization] = useState('')
   const [recordQuery, setRecordQuery] = useState('')
   const [recordOffset, setRecordOffset] = useState(0)
   const [recordData, setRecordData] = useState([])
@@ -96,6 +97,7 @@ export default function AdminConsole() {
     try {
       const params = new URLSearchParams({ type: recordType, limit: '25', offset: String(recordOffset) })
       if (recordQuery) params.set('q', recordQuery)
+      if (recordOrganization) params.set('organization_id', recordOrganization)
       const result = await apiRequest('/api/admin/records?' + params.toString())
       setRecordData(Array.isArray(result.data) ? result.data : [])
       setRecordTotal(Number(result.pagination?.total || 0))
@@ -106,7 +108,7 @@ export default function AdminConsole() {
     } finally {
       setRecordLoading(false)
     }
-  }, [recordType, recordQuery, recordOffset])
+  }, [recordType, recordQuery, recordOrganization, recordOffset])
 
   useEffect(() => { loadApplications(); loadOverview() }, [loadApplications, loadOverview])
   useEffect(() => { loadRecords() }, [loadRecords])
@@ -168,6 +170,7 @@ export default function AdminConsole() {
       <div className="admin-section-heading"><div><span className="admin-console-eyebrow">READ-ONLY OPERATIONS</span><h2>Operational records</h2><p>Search records across shipper workspaces. Access is restricted to platform administrators and views are audit-logged.</p></div></div>
       <div className="admin-record-controls">
         <label>Record type<select value={recordType} onChange={event => { setRecordType(event.target.value); setRecordOffset(0) }}>{recordTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+        <label>Shipper organisation<select value={recordOrganization} onChange={event => { setRecordOrganization(event.target.value); setRecordOffset(0) }}><option value="">All shipper organisations</option>{overviewOrganizations.map(org => <option key={org.id} value={org.id}>{org.name}</option>)}</select></label>
         <form onSubmit={event => { event.preventDefault(); setRecordOffset(0); setRecordQuery(recordSearch.trim()) }} className="admin-record-search"><label>Search records<input value={recordSearch} onChange={event => setRecordSearch(event.target.value)} placeholder="Order, tracking, SKU, reference…" maxLength={100}/></label><button type="submit" disabled={recordLoading}>Search</button></form>
         <button type="button" className="admin-refresh-button" onClick={loadRecords} disabled={recordLoading}><RefreshCw size={15}/> Refresh records</button>
       </div>
