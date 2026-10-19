@@ -14,8 +14,21 @@ const filters = [
 function formatDate(value) {
   if (!value) return '—'
   const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString()
+  return Number.isNaN(date.getTime()) || date.getTime() <= 0 ? '—' : date.toLocaleString()
 }
+
+const metricCards = [
+  ['total_shippers', 'Shipper organisations'],
+  ['pending_shippers', 'Awaiting approval'],
+  ['approved_shippers', 'Approved shippers'],
+  ['total_orders', 'Orders recorded'],
+  ['total_shipments', 'Shipments recorded'],
+  ['confirmed_courier_bookings', 'Confirmed courier bookings'],
+  ['cod_attention_records', 'COD records needing attention'],
+  ['inventory_items', 'Inventory items'],
+]
+
+const numberFormat = value => Number(value || 0).toLocaleString()
 
 export default function AdminConsole() {
   const { user } = useAuth()
@@ -26,6 +39,26 @@ export default function AdminConsole() {
   const [notes, setNotes] = useState({})
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [overview, setOverview] = useState(null)
+  const [overviewLoading, setOverviewLoading] = useState(true)
+  const [overviewError, setOverviewError] = useState('')
+
+  const loadOverview = useCallback(async () => {
+    setOverviewLoading(true)
+    setOverviewError('')
+    try {
+      const result = await apiRequest('/api/admin/overview')
+      setOverview(result.metrics || {})
+      setOverviewOrganizations(Array.isArray(result.organizations) ? result.organizations : [])
+    } catch (requestError) {
+      setOverviewError(requestError.message || 'Unable to load platform overview.')
+      setOverview(null)
+      setOverviewOrganizations([])
+    } finally {
+      setOverviewLoading(false)
+    }
+  }, [])
+  const [overviewOrganizations, setOverviewOrganizations] = useState([])
 
   const loadApplications = useCallback(async () => {
     setLoading(true)
@@ -41,7 +74,7 @@ export default function AdminConsole() {
     }
   }, [status])
 
-  useEffect(() => { loadApplications() }, [loadApplications])
+  useEffect(() => { loadApplications(); loadOverview() }, [loadApplications, loadOverview])
 
   async function decide(application, decision) {
     const note = String(notes[application.id] || '').trim()
@@ -72,12 +105,32 @@ export default function AdminConsole() {
       <span className="admin-console-mark"><ShieldCheck size={18}/> IKAI ONE · PLATFORM CONTROL</span>
       <div className="admin-console-title-row">
         <div><span className="admin-console-eyebrow">SECURE ADMINISTRATION</span><h1>Shipper applications</h1><p>Review business registrations before enabling seller dashboard access.</p></div>
-        <button type="button" className="admin-refresh-button" onClick={loadApplications} disabled={loading}><RefreshCw size={15}/> Refresh</button>
+        <button type="button" className="admin-refresh-button" onClick={() => { loadApplications(); loadOverview() }} disabled={loading || overviewLoading}><RefreshCw size={15}/> Refresh</button>
       </div>
       <div className="admin-console-identity"><ShieldCheck size={16}/><span>Signed in as <b>{user?.name || user?.email || 'Platform administrator'}</b></span><span className="admin-secure-pill">Platform admin</span></div>
     </header>
 
+    <section className="admin-overview-section" aria-label="Platform-wide operations overview">
+      <div className="admin-section-heading"><div><span className="admin-console-eyebrow">PLATFORM-WIDE VISIBILITY</span><h2>Operations overview</h2><p>Read-only totals across shipper workspaces. Customer-level personal information is not shown here.</p></div></div>
+      {overviewError && <p className="admin-alert admin-alert-error" role="alert">{overviewError}</p>}
+      {overviewLoading ? <div className="admin-empty compact"><RefreshCw size={20}/><b>Loading platform metrics…</b></div> : overview && <div className="admin-metric-grid">
+        {metricCards.map(([key, label]) => <article className="admin-metric-card" key={key}><span>{label}</span><strong>{numberFormat(overview[key])}</strong></article>)}
+      </div>}
+      <div className="admin-org-table-wrap">
+        <div className="admin-org-table-heading"><h3>Shipper workspace activity</h3><span>Latest 100 organisations</span></div>
+        {overviewLoading ? <div className="admin-empty compact">Loading workspaces…</div> : overviewOrganizations.length === 0 ? <div className="admin-empty compact"><Building2 size={20}/><b>No shipper workspaces found</b></div> : <table className="admin-org-table">
+          <thead><tr><th>Organisation</th><th>Approval</th><th>Orders</th><th>Shipments</th><th>Confirmed bookings</th><th>COD attention</th><th>Last activity</th></tr></thead>
+          <tbody>{overviewOrganizations.map(org => <tr key={org.id}>
+            <td><b>{org.name}</b><small>{org.slug}</small></td>
+            <td><span className={'admin-status-badge status-' + org.approval_status}>{org.approval_status}</span></td>
+            <td>{numberFormat(org.order_count)}</td><td>{numberFormat(org.shipment_count)}</td><td>{numberFormat(org.confirmed_booking_count)}</td><td>{numberFormat(org.cod_attention_count)}</td><td>{formatDate(org.last_activity_at)}</td>
+          </tr>)}</tbody>
+        </table>}
+      </div>
+    </section>
+
     <section className="admin-console-panel">
+      <div className="admin-panel-heading"><div><span className="admin-console-eyebrow">ACCOUNT LIFECYCLE</span><h2>Shipper applications</h2><p>Review verified business registrations before enabling seller dashboard access.</p></div></div>
       <nav className="admin-status-tabs" aria-label="Application status">
         {filters.map(([value, label]) => <button key={value} type="button" className={status === value ? 'active' : ''} onClick={() => setStatus(value)}>{label}</button>)}
       </nav>
