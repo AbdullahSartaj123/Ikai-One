@@ -735,16 +735,28 @@ export default {
             // Platform-wide read-only aggregates. Customer-level PII is deliberately not included.
             const rows = await sql`
               SELECT
-                (SELECT COUNT(*)::int FROM ikai.organizations WHERE organization_type = 'shipper') AS total_shippers,
-                (SELECT COUNT(*)::int FROM ikai.organizations WHERE organization_type = 'shipper' AND approval_status = 'pending') AS pending_shippers,
-                (SELECT COUNT(*)::int FROM ikai.organizations WHERE organization_type = 'shipper' AND approval_status = 'approved') AS approved_shippers,
-                (SELECT COUNT(*)::int FROM ikai.organizations WHERE organization_type = 'shipper' AND approval_status = 'rejected') AS rejected_shippers,
-                (SELECT COUNT(*)::int FROM ikai.orders) AS total_orders,
-                (SELECT COUNT(*)::int FROM ikai.shipment_records) AS total_shipments,
-                (SELECT COUNT(*)::int FROM ikai.shipment_records WHERE courier_booking_confirmed = true) AS confirmed_courier_bookings,
-                (SELECT COUNT(*)::int FROM ikai.cod_reconciliations) AS cod_records,
-                (SELECT COUNT(*)::int FROM ikai.cod_reconciliations WHERE status IN ('pending', 'under_review', 'short_paid')) AS cod_attention_records,
-                (SELECT COUNT(*)::int FROM ikai.inventory_items) AS inventory_items
+                (SELECT COUNT(*)::int FROM ikai.organizations o WHERE o.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = o.id)) AS total_shippers,
+                (SELECT COUNT(*)::int FROM ikai.organizations o WHERE o.organization_type = 'shipper' AND o.approval_status = 'pending'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = o.id)) AS pending_shippers,
+                (SELECT COUNT(*)::int FROM ikai.organizations o WHERE o.organization_type = 'shipper' AND o.approval_status = 'approved'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = o.id)) AS approved_shippers,
+                (SELECT COUNT(*)::int FROM ikai.organizations o WHERE o.organization_type = 'shipper' AND o.approval_status = 'rejected'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = o.id)) AS rejected_shippers,
+                (SELECT COUNT(*)::int FROM ikai.orders x JOIN ikai.organizations o ON o.id = x.organization_id WHERE o.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = o.id)) AS total_orders,
+                (SELECT COUNT(*)::int FROM ikai.shipment_records x JOIN ikai.organizations o ON o.id = x.organization_id WHERE o.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = o.id)) AS total_shipments,
+                (SELECT COUNT(*)::int FROM ikai.shipment_records x JOIN ikai.organizations o ON o.id = x.organization_id WHERE o.organization_type = 'shipper'
+                  AND x.courier_booking_confirmed = true
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = o.id)) AS confirmed_courier_bookings,
+                (SELECT COUNT(*)::int FROM ikai.cod_reconciliations x JOIN ikai.organizations o ON o.id = x.organization_id WHERE o.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = o.id)) AS cod_records,
+                (SELECT COUNT(*)::int FROM ikai.cod_reconciliations x JOIN ikai.organizations o ON o.id = x.organization_id WHERE o.organization_type = 'shipper'
+                  AND x.status IN ('pending', 'under_review', 'short_paid')
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = o.id)) AS cod_attention_records,
+                (SELECT COUNT(*)::int FROM ikai.inventory_items x JOIN ikai.organizations o ON o.id = x.organization_id WHERE o.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = o.id)) AS inventory_items
             `;
             const organizations = await sql`
               SELECT o.id, o.name, o.slug, o.approval_status, o.created_at,
