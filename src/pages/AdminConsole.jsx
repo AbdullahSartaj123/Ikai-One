@@ -162,7 +162,7 @@ export default function AdminConsole() {
         body: { decision, note: note || undefined },
       })
       setNotice(result.message || 'Application updated.')
-      await Promise.all([loadApplications(), loadOverview()])
+      await Promise.all([loadApplications(), loadOverview(), loadAudit()])
     } catch (requestError) {
       setError(requestError.message || 'The decision could not be saved. Refresh and try again.')
     } finally {
