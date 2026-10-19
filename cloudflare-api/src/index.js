@@ -876,14 +876,26 @@ export default {
           if (reviewMatch && request.method === "POST") {
             const body = await readJson(request);
             const note = String(body.followUpNote || "").trim().slice(0, 2000) || null;
+            const existingRows = await sql`
+              SELECT id, order_reference, status
+              FROM ikai.cod_reconciliations
+              WHERE id = ${reviewMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+              LIMIT 1
+            `;
+            if (!existingRows[0]) return json(request, { error: "Reconciliation record not found." }, 404);
+            if (existingRows[0].status === "under_review") {
+              return json(request, { error: "This reconciliation is already under review." }, 409);
+            }
             const rows = await sql`
               UPDATE ikai.cod_reconciliations
               SET status = 'under_review', follow_up_note = COALESCE(${note}, follow_up_note),
                   reviewed_by = ${user.id}::uuid, reviewed_at = now(), updated_at = now()
-              WHERE id = ${reviewMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+              WHERE id = ${reviewMatch[1]}::uuid
+                AND organization_id = ${user.organizationId}::uuid
+                AND status = ${existingRows[0].status}
               RETURNING id, order_reference, status, follow_up_note, reviewed_at, updated_at
             `;
-            if (!rows[0]) return json(request, { error: "Reconciliation record not found." }, 404);
+            if (!rows[0]) return json(request, { error: "Reconciliation changed concurrently. Refresh and try again." }, 409);
             await sql`
               INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
               VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'cod_reconciliation_reviewed', 'cod_reconciliation', ${rows[0].order_reference}, jsonb_build_object('status', 'under_review'))
