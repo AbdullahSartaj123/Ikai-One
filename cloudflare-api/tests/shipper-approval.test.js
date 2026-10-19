@@ -74,7 +74,7 @@ test("platform overview exposes aggregate operations metrics only to platform ad
   assert.match(worker, /confirmed_courier_bookings/);
   assert.match(worker, /cod_attention_records/);
   assert.match(worker, /if \(!user\.isPlatformAdmin\) return json\(request, \{ error: "Platform administrator access is required\." \}, 403\)/);
-  assert.match(worker, /Customer-level PII is deliberately not included/);
+  assert.match(worker, /Customer-level PII is excluded from the overview/);
 });
 
 
