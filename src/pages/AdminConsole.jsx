@@ -59,6 +59,13 @@ export default function AdminConsole() {
   const [recordTotal, setRecordTotal] = useState(0)
   const [recordLoading, setRecordLoading] = useState(false)
   const [recordError, setRecordError] = useState('')
+  const [auditSearch, setAuditSearch] = useState('')
+  const [auditQuery, setAuditQuery] = useState('')
+  const [auditOffset, setAuditOffset] = useState(0)
+  const [auditData, setAuditData] = useState([])
+  const [auditTotal, setAuditTotal] = useState(0)
+  const [auditLoading, setAuditLoading] = useState(false)
+  const [auditError, setAuditError] = useState('')
 
   const loadOverview = useCallback(async () => {
     setOverviewLoading(true)
@@ -110,8 +117,27 @@ export default function AdminConsole() {
     }
   }, [recordType, recordQuery, recordOrganization, recordOffset])
 
+  const loadAudit = useCallback(async () => {
+    setAuditLoading(true)
+    setAuditError('')
+    try {
+      const params = new URLSearchParams({ limit: '25', offset: String(auditOffset) })
+      if (auditQuery) params.set('q', auditQuery)
+      const result = await apiRequest('/api/admin/audit?' + params.toString())
+      setAuditData(Array.isArray(result.data) ? result.data : [])
+      setAuditTotal(Number(result.pagination?.total || 0))
+    } catch (requestError) {
+      setAuditError(requestError.message || 'Unable to load platform audit history.')
+      setAuditData([])
+      setAuditTotal(0)
+    } finally {
+      setAuditLoading(false)
+    }
+  }, [auditQuery, auditOffset])
+
   useEffect(() => { loadApplications(); loadOverview() }, [loadApplications, loadOverview])
   useEffect(() => { loadRecords() }, [loadRecords])
+  useEffect(() => { loadAudit() }, [loadAudit])
 
   async function decide(application, decision) {
     const note = String(notes[application.id] || '').trim()
@@ -180,6 +206,28 @@ export default function AdminConsole() {
         <tbody>{recordData.map(record => <tr key={record.id}>{(recordColumns[recordType] || []).map(column => <td key={column}>{record[column] == null ? '—' : typeof record[column] === 'object' ? JSON.stringify(record[column]) : String(record[column]).length > 90 ? String(record[column]).slice(0, 87) + '…' : String(record[column])}</td>)}</tr>)}</tbody>
       </table></div>}
       <div className="admin-record-pagination"><span>{recordTotal.toLocaleString()} records</span><div><button type="button" onClick={() => setRecordOffset(Math.max(0, recordOffset - 25))} disabled={recordLoading || recordOffset === 0}>Previous</button><span>{recordTotal === 0 ? 0 : recordOffset + 1}–{Math.min(recordOffset + 25, recordTotal)}</span><button type="button" onClick={() => setRecordOffset(recordOffset + 25)} disabled={recordLoading || recordOffset + 25 >= recordTotal}>Next</button></div></div>
+    </section>
+
+    <section className="admin-overview-section" aria-label="Platform administrative audit history">
+      <div className="admin-section-heading"><div><span className="admin-console-eyebrow">SECURITY & ACCOUNTABILITY</span><h2>Platform audit history</h2><p>Review administrative decisions and operational record access. Entries are read-only.</p></div>
+        <button type="button" className="admin-refresh-button" onClick={loadAudit} disabled={auditLoading}><RefreshCw size={15}/> Refresh history</button>
+      </div>
+      <form className="admin-record-controls" onSubmit={event => { event.preventDefault(); setAuditOffset(0); setAuditQuery(auditSearch.trim()) }}>
+        <label className="admin-audit-search-label">Filter audit history<input value={auditSearch} onChange={event => setAuditSearch(event.target.value)} maxLength={100} placeholder="Event, organisation, administrator email…"/></label>
+        <button type="submit" className="admin-record-search-button" disabled={auditLoading}>Search history</button>
+      </form>
+      {auditError && <p className="admin-alert admin-alert-error" role="alert">{auditError}</p>}
+      {auditLoading ? <div className="admin-empty compact"><RefreshCw size={20}/><b>Loading audit history…</b></div> : auditData.length === 0 ? <div className="admin-empty compact"><b>No audit events found</b><span>Administrative decisions and record views will appear here.</span></div> : <div className="admin-org-table-wrap"><table className="admin-org-table">
+        <thead><tr><th>Time</th><th>Event</th><th>Administrator</th><th>Organisation</th><th>Details</th></tr></thead>
+        <tbody>{auditData.map(event => <tr key={event.id}>
+          <td>{formatDate(event.created_at)}</td>
+          <td><b>{String(event.event_type || '').replaceAll('_', ' ')}</b></td>
+          <td>{event.actor_name || 'Unknown'}<small>{event.actor_email || ''}</small></td>
+          <td>{event.organization_name || '—'}</td>
+          <td className="admin-audit-details">{event.details == null ? '—' : JSON.stringify(event.details).slice(0, 220)}</td>
+        </tr>)}</tbody>
+      </table></div>}
+      <div className="admin-record-pagination"><span>{auditTotal.toLocaleString()} events</span><div><button type="button" onClick={() => setAuditOffset(Math.max(0, auditOffset - 25))} disabled={auditLoading || auditOffset === 0}>Previous</button><span>{auditTotal === 0 ? 0 : auditOffset + 1}–{Math.min(auditOffset + 25, auditTotal)}</span><button type="button" onClick={() => setAuditOffset(auditOffset + 25)} disabled={auditLoading || auditOffset + 25 >= auditTotal}>Next</button></div></div>
     </section>
 
     <section className="admin-console-panel">
