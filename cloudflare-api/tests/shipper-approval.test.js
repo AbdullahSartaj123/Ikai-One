@@ -112,7 +112,7 @@ test("approval checks happen before session creation in both login and email ver
   const verifyEnd = worker.indexOf("\nasync function resendVerification(", verifyStart);
   const verifyBody = worker.slice(verifyStart, verifyEnd);
   assert.ok(verifyStart >= 0 && verifyEnd > verifyStart);
-  assert.ok(verifyBody.indexOf("if (!user.isPlatformAdmin && user.approvalStatus !== \"approved\") < verifyBody.indexOf("const session = await createSession(sql, user)"));
+  assert.ok(verifyBody.indexOf("if (!user.isPlatformAdmin && user.approvalStatus !== \"approved\")") < verifyBody.indexOf("const session = await createSession(sql, user)"));
 });
 
 test("authenticated sessions are rejected immediately when shipper approval is revoked", () => {
