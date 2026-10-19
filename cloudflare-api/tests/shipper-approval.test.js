@@ -65,6 +65,17 @@ test("platform overview exposes aggregate operations metrics only to platform ad
 });
 
 
+test("platform administrators can search bounded read-only audit history", () => {
+  assert.match(worker, /url\.pathname === "\/api\/admin\/audit"/);
+  assert.match(worker, /FROM ikai\.platform_audit_events e/);
+  assert.match(worker, /ORDER BY e\.created_at DESC, e\.id DESC/);
+  assert.match(worker, /const limit = Math\.min\(100, Math\.max\(1/);
+  assert.match(worker, /const offset = Math\.min\(100000, Math\.max\(0/);
+  assert.match(adminPage, /Platform audit history/);
+  assert.match(adminPage, /api\/admin\/audit/);
+  assert.match(adminPage, /auditData\.map/);
+});
+
 test("platform admins can browse bounded operational records across shipper organisations", () => {
   assert.match(worker, /url\.pathname === "\/api\/admin\/records"/);
   assert.match(worker, /const allowedTypes = \["orders", "shipments", "cod", "inventory", "workflow"\]/);
