@@ -60,6 +60,17 @@ function ScrollToTop() {
   return null
 }
 
+function PlatformAdminRoute() {
+  const { user, isAuthenticated, authLoading } = useAuth()
+  const location = useLocation()
+  if (authLoading) {
+    return <main className="app-loading" role="status" aria-live="polite"><p>Checking your secure session…</p></main>
+  }
+  if (!isAuthenticated) return <Navigate to="/login" replace state={{ from: location }} />
+  if (!user?.isPlatformAdmin) return <Navigate to="/app/dashboard" replace />
+  return <Outlet />
+}
+
 function ShipperEntry() {
   const location = useLocation()
   const { isAuthenticated, authLoading } = useAuth()
@@ -92,8 +103,10 @@ function Root() {
     <Route path="/verify-otp" element={<VerifyOTP/>}/>
     <Route path="/onboarding" element={<Onboarding/>}/>
     <Route element={<ProtectedRoute/>}>
-      <Route path="/admin" element={<AdminConsole/>}/>
       <Route path="/dashboard" element={<DashboardLayout/>}><Route index element={<DashboardHome/>}/></Route>
+    </Route>
+    <Route element={<PlatformAdminRoute/>}>
+      <Route path="/admin" element={<AdminConsole/>}/>
     </Route>
     <Route path="/app" element={<ProtectedRoute/>}>
       <Route index element={<Navigate to="dashboard" replace/>}/>
