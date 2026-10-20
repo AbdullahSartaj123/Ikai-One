@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, Building2, CheckCircle2, Clock3, RefreshCw, ShieldCheck, XCircle } from 'lucide-react'
 import { apiRequest } from '../lib/api.js'
@@ -71,42 +71,55 @@ export default function AdminConsole() {
   const [auditLoading, setAuditLoading] = useState(false)
   const [auditError, setAuditError] = useState('')
 
+  // Ignore stale responses when a user changes filters before an earlier request finishes.
+  const overviewRequest = useRef(0)
+  const applicationsRequest = useRef(0)
+  const recordsRequest = useRef(0)
+  const auditRequest = useRef(0)
+
   const loadOverview = useCallback(async () => {
+    const requestId = ++overviewRequest.current
     setOverviewLoading(true)
     setOverviewError('')
     try {
       const result = await apiRequest('/api/admin/overview')
+      if (requestId !== overviewRequest.current) return
       setOverview(result.metrics || {})
       setOverviewOrganizations(Array.isArray(result.organizations) ? result.organizations : [])
     } catch (requestError) {
+      if (requestId !== overviewRequest.current) return
       setOverviewError(requestError.message || 'Unable to load platform overview.')
       setOverview(null)
       setOverviewOrganizations([])
     } finally {
-      setOverviewLoading(false)
+      if (requestId === overviewRequest.current) setOverviewLoading(false)
     }
   }, [])
   const [overviewOrganizations, setOverviewOrganizations] = useState([])
 
   const loadApplications = useCallback(async () => {
+    const requestId = ++applicationsRequest.current
     setLoading(true)
     setError('')
     try {
       const params = new URLSearchParams({ status, limit: '25', offset: String(applicationOffset) })
       if (applicationQuery) params.set('q', applicationQuery)
       const result = await apiRequest('/api/admin/organizations?' + params.toString())
+      if (requestId !== applicationsRequest.current) return
       setApplications(Array.isArray(result.data) ? result.data : [])
       setApplicationTotal(Number(result.pagination?.total || 0))
     } catch (requestError) {
+      if (requestId !== applicationsRequest.current) return
       setError(requestError.message || 'Unable to load shipper applications.')
       setApplications([])
       setApplicationTotal(0)
     } finally {
-      setLoading(false)
+      if (requestId === applicationsRequest.current) setLoading(false)
     }
   }, [status, applicationOffset, applicationQuery])
 
   const loadRecords = useCallback(async () => {
+    const requestId = ++recordsRequest.current
     setRecordLoading(true)
     setRecordError('')
     try {
@@ -114,32 +127,37 @@ export default function AdminConsole() {
       if (recordQuery) params.set('q', recordQuery)
       if (recordOrganization) params.set('organization_id', recordOrganization)
       const result = await apiRequest('/api/admin/records?' + params.toString())
+      if (requestId !== recordsRequest.current) return
       setRecordData(Array.isArray(result.data) ? result.data : [])
       setRecordTotal(Number(result.pagination?.total || 0))
     } catch (requestError) {
+      if (requestId !== recordsRequest.current) return
       setRecordError(requestError.message || 'Unable to load operational records.')
       setRecordData([])
       setRecordTotal(0)
     } finally {
-      setRecordLoading(false)
+      if (requestId === recordsRequest.current) setRecordLoading(false)
     }
   }, [recordType, recordQuery, recordOrganization, recordOffset])
 
   const loadAudit = useCallback(async () => {
+    const requestId = ++auditRequest.current
     setAuditLoading(true)
     setAuditError('')
     try {
       const params = new URLSearchParams({ limit: '25', offset: String(auditOffset) })
       if (auditQuery) params.set('q', auditQuery)
       const result = await apiRequest('/api/admin/audit?' + params.toString())
+      if (requestId !== auditRequest.current) return
       setAuditData(Array.isArray(result.data) ? result.data : [])
       setAuditTotal(Number(result.pagination?.total || 0))
     } catch (requestError) {
+      if (requestId !== auditRequest.current) return
       setAuditError(requestError.message || 'Unable to load platform audit history.')
       setAuditData([])
       setAuditTotal(0)
     } finally {
-      setAuditLoading(false)
+      if (requestId === auditRequest.current) setAuditLoading(false)
     }
   }, [auditQuery, auditOffset])
 
