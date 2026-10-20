@@ -37,10 +37,10 @@ test("order status API protects terminal orders and detects concurrent status ch
   assert.notEqual(start, -1, "order status route should exist");
   assert.notEqual(end, -1, "order status route should end before unsupported-route response");
   const handler = workerSource.slice(start, end);
-  assert.match(handler, /SELECT id, status FROM ikai\.orders/);
-  assert.match(handler, /WHERE id = \\${statusMatch\[1\]\u007d::uuid AND organization_id = \\${user\.organizationId\u007d::uuid/);
-  assert.match(handler, /terminalStatuses = \["Delivered", "RTO", "Cancelled"\]/);
-  assert.match(handler, /terminalStatuses\.includes\(currentStatus\) && status !== currentStatus/);
-  assert.match(handler, /AND status = \\${currentStatus\u007d/);
-  assert.match(handler, /Order status changed concurrently/);
+  assert.ok(handler.includes("SELECT id, status FROM ikai.orders"));
+  assert.ok(handler.includes("WHERE id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid"));
+  assert.ok(handler.includes('const terminalStatuses = ["Delivered", "RTO", "Cancelled"]'));
+  assert.ok(handler.includes("terminalStatuses.includes(currentStatus) && status !== currentStatus"));
+  assert.ok(handler.includes("AND status = ${currentStatus}"));
+  assert.ok(handler.includes("Order status changed concurrently"));
 });
