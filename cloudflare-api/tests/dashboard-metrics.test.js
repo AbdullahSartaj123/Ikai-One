@@ -13,7 +13,7 @@ test("order trends aggregate actual records by selected calendar period", () => 
   ];
   const today = buildOrderTrend(orders, "Today", "", "", now);
   assert.equal(today.length, 24);
-  assert.equal(today.find(point => point.label === "9 AM")?.orders, 2);
+  assert.equal(today[9]?.orders, 2);
   assert.equal(today.reduce((sum, point) => sum + point.orders, 0), 2);
   const week = buildOrderTrend(orders, "7 days", "", "", now);
   assert.equal(week.length, 7);
