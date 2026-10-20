@@ -98,6 +98,10 @@ test("platform overview exposes aggregate operations metrics only to platform ad
 });
 
 
+test("platform audit search includes event details and review notes", () => {
+  assert.equal((worker.match(/COALESCE\(e\.details::text, ''\) ILIKE/g) || []).length, 2);
+});
+
 test("platform administrators can search bounded read-only audit history", () => {
   assert.match(worker, /url\.pathname === "\/api\/admin\/audit"/);
   assert.match(worker, /FROM ikai\.platform_audit_events e/);
