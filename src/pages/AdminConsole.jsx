@@ -180,6 +180,11 @@ export default function AdminConsole() {
         body: { decision, note: note || undefined },
       })
       setNotice(result.message || 'Application updated.')
+      setNotes(previous => {
+        const next = { ...previous }
+        delete next[application.id]
+        return next
+      })
       await Promise.all([loadApplications(), loadOverview(), loadAudit()])
     } catch (requestError) {
       setError(requestError.message || 'The decision could not be saved. Refresh and try again.')
