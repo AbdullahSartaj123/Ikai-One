@@ -44,6 +44,25 @@ test("admin console route redirects authenticated non-admins away from platform 
   assert.match(router, /<Route element={<PlatformAdminRoute\/>}>[\s\S]*?<Route path="\/admin" element={<AdminConsole\/>}\/>/);
 });
 
+test("every platform admin endpoint is behind the shared authentication and role guard", () => {
+  const guardStart = worker.indexOf('if (url.pathname.startsWith("/api/admin/"))');
+  const authGuard = worker.indexOf('if (!user) return json(request, { error: "Authentication required." }, 401);', guardStart);
+  const roleGuard = worker.indexOf('if (!user.isPlatformAdmin) return json(request, { error: "Platform administrator access is required." }, 403);', guardStart);
+  assert.ok(guardStart >= 0, "admin routes must use a shared prefix guard");
+  assert.ok(authGuard > guardStart, "authentication must run inside the shared admin guard");
+  assert.ok(roleGuard > authGuard, "platform role authorization must follow authentication");
+  for (const route of [
+    '/api/admin/overview',
+    '/api/admin/records',
+    '/api/admin/audit',
+    '/api/admin/organizations',
+  ]) {
+    const routeIndex = worker.indexOf(`url.pathname === "${route}"`, guardStart);
+    assert.ok(routeIndex > roleGuard, `${route} must be dispatched only after authorization`);
+  }
+  assert.ok(worker.indexOf('/decision', guardStart) > roleGuard, "approval decisions must also follow the shared role guard");
+});
+
 test("platform administrator access cannot be self-provisioned or granted by public signup", () => {
   assert.ok(!migration.includes("INSERT INTO ikai.platform_admins"));
   assert.ok(!worker.includes("INSERT INTO ikai.platform_admins"));
