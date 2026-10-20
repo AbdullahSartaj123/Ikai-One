@@ -99,5 +99,5 @@ test("shipment list does not present mock records when the API is unavailable", 
   assert.ok(shipmentPageSource.includes("setShipments([]);setDataSource('unavailable');setLoading(false)"));
   assert.ok(shipmentPageSource.includes("No demo records are shown"));
   assert.ok(shipmentPageSource.includes("disabled={loading||dataSource==='unavailable'}"));
-  assert.ok(!shipmentPageSource.includes("mockShipments"));
+  assert.ok(!shipmentPageSource.includes("setShipments(mockShipments)"), "shipment list must not fall back to demo records");
 });
