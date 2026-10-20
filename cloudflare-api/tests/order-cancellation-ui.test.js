@@ -54,6 +54,7 @@ test("order cancellation is blocked after the linked shipment progresses", () =>
   const handler = workerSource.slice(start, end);
   assert.ok(handler.includes('if (status === "Cancelled")'));
   assert.ok(handler.includes("SELECT status FROM ikai.shipment_records"));
+  assert.ok(handler.includes("AND status NOT IN ('Label pending', 'Ready to ship')"), "cancellation must check every linked shipment that has progressed");
   assert.ok(handler.includes('!["Label pending", "Ready to ship"].includes(shipmentStatus)'));
   assert.ok(handler.includes("Update or resolve the shipment before cancelling the order."));
   assert.ok(handler.includes("}, 409)"));
