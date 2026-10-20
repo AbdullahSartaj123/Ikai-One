@@ -55,6 +55,14 @@ test("platform approval routes require an explicitly provisioned platform admin"
   assert.match(adminPage, /Reject application/);
 });
 
+test("admin console ignores stale responses when filters change quickly", () => {
+  assert.match(adminPage, /const applicationsRequest = useRef\(0\)/);
+  assert.match(adminPage, /if \(requestId !== applicationsRequest\.current\) return/);
+  assert.match(adminPage, /if \(requestId !== recordsRequest\.current\) return/);
+  assert.match(adminPage, /if \(requestId !== auditRequest\.current\) return/);
+  assert.match(adminPage, /if \(requestId !== overviewRequest\.current\) return/);
+});
+
 test("admin approval decisions refresh both the application queue and platform overview", () => {
   assert.match(adminPage, /await Promise\.all\(\[loadApplications\(\), loadOverview\(\), loadAudit\(\)\]\)/);
 });
