@@ -101,3 +101,10 @@ test("shipment list does not present mock records when the API is unavailable", 
   assert.ok(shipmentPageSource.includes("disabled={loading||dataSource==='unavailable'}"));
   assert.ok(!shipmentPageSource.includes("setShipments(mockShipments)"), "shipment list must not fall back to demo records");
 });
+
+
+test("orders list clears stale records and explains API failure after refresh", () => {
+  assert.match(source, /setOrders\(\[\]\)\s+setSelected\(\[\]\)\s+setOrdersSource\('unavailable'\)/);
+  assert.ok(source.includes("Saved orders are unavailable"));
+  assert.ok(source.includes("no stale records are shown"));
+});
