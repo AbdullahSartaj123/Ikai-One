@@ -1253,12 +1253,28 @@ export default {
             const description = String(body.description || "Internal status updated. This does not contact a courier.").trim().slice(0,500);
             const location = String(body.location || "").trim().slice(0,200);
             const currentRows = await sql`
-              SELECT id, status FROM ikai.shipment_records
-              WHERE id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+              SELECT s.id, s.status, o.status AS order_status
+              FROM ikai.shipment_records s
+              LEFT JOIN ikai.orders o
+                ON o.id = s.order_id AND o.organization_id = s.organization_id
+              WHERE s.id = ${statusMatch[1]}::uuid AND s.organization_id = ${user.organizationId}::uuid
               LIMIT 1
             `;
             if (!currentRows[0]) return json(request, { error: "Shipment not found." }, 404);
             const currentStatus = currentRows[0].status;
+            const synchronizedOrderStatus = {
+              "Ready to ship": "Ready to Ship",
+              "Booked": "Shipped",
+              "Picked up": "Shipped",
+              "In transit": "Shipped",
+              "Out for delivery": "Shipped",
+              "Delivered": "Delivered",
+              "Exception": "NDR raised",
+              "Returned": "RTO"
+            }[status];
+            if (synchronizedOrderStatus && ["Delivered", "RTO", "Cancelled"].includes(currentRows[0].order_status) && currentRows[0].order_status !== synchronizedOrderStatus) {
+              return json(request, { error: `The linked order is already ${currentRows[0].order_status} and cannot be changed by a shipment status update.` }, 409);
+            }
             const transitions = {
               "Label pending": ["Ready to ship", "Booked", "Exception"],
               "Ready to ship": ["Booked", "Picked up", "Exception"],
