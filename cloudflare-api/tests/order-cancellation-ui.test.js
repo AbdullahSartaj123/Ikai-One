@@ -67,3 +67,13 @@ test("shipment status API cannot change a terminal linked order", () => {
   assert.ok(handler.includes("The linked order is already"));
   assert.ok(handler.includes("AND o.organization_id = s.organization_id"));
 });
+
+test("shipment status sync cannot bypass the linked order lifecycle", () => {
+  const start = workerSource.indexOf('const statusMatch = url.pathname.match(/^\\/api\\/shipments');
+  const end = workerSource.indexOf('return json(request, { error: "Method or shipment route not supported." }, 405);', start);
+  const handler = workerSource.slice(start, end);
+  assert.ok(handler.includes("const allowedOrderNextStatuses = {"));
+  assert.ok(handler.includes('"New": ["Processing", "Ready to Ship", "Cancelled"]'));
+  assert.ok(handler.includes("!(allowedOrderNextStatuses[linkedOrderStatus] || []).includes(synchronizedOrderStatus)"));
+  assert.ok(handler.includes("which is not an allowed order transition"));
+});
