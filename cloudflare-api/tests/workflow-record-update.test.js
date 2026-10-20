@@ -86,7 +86,7 @@ test("shipment list can create a persisted shipment from a saved order without b
   assert.match(shipmentsPage, /apiRequest\('\/api\/orders\?limit=100'\)/);
   assert.match(shipmentsPage, /apiRequest\('\/api\/shipments'/);
   assert.match(shipmentsPage, /orderId:shipmentDraft\.orderId/);
-  assert.match(shipmentsPage, /disabled=\{loading\|\|dataSource==='demo'\}/);
+  assert.match(shipmentsPage, /disabled=\{loading\|\|dataSource==='unavailable'\}/);
   assert.match(shipmentsPage, /This creates an internal shipment record and history event only/);
   assert.match(api, /courierBookingConfirmed', false/);
   assert.match(api, /Shipment record saved\. Courier booking has not been performed\./);
