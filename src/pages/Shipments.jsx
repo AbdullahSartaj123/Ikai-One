@@ -43,8 +43,19 @@ function ShipmentsList(){
 }
 function ShipmentDetail(){
  const {awb}=useParams(),navigate=useNavigate()
- const [shipment,setShipment]=useState(()=>mockShipments.find(s=>s.awb===awb)||null)
- useEffect(()=>{let active=true;apiRequest('/api/shipments?limit=100&search='+encodeURIComponent(awb||'')).then(payload=>{if(!active)return;const row=(payload.data||[]).find(item=>(item.tracking_number||item.shipment_number)===awb);if(row)setShipment(apiShipmentToView(row))}).catch(()=>{});return()=>{active=false}},[awb])
+ const [shipment,setShipment]=useState(null)
+ const [shipmentLoadState,setShipmentLoadState]=useState('loading')
+ const [shipmentLoadError,setShipmentLoadError]=useState('')
+ const reloadShipment=async()=>{
+  setShipmentLoadState('loading');setShipmentLoadError('')
+  try{
+   const payload=await apiRequest('/api/shipments?limit=100&search='+encodeURIComponent(awb||''))
+   const row=(payload.data||[]).find(item=>(item.tracking_number||item.shipment_number)===awb)
+   if(!row){setShipment(null);setShipmentLoadState('not-found');return null}
+   const mapped=apiShipmentToView(row);setShipment(mapped);setShipmentLoadState('loaded');return mapped
+  }catch(error){setShipment(null);setShipmentLoadState('unavailable');setShipmentLoadError(error.message||'Saved shipment could not be loaded.');return null}
+ }
+ useEffect(()=>{let active=true;const load=async()=>{setShipmentLoadState('loading');setShipmentLoadError('');try{const payload=await apiRequest('/api/shipments?limit=100&search='+encodeURIComponent(awb||''));if(!active)return;const row=(payload.data||[]).find(item=>(item.tracking_number||item.shipment_number)===awb);if(!row){setShipment(null);setShipmentLoadState('not-found');return}setShipment(apiShipmentToView(row));setShipmentLoadState('loaded')}catch(error){if(active){setShipment(null);setShipmentLoadState('unavailable');setShipmentLoadError(error.message||'Saved shipment could not be loaded.')}}};load();return()=>{active=false}},[awb])
  const [statusDraft,setStatusDraft]=useState('Label pending'),[statusSaving,setStatusSaving]=useState(false),[statusMessage,setStatusMessage]=useState('')
  useEffect(()=>{if(shipment?.status)setStatusDraft(shipment.status)},[shipment?.status])
  const shipmentTransitions={
@@ -60,7 +71,7 @@ function ShipmentDetail(){
   'Cancelled':[]
  }
  const allowedStatusOptions=[shipment?.status,...(shipmentTransitions[shipment?.status]||[])].filter((value,index,all)=>value&&all.indexOf(value)===index)
- const saveInternalStatus=async()=>{if(!shipment?.shipmentId){setStatusMessage('This demo shipment cannot be saved.');return}if(statusDraft==='Cancelled'&&!window.confirm('Cancel this shipment before dispatch? Its linked order will also be cancelled. This cannot be undone.'))return;setStatusSaving(true);setStatusMessage('');try{await apiRequest('/api/shipments/'+shipment.shipmentId+'/status',{method:'POST',body:{status:statusDraft,description:statusDraft==='Cancelled'?'Shipment cancelled before dispatch in Ikai.One. The linked order was cancelled.':'Internal shipment status updated in Ikai.One.'}});const refreshed=await apiRequest('/api/shipments?limit=100&search='+encodeURIComponent(awb||''));const row=(refreshed.data||[]).find(item=>(item.tracking_number||item.shipment_number)===awb);if(row)setShipment(apiShipmentToView(row));setStatusMessage(statusDraft==='Cancelled'?'Shipment and linked order cancelled. No courier was contacted.':'Internal status saved. No courier was contacted.')}catch(error){setStatusMessage(error.message||'Could not save status.')}finally{setStatusSaving(false)}}
+ const saveInternalStatus=async()=>{if(!shipment?.shipmentId){setStatusMessage('This demo shipment cannot be saved.');return}if(statusDraft==='Cancelled'&&!window.confirm('Cancel this shipment before dispatch? Its linked order will also be cancelled. This cannot be undone.'))return;setStatusSaving(true);setStatusMessage('');try{await apiRequest('/api/shipments/'+shipment.shipmentId+'/status',{method:'POST',body:{status:statusDraft,description:statusDraft==='Cancelled'?'Shipment cancelled before dispatch in Ikai.One. The linked order was cancelled.':'Internal shipment status updated in Ikai.One.'}});const latest=await reloadShipment();if(!latest)throw new Error('The saved shipment could not be reloaded. Refresh before continuing.');setStatusDraft(latest.status);setStatusMessage(statusDraft==='Cancelled'?'Shipment and linked order cancelled. No courier was contacted.':'Internal status saved. Latest saved shipment state reloaded. No courier was contacted.')}catch(error){if(error.status===409){const latest=await reloadShipment();setStatusDraft(latest?.status||'Label pending');setStatusMessage((error.message||'Shipment status changed elsewhere.')+' Latest saved state reloaded.')}else setStatusMessage(error.message||'Could not save status.')}finally{setStatusSaving(false)}}
  const [exceptionAction,setExceptionAction]=useState('')
  const [exceptionReason,setExceptionReason]=useState('Customer unavailable')
  const [exceptionNote,setExceptionNote]=useState('')
@@ -95,15 +106,14 @@ function ShipmentDetail(){
    }
    const nextStatus=exceptionAction==='Return to sender'?'Returned':'Ready to ship'
    await apiRequest('/api/shipments/'+shipment.shipmentId+'/status',{method:'POST',body:{status:nextStatus,description,location:shipment.destination||''}})
-   const refreshed=await apiRequest('/api/shipments?limit=100&search='+encodeURIComponent(awb||''))
-   const row=(refreshed.data||[]).find(item=>(item.tracking_number||item.shipment_number)===awb)
-   if(row)setShipment(apiShipmentToView(row))
-   setStatusDraft(nextStatus);setExceptionSaved(true)
+   const latest=await reloadShipment()
+   if(!latest)throw new Error('The saved shipment could not be reloaded. Refresh before continuing.')
+   setStatusDraft(latest.status);setExceptionSaved(true)
    setStatusMessage('Exception action saved to shipment history as '+nextStatus+'. No courier instruction was sent.')
   }catch(error){setStatusMessage(error.status===503?'Workflow persistence is unavailable. Check migration 0007 and retry.':error.message||'Could not save exception action.')}
   finally{setExceptionSaving(false)}
  }
- if(!shipment)return <div className="panel shipment-not-found"><Package size={28}/><h2>Shipment not found</h2><p>Check the AWB number and try again.</p><button className="primary-button" onClick={()=>navigate('/app/shipments')}>Back to shipments</button></div>
+ if(!shipment)return <div className="panel shipment-not-found"><Package size={28}/><h2>{shipmentLoadState==='loading'?'Loading saved shipment…':shipmentLoadState==='unavailable'?'Shipment service unavailable':'Shipment not found'}</h2><p>{shipmentLoadState==='loading'?'Checking the latest saved shipment record.':shipmentLoadState==='unavailable'?(shipmentLoadError+' No demo records are shown.'): 'No saved shipment matches this tracking number.'}</p>{shipmentLoadState!=='loading'&&<button className="secondary-button" onClick={reloadShipment}>Retry loading</button>}<button className="primary-button" onClick={()=>navigate('/app/shipments')}>Back to shipments</button></div>
  const ordered=[...shipment.scans].sort((a,b)=>new Date(b.time)-new Date(a.time))
  return <div className="page-stack shipment-detail-page"><div className="page-heading"><div><button className="orders-back-link" onClick={()=>navigate('/app/shipments')}><ArrowLeft size={15}/> Back to shipments</button><div className="shipment-detail-title"><h1>{shipment.awb}</h1><StatusBadge status={shipment.status}/></div><p>Courier tracking · {shipment.courier} · Order <Link to={'/app/orders/'+shipment.orderId}>{shipment.orderId}</Link></p></div><div className="heading-actions"><button className="secondary-button" onClick={()=>navigator.clipboard?.writeText(shipment.awb)}><Copy size={14}/> Copy AWB</button><Link className="primary-button" to={'/track/'+shipment.awb} target="_blank"><ExternalLink size={15}/> Public tracking</Link></div></div>
  <div className="shipment-detail-grid"><div className="shipment-detail-main"><section className="panel shipment-progress-card"><div className="shipment-card-heading"><div><span className="panel-eyebrow">DELIVERY PROGRESS</span><h2>Shipment journey</h2></div><span className="shipment-updated"><Clock3 size={13}/> Updated {dateTime(shipment.updatedAt)}</span></div><div className="shipment-route-visual"><div className="shipment-route-point"><span><MapPin size={17}/></span><small>ORIGIN</small><b>{shipment.origin}</b><em>{shipment.originPincode}</em></div><div className="shipment-route-line"><span/><span/><span/><Truck size={17}/></div><div className="shipment-route-point destination"><span><Navigation size={17}/></span><small>DESTINATION</small><b>{shipment.destination}</b><em>{shipment.destinationPincode}</em></div></div><div className="shipment-progress-footer"><span><small>Expected delivery</small><b>{['Delivered','RTO Delivered'].includes(shipment.status)?'Shipment completed':date(shipment.eta)}</b></span><span><small>Package weight</small><b>{shipment.weight.toFixed(2)} kg</b></span><span><small>Payment</small><b>{shipment.paymentMode} · {money(shipment.amount)}</b></span></div></section>
