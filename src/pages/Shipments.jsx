@@ -48,18 +48,19 @@ function ShipmentDetail(){
  const [statusDraft,setStatusDraft]=useState('Label pending'),[statusSaving,setStatusSaving]=useState(false),[statusMessage,setStatusMessage]=useState('')
  useEffect(()=>{if(shipment?.status)setStatusDraft(shipment.status)},[shipment?.status])
  const shipmentTransitions={
-  'Label pending':['Ready to ship','Booked','Exception'],
-  'Ready to ship':['Booked','Picked up','Exception'],
+  'Label pending':['Ready to ship','Booked','Exception','Cancelled'],
+  'Ready to ship':['Booked','Picked up','Exception','Cancelled'],
   'Booked':['Picked up','In transit','Exception'],
   'Picked up':['In transit','Out for delivery','Exception','Returned'],
   'In transit':['Out for delivery','Delivered','Exception','Returned'],
   'Out for delivery':['Delivered','Exception','Returned'],
   'Exception':['Ready to ship','Booked','Picked up','In transit','Out for delivery','Returned'],
   'Delivered':[],
-  'Returned':[]
+  'Returned':[],
+  'Cancelled':[]
  }
  const allowedStatusOptions=[shipment?.status,...(shipmentTransitions[shipment?.status]||[])].filter((value,index,all)=>value&&all.indexOf(value)===index)
- const saveInternalStatus=async()=>{if(!shipment?.shipmentId){setStatusMessage('This demo shipment cannot be saved.');return}setStatusSaving(true);setStatusMessage('');try{await apiRequest('/api/shipments/'+shipment.shipmentId+'/status',{method:'POST',body:{status:statusDraft,description:'Internal shipment status updated in Ikai.One.'}});const refreshed=await apiRequest('/api/shipments?limit=100&search='+encodeURIComponent(awb||''));const row=(refreshed.data||[]).find(item=>(item.tracking_number||item.shipment_number)===awb);if(row)setShipment(apiShipmentToView(row));setStatusMessage('Internal status saved. No courier was contacted.')}catch(error){setStatusMessage(error.message||'Could not save status.')}finally{setStatusSaving(false)}}
+ const saveInternalStatus=async()=>{if(!shipment?.shipmentId){setStatusMessage('This demo shipment cannot be saved.');return}if(statusDraft==='Cancelled'&&!window.confirm('Cancel this shipment before dispatch? Its linked order will also be cancelled. This cannot be undone.'))return;setStatusSaving(true);setStatusMessage('');try{await apiRequest('/api/shipments/'+shipment.shipmentId+'/status',{method:'POST',body:{status:statusDraft,description:statusDraft==='Cancelled'?'Shipment cancelled before dispatch in Ikai.One. The linked order was cancelled.':'Internal shipment status updated in Ikai.One.'}});const refreshed=await apiRequest('/api/shipments?limit=100&search='+encodeURIComponent(awb||''));const row=(refreshed.data||[]).find(item=>(item.tracking_number||item.shipment_number)===awb);if(row)setShipment(apiShipmentToView(row));setStatusMessage(statusDraft==='Cancelled'?'Shipment and linked order cancelled. No courier was contacted.':'Internal status saved. No courier was contacted.')}catch(error){setStatusMessage(error.message||'Could not save status.')}finally{setStatusSaving(false)}}
  const [exceptionAction,setExceptionAction]=useState('')
  const [exceptionReason,setExceptionReason]=useState('Customer unavailable')
  const [exceptionNote,setExceptionNote]=useState('')
