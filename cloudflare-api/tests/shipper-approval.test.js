@@ -113,6 +113,11 @@ test("admin approval decisions refresh both the application queue and platform o
   assert.match(adminPage, /await Promise\.all\(\[loadApplications\(\), loadOverview\(\), loadAudit\(\)\]\)/);
 });
 
+test("shipper decision route validates the full UUID shape before database casts", () => {
+  assert.ok(worker.includes('url.pathname.match(/^\\/api\\/admin\\/organizations\\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\\/decision$/i)'));
+  assert.ok(!worker.includes('([0-9a-f-]{36})\\/decision'));
+});
+
 test("admin decision requires a rejection reason and rejects duplicate or stale decisions", () => {
   assert.match(worker, /if \(decision === "rejected" && !note\)/);
   assert.match(worker, /This application is no longer pending/);
