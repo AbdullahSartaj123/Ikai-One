@@ -1263,7 +1263,7 @@ export default {
           if (statusMatch && request.method === "POST") {
             const body = await readJson(request);
             const status = String(body.status || "").trim();
-            const allowed = ["Label pending", "Ready to ship", "Booked", "Picked up", "In transit", "Out for delivery", "Delivered", "Exception", "Returned"];
+            const allowed = ["Label pending", "Ready to ship", "Booked", "Picked up", "In transit", "Out for delivery", "Delivered", "Exception", "Returned", "Cancelled"];
             if (!allowed.includes(status)) return json(request, { error: "Invalid internal shipment status." }, 400);
             const description = String(body.description || "Internal status updated. This does not contact a courier.").trim().slice(0,500);
             const location = String(body.location || "").trim().slice(0,200);
@@ -1285,7 +1285,8 @@ export default {
               "Out for delivery": "Shipped",
               "Delivered": "Delivered",
               "Exception": "NDR raised",
-              "Returned": "RTO"
+              "Returned": "RTO",
+              "Cancelled": "Cancelled"
             }[status];
             if (synchronizedOrderStatus && ["Delivered", "RTO", "Cancelled"].includes(currentRows[0].order_status) && currentRows[0].order_status !== synchronizedOrderStatus) {
               return json(request, { error: `The linked order is already ${currentRows[0].order_status} and cannot be changed by a shipment status update.` }, 409);
@@ -1306,15 +1307,16 @@ export default {
               return json(request, { error: `Shipment status would move the linked order from "${linkedOrderStatus}" to "${synchronizedOrderStatus}", which is not an allowed order transition.` }, 409);
             }
             const transitions = {
-              "Label pending": ["Ready to ship", "Booked", "Exception"],
-              "Ready to ship": ["Booked", "Picked up", "Exception"],
+              "Label pending": ["Ready to ship", "Booked", "Exception", "Cancelled"],
+              "Ready to ship": ["Booked", "Picked up", "Exception", "Cancelled"],
               "Booked": ["Picked up", "In transit", "Exception"],
               "Picked up": ["In transit", "Out for delivery", "Exception", "Returned"],
               "In transit": ["Out for delivery", "Delivered", "Exception", "Returned"],
               "Out for delivery": ["Delivered", "Exception", "Returned"],
               "Exception": ["Ready to ship", "Booked", "Picked up", "In transit", "Out for delivery", "Returned"],
               "Delivered": [],
-              "Returned": []
+              "Returned": [],
+              "Cancelled": []
             };
             if (status !== currentStatus && !(transitions[currentStatus] || []).includes(status)) {
               return json(request, { error: `Shipment status cannot move from "${currentStatus}" to "${status}". Refresh the shipment and choose a valid next step.` }, 409);
