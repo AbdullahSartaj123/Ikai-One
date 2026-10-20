@@ -80,8 +80,13 @@ function OrdersList() {
       await apiRequest('/api/orders/' + order.uuid + '/status', {method:'POST', body:{status}})
       showToast(order.id + ' status saved as ' + status + '.')
     } catch (error) {
-      setOrders(current => current.map(item => item.id === order.id ? {...item,status:previousStatus} : item))
-      showToast(error.message || 'Order status could not be saved.')
+      if (error.status === 409) {
+        await loadOrders()
+        showToast((error.message || 'Order status changed elsewhere.') + ' Latest saved statuses reloaded.')
+      } else {
+        setOrders(current => current.map(item => item.id === order.id ? {...item,status:previousStatus} : item))
+        showToast(error.message || 'Order status could not be saved.')
+      }
     } finally {
       setUpdatingOrderIds(current => current.filter(id => id !== order.uuid))
     }
