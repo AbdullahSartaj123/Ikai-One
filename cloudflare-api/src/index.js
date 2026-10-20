@@ -1137,19 +1137,19 @@ export default {
             `;
             if (!currentRows[0]) return json(request, { error: "Order not found." }, 404);
             const currentStatus = currentRows[0].status;
-            if (status === "Cancelled") {
+            if (status !== currentStatus) {
               const linkedShipments = await sql`
                 SELECT status FROM ikai.shipment_records
                 WHERE order_id = ${statusMatch[1]}::uuid
                   AND organization_id = ${user.organizationId}::uuid
-                  AND status NOT IN ('Label pending', 'Ready to ship')
                 LIMIT 1
               `;
-              const shipmentStatus = linkedShipments[0]?.status;
-              if (shipmentStatus && !["Label pending", "Ready to ship"].includes(shipmentStatus)) {
-                return json(request, {
-                  error: `This order has a shipment in "${shipmentStatus}" status. Update or resolve the shipment before cancelling the order.`,
-                }, 409);
+              const linkedShipmentStatus = linkedShipments[0]?.status;
+              if (linkedShipmentStatus) {
+                const message = status === "Cancelled"
+                  ? `This order has a linked shipment in "${linkedShipmentStatus}" status. Order cancellation is blocked until shipment cancellation is supported; do not change the order status directly.`
+                  : `This order has a linked shipment in "${linkedShipmentStatus}" status. Update the shipment status to advance its linked order, so both records stay consistent.`;
+                return json(request, { error: message }, 409);
               }
             }
             const allowedNextStatuses = {
