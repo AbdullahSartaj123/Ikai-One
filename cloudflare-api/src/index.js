@@ -1340,19 +1340,21 @@ export default {
                     WHEN ${status} = 'Delivered' THEN 'Delivered'
                     WHEN ${status} = 'Exception' THEN 'NDR raised'
                     WHEN ${status} = 'Returned' THEN 'RTO'
+                    WHEN ${status} = 'Cancelled' THEN 'Cancelled'
                   END,
                   updated_by = ${user.id}::uuid,
                   updated_at = now()
                 FROM changed
                 WHERE o.id = changed.order_id
                   AND o.organization_id = changed.organization_id
-                  AND ${status} IN ('Ready to ship', 'Booked', 'Picked up', 'In transit', 'Out for delivery', 'Delivered', 'Exception', 'Returned')
+                  AND ${status} IN ('Ready to ship', 'Booked', 'Picked up', 'In transit', 'Out for delivery', 'Delivered', 'Exception', 'Returned', 'Cancelled')
                   AND o.status IS DISTINCT FROM CASE
                     WHEN ${status} = 'Ready to ship' THEN 'Ready to Ship'
                     WHEN ${status} IN ('Booked', 'Picked up', 'In transit', 'Out for delivery') THEN 'Shipped'
                     WHEN ${status} = 'Delivered' THEN 'Delivered'
                     WHEN ${status} = 'Exception' THEN 'NDR raised'
                     WHEN ${status} = 'Returned' THEN 'RTO'
+                    WHEN ${status} = 'Cancelled' THEN 'Cancelled'
                   END
                 RETURNING o.id, o.organization_id, o.order_number, o.status
               ), order_audit AS (
