@@ -1275,6 +1275,21 @@ export default {
             if (synchronizedOrderStatus && ["Delivered", "RTO", "Cancelled"].includes(currentRows[0].order_status) && currentRows[0].order_status !== synchronizedOrderStatus) {
               return json(request, { error: `The linked order is already ${currentRows[0].order_status} and cannot be changed by a shipment status update.` }, 409);
             }
+            const allowedOrderNextStatuses = {
+              "New": ["Processing", "Ready to Ship", "Cancelled"],
+              "Processing": ["Ready to Ship", "Cancelled", "NDR raised"],
+              "Ready to Ship": ["Shipped", "Cancelled", "NDR raised"],
+              "Shipped": ["Delivered", "NDR raised", "RTO"],
+              "NDR raised": ["Shipped", "Delivered", "RTO"],
+              "Delivered": [],
+              "RTO": [],
+              "Cancelled": []
+            };
+            const linkedOrderStatus = currentRows[0].order_status;
+            if (synchronizedOrderStatus && linkedOrderStatus && synchronizedOrderStatus !== linkedOrderStatus &&
+                !(allowedOrderNextStatuses[linkedOrderStatus] || []).includes(synchronizedOrderStatus)) {
+              return json(request, { error: `Shipment status would move the linked order from "${linkedOrderStatus}" to "${synchronizedOrderStatus}", which is not an allowed order transition.` }, 409);
+            }
             const transitions = {
               "Label pending": ["Ready to ship", "Booked", "Exception"],
               "Ready to ship": ["Booked", "Picked up", "Exception"],
