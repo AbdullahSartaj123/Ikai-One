@@ -50,15 +50,16 @@ test("order status API validates transitions, protects terminal orders and detec
   assert.ok(handler.includes("jsonb_build_object('fromStatus', ${currentStatus}, 'status', ${status})"), "order audit should retain the prior status");
 });
 
-test("order cancellation is blocked after the linked shipment progresses", () => {
+test("direct order status changes are blocked when a shipment is linked", () => {
   const start = workerSource.indexOf('const statusMatch = url.pathname.match(/^\\/api\\/orders');
   const end = workerSource.indexOf('return json(request, { error: "Method or order route not supported." }, 405);', start);
   const handler = workerSource.slice(start, end);
-  assert.ok(handler.includes('if (status === "Cancelled")'));
+  assert.ok(handler.includes('if (status !== currentStatus)'));
   assert.ok(handler.includes("SELECT status FROM ikai.shipment_records"));
-  assert.ok(handler.includes("AND status NOT IN ('Label pending', 'Ready to ship')"), "cancellation must check every linked shipment that has progressed");
-  assert.ok(handler.includes('!["Label pending", "Ready to ship"].includes(shipmentStatus)'));
-  assert.ok(handler.includes("Update or resolve the shipment before cancelling the order."));
+  assert.ok(handler.includes("WHERE order_id = ${statusMatch[1]}::uuid"));
+  assert.ok(handler.includes("AND organization_id = ${user.organizationId}::uuid"));
+  assert.ok(handler.includes("Order cancellation is blocked until shipment cancellation is supported"));
+  assert.ok(handler.includes("Update the shipment status to advance its linked order"));
   assert.ok(handler.includes("}, 409)"));
 });
 
