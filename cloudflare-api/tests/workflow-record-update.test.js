@@ -270,3 +270,25 @@ test("shipment status conflicts reload the latest saved shipment state", async (
   assert.ok(save.includes("Latest saved state reloaded."));
   assert.ok(save.includes("setStatusDraft(latest?.status||'Label pending')"));
 });
+
+test("orders workspace refreshes saved orders when the tab regains focus", async () => {
+  const orders = await readFile(new URL("../../src/pages/Orders.jsx", import.meta.url), "utf8");
+  const listStart = orders.indexOf("function OrdersList()");
+  const detailStart = orders.indexOf("function OrderDetail()");
+  const list = orders.slice(listStart, detailStart);
+  assert.ok(list.includes("window.addEventListener('focus', refresh)"));
+  assert.ok(list.includes("document.addEventListener('visibilitychange', refresh)"));
+  assert.ok(list.includes("refresh()"));
+});
+
+test("order detail refreshes order and linked shipment state together on demand and on focus", async () => {
+  const orders = await readFile(new URL("../../src/pages/Orders.jsx", import.meta.url), "utf8");
+  const start = orders.indexOf("function OrderDetail()");
+  const detail = orders.slice(start);
+  assert.ok(detail.includes("const [refreshKey,setRefreshKey]=useState(0)"));
+  assert.ok(detail.includes("},[orderId,refreshKey])"), "order and shipment reads should rerun after refresh");
+  assert.ok(detail.includes("const refreshRecords=()=>{setRefreshingRecords(true);setRefreshKey(key=>key+1)}"));
+  assert.ok(detail.includes("onClick={refreshRecords}"));
+  assert.ok(detail.includes("window.addEventListener('focus',refresh)"));
+  assert.ok(detail.includes("document.addEventListener('visibilitychange',refresh)"));
+});
