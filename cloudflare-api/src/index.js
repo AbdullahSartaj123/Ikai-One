@@ -1137,9 +1137,18 @@ export default {
             `;
             if (!currentRows[0]) return json(request, { error: "Order not found." }, 404);
             const currentStatus = currentRows[0].status;
-            const terminalStatuses = ["Delivered", "RTO", "Cancelled"];
-            if (terminalStatuses.includes(currentStatus) && status !== currentStatus) {
-              return json(request, { error: `Order status cannot move from "${currentStatus}". Terminal orders cannot be changed.` }, 409);
+            const allowedNextStatuses = {
+              "New": ["Processing", "Ready to Ship", "Cancelled"],
+              "Processing": ["Ready to Ship", "Cancelled", "NDR raised"],
+              "Ready to Ship": ["Shipped", "Cancelled", "NDR raised"],
+              "Shipped": ["Delivered", "NDR raised", "RTO"],
+              "NDR raised": ["Shipped", "Delivered", "RTO"],
+              "Delivered": [],
+              "RTO": [],
+              "Cancelled": []
+            };
+            if (status !== currentStatus && !(allowedNextStatuses[currentStatus] || []).includes(status)) {
+              return json(request, { error: `Order status cannot move from "${currentStatus}" to "${status}". Refresh the order and choose a valid next step.` }, 409);
             }
             const rows = await sql`
               UPDATE ikai.orders SET status = ${status}, updated_by = ${user.id}::uuid, updated_at = now()
