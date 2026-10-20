@@ -30,6 +30,7 @@ test("row cancellation uses saved-order status update and disables terminal or u
 });
 
 const workerSource = readFileSync(new URL("../src/index.js", import.meta.url), "utf8");
+const shipmentPageSource = readFileSync(new URL("../../src/pages/Shipments.jsx", import.meta.url), "utf8");
 
 test("order status API validates transitions, protects terminal orders and detects concurrent changes", () => {
   const start = workerSource.indexOf('const statusMatch = url.pathname.match(/^\\/api\\/orders');
@@ -90,4 +91,13 @@ test("shipment status sync cannot bypass the linked order lifecycle", () => {
   assert.ok(handler.includes("!(allowedOrderNextStatuses[linkedOrderStatus] || []).includes(synchronizedOrderStatus)"));
   assert.ok(handler.includes("which is not an allowed order transition"));
   assert.ok(handler.includes("jsonb_build_object('fromStatus', ${currentStatus}, 'status', ${status}, 'courierBookingConfirmed', false)"), "shipment audit should retain the prior status");
+});
+
+
+test("shipment list does not present mock records when the API is unavailable", () => {
+  assert.ok(shipmentPageSource.includes("const [shipments,setShipments]=useState([])"));
+  assert.ok(shipmentPageSource.includes("setShipments([]);setDataSource('unavailable');setLoading(false)"));
+  assert.ok(shipmentPageSource.includes("No demo records are shown"));
+  assert.ok(shipmentPageSource.includes("disabled={loading||dataSource==='unavailable'}"));
+  assert.ok(!shipmentPageSource.includes("mockShipments"));
 });
