@@ -247,3 +247,26 @@ test("shipment lifecycle mapping updates only the linked order when its status a
   assert.ok(route.includes("'order_status_synced_from_shipment', 'order'"));
   assert.ok(route.includes("jsonb_build_object('status', order_sync.status, 'sourceShipment', changed.shipment_number)"));
 });
+
+test("shipment detail loads only saved API records and exposes retry states", async () => {
+  const shipments = await readFile(new URL("../../src/pages/Shipments.jsx", import.meta.url), "utf8");
+  const start = shipments.indexOf("function ShipmentDetail()");
+  const end = shipments.indexOf("function SelectedTracking()", start);
+  const detail = shipments.slice(start, end);
+  assert.ok(detail.includes("const [shipment,setShipment]=useState(null)"), "detail must not initialize from mock shipments");
+  assert.ok(detail.includes("setShipmentLoadState('unavailable')"));
+  assert.ok(detail.includes("No demo records are shown."));
+  assert.ok(detail.includes("onClick={reloadShipment}"));
+  assert.ok(detail.includes("setShipmentLoadState('not-found')"));
+});
+
+test("shipment status conflicts reload the latest saved shipment state", async () => {
+  const shipments = await readFile(new URL("../../src/pages/Shipments.jsx", import.meta.url), "utf8");
+  const start = shipments.indexOf("const saveInternalStatus=async()=>");
+  const end = shipments.indexOf("const [exceptionAction", start);
+  const save = shipments.slice(start, end);
+  assert.ok(save.includes("if(error.status===409)"));
+  assert.ok(save.includes("await reloadShipment()"));
+  assert.ok(save.includes("Latest saved state reloaded."));
+  assert.ok(save.includes("setStatusDraft(latest?.status||'Label pending')"));
+});
