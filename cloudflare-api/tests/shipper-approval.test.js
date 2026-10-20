@@ -45,12 +45,12 @@ test("admin console route redirects authenticated non-admins away from platform 
 });
 
 test("platform administrator access cannot be self-provisioned or granted by public signup", () => {
-  assert.doesNotMatch(migration, /INSERT\\s+INTO\\s+ikai\\.platform_admins/i);
-  assert.doesNotMatch(worker, /INSERT\\s+INTO\\s+ikai\\.platform_admins/i);
-  assert.match(migration, /provisioned manually by a trusted database operator/i);
-  assert.match(worker, /isPlatformAdmin: row\\.is_platform_admin === true/);
-  assert.match(worker, /JOIN ikai\\.platform_admins pa ON pa\\.user_id = u\\.id/);
-  assert.doesNotMatch(worker, /admin@ikai\\.one|password123|defaultAdminPassword/i);
+  assert.ok(!migration.includes("INSERT INTO ikai.platform_admins"));
+  assert.ok(!worker.includes("INSERT INTO ikai.platform_admins"));
+  assert.ok(migration.includes("provisioned manually by a trusted database operator"));
+  assert.ok(worker.includes("isPlatformAdmin: row.is_platform_admin === true"));
+  assert.ok(worker.includes("JOIN ikai.platform_admins pa ON pa.user_id = u.id"));
+  assert.ok(!/admin@ikai\.one|password123|defaultAdminPassword/i.test(worker));
 });
 
 test("platform approval routes require an explicitly provisioned platform admin", () => {
