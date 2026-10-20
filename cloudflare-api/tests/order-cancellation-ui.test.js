@@ -55,3 +55,15 @@ test("saved-order status controls offer only API-supported statuses and valid ne
   assert.ok(source.includes("const tabs=['All', ...savedOrderStatuses]"));
   assert.ok(!source.includes("orderStatuses.filter(status=>status!=='All').map(status=>"));
 });
+
+test("shipment status API cannot change a terminal linked order", () => {
+  const start = workerSource.indexOf('const statusMatch = url.pathname.match(/^\\/api\\/shipments');
+  const end = workerSource.indexOf('return json(request, { error: "Method or shipment route not supported." }, 405);', start);
+  assert.notEqual(start, -1, "shipment status route should exist");
+  assert.notEqual(end, -1, "shipment status route should end before unsupported-route response");
+  const handler = workerSource.slice(start, end);
+  assert.ok(handler.includes("o.status AS order_status"));
+  assert.ok(handler.includes('["Delivered", "RTO", "Cancelled"].includes(currentRows[0].order_status)'));
+  assert.ok(handler.includes("The linked order is already"));
+  assert.ok(handler.includes("AND o.organization_id = s.organization_id"));
+});
