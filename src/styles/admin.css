@@ -91,3 +91,8 @@
 .admin-record-search-button{min-height:40px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;padding:8px 13px;font-weight:700;color:#1e293b;cursor:pointer}
 .admin-record-search-button:disabled{opacity:.5;cursor:not-allowed}
 .admin-audit-details{min-width:220px;white-space:normal!important;overflow-wrap:anywhere;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px}
+
+
+/* Keep the platform administrator entry visible in the authenticated mobile navigation. */
+.mobile-admin-nav-link{display:none}
+@media(max-width:900px){.mega-site-header .mobile-admin-nav-link{display:flex;align-items:center;justify-content:space-between;gap:9px;margin:8px 0 4px;padding:12px 13px;border:1px solid #dfe3ff;border-radius:11px;background:#f4f5ff;color:#3547d7;text-decoration:none;font-size:13px;font-weight:750}.mega-site-header .mobile-admin-nav-link svg:first-child{flex:0 0 auto}}
