@@ -49,7 +49,7 @@ test("platform administrator access cannot be self-provisioned or granted by pub
   assert.ok(!worker.includes("INSERT INTO ikai.platform_admins"));
   assert.ok(migration.includes("provisioned manually by a trusted database operator"));
   assert.ok(worker.includes("isPlatformAdmin: row.is_platform_admin === true"));
-  assert.ok(worker.includes("JOIN ikai.platform_admins pa ON pa.user_id = u.id"));
+  assert.ok(worker.includes("EXISTS (SELECT 1 FROM ikai.platform_admins pa WHERE pa.user_id = u.id)"));
   assert.ok(!/admin@ikai\.one|password123|defaultAdminPassword/i.test(worker));
 });
 
