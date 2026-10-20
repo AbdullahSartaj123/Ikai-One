@@ -108,3 +108,11 @@ test("orders list clears stale records and explains API failure after refresh", 
   assert.ok(source.includes("Saved orders are unavailable"));
   assert.ok(source.includes("no stale records are shown"));
 });
+
+test("order status UI prevents overlapping updates for the same saved order", () => {
+  assert.ok(source.includes("const [updatingOrderIds,setUpdatingOrderIds] = useState([])"));
+  assert.ok(source.includes("if (updatingOrderIds.includes(order.uuid))"));
+  assert.ok(source.includes("setUpdatingOrderIds(current => [...current, order.uuid])"));
+  assert.ok(source.includes("setUpdatingOrderIds(current => current.filter(id => id !== order.uuid))"));
+  assert.ok(source.includes("disabled={updatingOrderIds.includes(order.uuid)}"));
+});
