@@ -902,7 +902,7 @@ export default {
             } else {
               rows = await sql`
                 SELECT w.id, w.organization_id, org.name AS organization_name, w.workflow_key,
-                  w.reference, w.title, w.status, w.payload, w.created_at, w.updated_at
+                  w.reference, w.title, w.status, w.created_at, w.updated_at
                 FROM ikai.workflow_records w JOIN ikai.organizations org ON org.id = w.organization_id
                 WHERE org.organization_type = 'shipper'
                   AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
