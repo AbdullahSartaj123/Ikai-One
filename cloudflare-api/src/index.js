@@ -1011,7 +1011,7 @@ export default {
             return json(request, { data: rows, pagination: { total, limit, offset, has_more: offset + rows.length < total } });
           }
 
-          const decisionMatch = url.pathname.match(/^\/api\/admin\/organizations\/([0-9a-f-]{36})\/decision$/i);
+          const decisionMatch = url.pathname.match(/^\/api\/admin\/organizations\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/decision$/i);
           if (decisionMatch && request.method === "POST") {
             const body = await readJson(request);
             const decision = String(body.decision || "");
