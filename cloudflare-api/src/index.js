@@ -1137,6 +1137,20 @@ export default {
             `;
             if (!currentRows[0]) return json(request, { error: "Order not found." }, 404);
             const currentStatus = currentRows[0].status;
+            if (status === "Cancelled") {
+              const linkedShipments = await sql`
+                SELECT status FROM ikai.shipment_records
+                WHERE order_id = ${statusMatch[1]}::uuid
+                  AND organization_id = ${user.organizationId}::uuid
+                LIMIT 1
+              `;
+              const shipmentStatus = linkedShipments[0]?.status;
+              if (shipmentStatus && !["Label pending", "Ready to ship"].includes(shipmentStatus)) {
+                return json(request, {
+                  error: `This order has a shipment in "${shipmentStatus}" status. Update or resolve the shipment before cancelling the order.`,
+                }, 409);
+              }
+            }
             const allowedNextStatuses = {
               "New": ["Processing", "Ready to Ship", "Cancelled"],
               "Processing": ["Ready to Ship", "Cancelled", "NDR raised"],
