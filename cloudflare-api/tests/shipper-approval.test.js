@@ -44,6 +44,15 @@ test("admin console route redirects authenticated non-admins away from platform 
   assert.match(router, /<Route element={<PlatformAdminRoute\/>}>[\s\S]*?<Route path="\/admin" element={<AdminConsole\/>}\/>/);
 });
 
+test("platform administrator access cannot be self-provisioned or granted by public signup", () => {
+  assert.doesNotMatch(migration, /INSERT\\s+INTO\\s+ikai\\.platform_admins/i);
+  assert.doesNotMatch(worker, /INSERT\\s+INTO\\s+ikai\\.platform_admins/i);
+  assert.match(migration, /provisioned manually by a trusted database operator/i);
+  assert.match(worker, /isPlatformAdmin: row\\.is_platform_admin === true/);
+  assert.match(worker, /JOIN ikai\\.platform_admins pa ON pa\\.user_id = u\\.id/);
+  assert.doesNotMatch(worker, /admin@ikai\\.one|password123|defaultAdminPassword/i);
+});
+
 test("platform approval routes require an explicitly provisioned platform admin", () => {
   assert.match(migration, /CREATE TABLE IF NOT EXISTS ikai\.platform_admins/);
   assert.match(worker, /if \(!user\.isPlatformAdmin\) return json\(request, \{ error: "Platform administrator access is required\." \}, 403\)/);
