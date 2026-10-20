@@ -20,3 +20,22 @@ test("COD reconciliation review records audit only after a successful conditiona
   const reviewRoute = worker.slice(reviewStart, reviewEnd);
   assert.ok(reviewRoute.indexOf("if (!rows[0]) return json(request, { error: \"Reconciliation changed concurrently.") < reviewRoute.indexOf("cod_reconciliation_reviewed"));
 });
+
+
+test("COD reconciliation save cannot overwrite under-review or resolved records", () => {
+  const saveStart = worker.indexOf('if (url.pathname === "/api/cod-reconciliations" && request.method === "POST")');
+  const reviewStart = worker.indexOf('const reviewMatch = url.pathname.match', saveStart);
+  assert.ok(saveStart >= 0 && reviewStart > saveStart, "COD save route must exist");
+  const saveRoute = worker.slice(saveStart, reviewStart);
+  assert.match(saveRoute, /WHERE ikai\.cod_reconciliations\.status NOT IN \('under_review', 'resolved'\)/);
+  assert.match(saveRoute, /This reconciliation is under review or resolved and cannot be overwritten/);
+  assert.ok(saveRoute.indexOf("if (!rows[0])") < saveRoute.indexOf("cod_reconciliation_saved"), "audit must only be written after a successful save");
+});
+
+test("COD reconciliation save preserves existing follow-up notes and remittance references when omitted", () => {
+  const saveStart = worker.indexOf('if (url.pathname === "/api/cod-reconciliations" && request.method === "POST")');
+  const reviewStart = worker.indexOf('const reviewMatch = url.pathname.match', saveStart);
+  const saveRoute = worker.slice(saveStart, reviewStart);
+  assert.match(saveRoute, /follow_up_note = COALESCE\(EXCLUDED\.follow_up_note, ikai\.cod_reconciliations\.follow_up_note\)/);
+  assert.match(saveRoute, /remittance_reference = COALESCE\(EXCLUDED\.remittance_reference, ikai\.cod_reconciliations\.remittance_reference\)/);
+});
