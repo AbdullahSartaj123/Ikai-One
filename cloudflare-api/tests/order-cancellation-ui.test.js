@@ -47,3 +47,11 @@ test("order status API validates transitions, protects terminal orders and detec
   assert.ok(handler.includes("AND status = ${currentStatus}"));
   assert.ok(handler.includes("Order status changed concurrently"));
 });
+
+test("saved-order status controls offer only API-supported statuses and valid next steps", () => {
+  assert.ok(source.includes("const savedOrderStatuses = ['New', 'Processing', 'Ready to Ship', 'Shipped', 'NDR raised', 'Delivered', 'RTO', 'Cancelled']"));
+  assert.ok(source.includes("const allowedOrderStatusChanges = {"));
+  assert.ok(source.includes("(allowedOrderStatusChanges[order.status] || [order.status]).map(status=>"));
+  assert.ok(source.includes("const tabs=['All', ...savedOrderStatuses]"));
+  assert.ok(!source.includes("orderStatuses.filter(status=>status!=='All').map(status=>"));
+});
