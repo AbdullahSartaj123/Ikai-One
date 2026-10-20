@@ -127,3 +127,23 @@ test("order status conflict reloads the saved server state instead of restoring 
   assert.ok(handler.includes("Latest saved statuses reloaded."));
   assert.ok(handler.includes("setOrders(current => current.map(item => item.id === order.id ? {...item,status:previousStatus} : item))"));
 });
+
+test("shipment cancellation is allowed only before dispatch and is synchronized to the linked order", () => {
+  const start = workerSource.indexOf('const statusMatch = url.pathname.match(/^\\/api\\/shipments');
+  const end = workerSource.indexOf('return json(request, { error: "Method or shipment route not supported." }, 405);', start);
+  const handler = workerSource.slice(start, end);
+  assert.ok(handler.includes('"Cancelled"'));
+  assert.ok(handler.includes('"Label pending": ["Ready to ship", "Booked", "Exception", "Cancelled"]'));
+  assert.ok(handler.includes('"Ready to ship": ["Booked", "Picked up", "Exception", "Cancelled"]'));
+  assert.ok(handler.includes('"Booked": ["Picked up", "In transit", "Exception"]'), "dispatched-or-booked shipments cannot be cancelled through this action");
+  assert.ok(handler.includes('WHEN ${status} = \'Cancelled\' THEN \'Cancelled\''));
+  assert.ok(handler.includes("'Returned', 'Cancelled')"));
+  assert.ok(handler.includes("'order_status_synced_from_shipment'"));
+});
+
+test("shipment detail confirms cancellation and explains linked order cancellation", () => {
+  assert.ok(shipmentPageSource.includes("statusDraft==='Cancelled'&&!window.confirm("));
+  assert.ok(shipmentPageSource.includes("Its linked order will also be cancelled."));
+  assert.ok(shipmentPageSource.includes("'Cancelled'"));
+  assert.ok(shipmentPageSource.includes("Shipment and linked order cancelled."));
+});
