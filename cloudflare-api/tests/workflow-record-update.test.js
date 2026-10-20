@@ -292,3 +292,29 @@ test("order detail refreshes order and linked shipment state together on demand 
   assert.ok(detail.includes("window.addEventListener('focus',refresh)"));
   assert.ok(detail.includes("document.addEventListener('visibilitychange',refresh)"));
 });
+
+test("order activity endpoint combines tenant-scoped order audit and shipment events", async () => {
+  const workerSource = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  const start = workerSource.indexOf("const activityMatch = url.pathname.match");
+  const end = workerSource.indexOf("const statusMatch = url.pathname.match", start);
+  const route = workerSource.slice(start, end);
+  assert.ok(start >= 0 && end > start, "order activity route must exist before the order status route");
+  assert.ok(route.includes("organization_id = ${user.organizationId}::uuid"));
+  assert.ok(route.includes("entity_type = 'order'"));
+  assert.ok(route.includes("FROM ikai.shipment_events e"));
+  assert.ok(route.includes("s.order_id = ${order.id}::uuid"));
+  assert.ok(route.includes("ORDER BY created_at DESC LIMIT 100"));
+  assert.ok(route.includes("ORDER BY e.created_at DESC LIMIT 100"));
+  assert.ok(route.includes("return json(request, { data: activity, count: activity.length, orderStatus: order.status })"));
+});
+
+test("order detail timeline renders persisted activity and linked shipment events", async () => {
+  const orders = await readFile(new URL("../../src/pages/Orders.jsx", import.meta.url), "utf8");
+  const start = orders.indexOf("function OrderDetail()");
+  const detail = orders.slice(start);
+  assert.ok(detail.includes("apiRequest('/api/orders/'+encodeURIComponent(savedOrder.uuid)+'/activity')"));
+  assert.ok(detail.includes("event.type==='shipment'"));
+  assert.ok(detail.includes("event.event==='order_status_synced_from_shipment'") || detail.includes("event.detail?.sourceShipment"));
+  assert.ok(detail.includes("activityTimeline.map((event,index)"));
+  assert.ok(detail.includes("activityError"));
+});
