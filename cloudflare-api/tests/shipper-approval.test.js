@@ -223,3 +223,47 @@ test("platform workflow record browsing omits unneeded raw payload data", () => 
   assert.ok(!worker.includes("w.status, w.payload, w.created_at"), "raw workflow payloads should not be exposed by the admin list endpoint");
   assert.doesNotMatch(adminPage, /workflow:\s*\[[^\]]*payload/);
 });
+
+
+test("all platform-admin overview, records, audit, application-review, and decision routes stay inside the shared authorization boundary", () => {
+  const guardStart = worker.indexOf('if (url.pathname.startsWith("/api/admin/"))');
+  const tenantOrdersStart = worker.indexOf('if (url.pathname === "/api/orders" || url.pathname.startsWith("/api/orders/"))', guardStart);
+  assert.ok(guardStart >= 0, "the admin API prefix guard must exist");
+  assert.ok(tenantOrdersStart > guardStart, "the shared admin guard must end before tenant routes begin");
+
+  const adminBlock = worker.slice(guardStart, tenantOrdersStart);
+  const authCheck = adminBlock.indexOf('if (!user) return json(request, { error: "Authentication required." }, 401);');
+  const roleCheck = adminBlock.indexOf('if (!user.isPlatformAdmin) return json(request, { error: "Platform administrator access is required." }, 403);');
+  assert.ok(authCheck > 0, "all admin requests must authenticate");
+  assert.ok(roleCheck > authCheck, "all admin requests must check the platform-admin role after authentication");
+
+  const protectedRoutes = [
+    ['overview', 'url.pathname === "/api/admin/overview" && request.method === "GET"'],
+    ['records', 'url.pathname === "/api/admin/records" && request.method === "GET"'],
+    ['audit history', 'url.pathname === "/api/admin/audit" && request.method === "GET"'],
+    ['application review queue', 'url.pathname === "/api/admin/organizations" && request.method === "GET"'],
+    ['application approval/rejection', 'url.pathname.match(/^\\/api\\/admin\\/organizations\\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\\/decision$/i)'],
+  ];
+
+  for (const [label, dispatch] of protectedRoutes) {
+    const routeIndex = adminBlock.indexOf(dispatch);
+    assert.ok(routeIndex > roleCheck, label + " must be dispatched only after platform-admin authorization");
+  }
+
+  const firstDatabaseAccess = adminBlock.indexOf("await sql");
+  assert.ok(firstDatabaseAccess > roleCheck, "no admin database query may run before the shared role guard");
+  assert.match(adminBlock, /if \(url\.pathname\.match\(\/\^\\\/api\\\/admin\\\/organizations/);
+  assert.match(adminBlock, /request\.method === "POST"/);
+  assert.match(adminBlock, /return json\(request, \{ error: "Method or admin route not supported\." \}, 405\)/);
+});
+
+test("non-admin and unauthenticated callers cannot bypass the shared guard through unsupported admin methods", () => {
+  const guardStart = worker.indexOf('if (url.pathname.startsWith("/api/admin/"))');
+  const tenantOrdersStart = worker.indexOf('if (url.pathname === "/api/orders" || url.pathname.startsWith("/api/orders/"))', guardStart);
+  const adminBlock = worker.slice(guardStart, tenantOrdersStart);
+  const authCheck = adminBlock.indexOf('if (!user) return json(request, { error: "Authentication required." }, 401);');
+  const roleCheck = adminBlock.indexOf('if (!user.isPlatformAdmin) return json(request, { error: "Platform administrator access is required." }, 403);');
+  const fallback = adminBlock.lastIndexOf('return json(request, { error: "Method or admin route not supported." }, 405)');
+  assert.ok(authCheck >= 0 && roleCheck > authCheck && fallback > roleCheck);
+  assert.ok(!adminBlock.includes('return json(request, { error: "Method or admin route not supported." }, 405);\n        }\n\n        if (url.pathname === "/api/orders"'), "admin fallback must remain inside the admin prefix guard");
+});
