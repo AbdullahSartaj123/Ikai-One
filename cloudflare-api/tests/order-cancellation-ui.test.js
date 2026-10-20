@@ -46,6 +46,7 @@ test("order status API validates transitions, protects terminal orders and detec
   assert.ok(handler.includes('if (status !== currentStatus && !(allowedNextStatuses[currentStatus] || []).includes(status))'));
   assert.ok(handler.includes("AND status = ${currentStatus}"));
   assert.ok(handler.includes("Order status changed concurrently"));
+  assert.ok(handler.includes("jsonb_build_object('fromStatus', ${currentStatus}, 'status', ${status})"), "order audit should retain the prior status");
 });
 
 test("order cancellation is blocked after the linked shipment progresses", () => {
@@ -88,4 +89,5 @@ test("shipment status sync cannot bypass the linked order lifecycle", () => {
   assert.ok(handler.includes('"New": ["Processing", "Ready to Ship", "Cancelled"]'));
   assert.ok(handler.includes("!(allowedOrderNextStatuses[linkedOrderStatus] || []).includes(synchronizedOrderStatus)"));
   assert.ok(handler.includes("which is not an allowed order transition"));
+  assert.ok(handler.includes("jsonb_build_object('fromStatus', ${currentStatus}, 'status', ${status}, 'courierBookingConfirmed', false)"), "shipment audit should retain the prior status");
 });
