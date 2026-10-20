@@ -31,7 +31,7 @@ test("row cancellation uses saved-order status update and disables terminal or u
 
 const workerSource = readFileSync(new URL("../src/index.js", import.meta.url), "utf8");
 
-test("order status API protects terminal orders and detects concurrent status changes", () => {
+test("order status API validates transitions, protects terminal orders and detects concurrent changes", () => {
   const start = workerSource.indexOf('const statusMatch = url.pathname.match(/^\\/api\\/orders');
   const end = workerSource.indexOf('return json(request, { error: "Method or order route not supported." }, 405);', start);
   assert.notEqual(start, -1, "order status route should exist");
@@ -39,8 +39,11 @@ test("order status API protects terminal orders and detects concurrent status ch
   const handler = workerSource.slice(start, end);
   assert.ok(handler.includes("SELECT id, status FROM ikai.orders"));
   assert.ok(handler.includes("WHERE id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid"));
-  assert.ok(handler.includes('const terminalStatuses = ["Delivered", "RTO", "Cancelled"]'));
-  assert.ok(handler.includes("terminalStatuses.includes(currentStatus) && status !== currentStatus"));
+  assert.ok(handler.includes('const allowedNextStatuses = {'));
+  assert.ok(handler.includes('"Delivered": []'));
+  assert.ok(handler.includes('"RTO": []'));
+  assert.ok(handler.includes('"Cancelled": []'));
+  assert.ok(handler.includes('if (status !== currentStatus && !(allowedNextStatuses[currentStatus] || []).includes(status))'));
   assert.ok(handler.includes("AND status = ${currentStatus}"));
   assert.ok(handler.includes("Order status changed concurrently"));
 });
