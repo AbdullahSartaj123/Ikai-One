@@ -55,6 +55,13 @@ test("platform approval routes require an explicitly provisioned platform admin"
   assert.match(adminPage, /Reject application/);
 });
 
+test("admin console prevents decisions before email verification and requires rejection reasons", () => {
+  assert.match(adminPage, /disabled=\{Boolean\(busyId\) \|\| !application\.email_verified\} onClick=\{\(\) => decide\(application, 'approved'\)\}/);
+  assert.match(adminPage, /disabled=\{Boolean\(busyId\) \|\| !application\.email_verified \|\| !String\(notes\[application\.id\] \|\| ''\)\.trim\(\)\} onClick=\{\(\) => decide\(application, 'rejected'\)\}/);
+  assert.match(adminPage, /The applicant must verify their email before you can approve or reject the application/);
+  assert.match(worker, /if \(!applicant\[0\]\.email_verified\)/);
+});
+
 test("admin console ignores stale responses when filters change quickly", () => {
   assert.match(adminPage, /const applicationsRequest = useRef\(0\)/);
   assert.match(adminPage, /if \(requestId !== applicationsRequest\.current\) return/);
