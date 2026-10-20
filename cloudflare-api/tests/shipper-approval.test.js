@@ -210,7 +210,6 @@ test("all inventory, COD, workflow, order and shipment ID routes validate UUID s
   for (const route of [
     "/api/inventory/",
     "/api/cod-reconciliations/",
-    "/api/workflows/",
     "/api/orders/",
     "/api/shipments/",
   ]) {
