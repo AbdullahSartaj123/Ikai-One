@@ -28,3 +28,12 @@ test("CORS does not return Access-Control-Allow-Origin when Origin is absent", a
   assert.equal(response.status, 204);
   assert.equal(response.headers.get("Access-Control-Allow-Origin"), null);
 });
+
+test("API responses include defensive browser security headers", async () => {
+  const response = await preflight("https://ikai.one");
+  assert.equal(response.headers.get("X-Content-Type-Options"), "nosniff");
+  assert.equal(response.headers.get("X-Frame-Options"), "DENY");
+  assert.equal(response.headers.get("Referrer-Policy"), "no-referrer");
+  assert.equal(response.headers.get("Permissions-Policy"), "camera=(), microphone=(), geolocation=()");
+  assert.equal(response.headers.get("Cache-Control"), "no-store");
+});
