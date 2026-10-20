@@ -63,6 +63,10 @@ test("admin console ignores stale responses when filters change quickly", () => 
   assert.match(adminPage, /if \(requestId !== overviewRequest\.current\) return/);
 });
 
+test("admin console clears the reviewed application note after a successful decision", () => {
+  assert.match(adminPage, /setNotes\(previous => \{[\s\S]*?delete next\[application\.id\][\s\S]*?return next/);
+});
+
 test("admin approval decisions refresh both the application queue and platform overview", () => {
   assert.match(adminPage, /await Promise\.all\(\[loadApplications\(\), loadOverview\(\), loadAudit\(\)\]\)/);
 });
