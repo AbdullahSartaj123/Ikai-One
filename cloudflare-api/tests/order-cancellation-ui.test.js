@@ -116,3 +116,13 @@ test("order status UI prevents overlapping updates for the same saved order", ()
   assert.ok(source.includes("setUpdatingOrderIds(current => current.filter(id => id !== order.uuid))"));
   assert.ok(source.includes("disabled={updatingOrderIds.includes(order.uuid)}"));
 });
+
+test("order status conflict reloads the saved server state instead of restoring a stale status", () => {
+  const start = source.indexOf("async function updateOrderStatus(order, status)");
+  const end = source.indexOf("const activeOrders = orders", start);
+  const handler = source.slice(start, end);
+  assert.ok(handler.includes("if (error.status === 409)"));
+  assert.ok(handler.includes("await loadOrders()"));
+  assert.ok(handler.includes("Latest saved statuses reloaded."));
+  assert.ok(handler.includes("setOrders(current => current.map(item => item.id === order.id ? {...item,status:previousStatus} : item))"));
+});
