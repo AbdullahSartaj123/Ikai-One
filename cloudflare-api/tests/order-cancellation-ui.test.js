@@ -48,6 +48,17 @@ test("order status API validates transitions, protects terminal orders and detec
   assert.ok(handler.includes("Order status changed concurrently"));
 });
 
+test("order cancellation is blocked after the linked shipment progresses", () => {
+  const start = workerSource.indexOf('const statusMatch = url.pathname.match(/^\\/api\\/orders');
+  const end = workerSource.indexOf('return json(request, { error: "Method or order route not supported." }, 405);', start);
+  const handler = workerSource.slice(start, end);
+  assert.ok(handler.includes('if (status === "Cancelled")'));
+  assert.ok(handler.includes("SELECT status FROM ikai.shipment_records"));
+  assert.ok(handler.includes('!["Label pending", "Ready to ship"].includes(shipmentStatus)'));
+  assert.ok(handler.includes("Update or resolve the shipment before cancelling the order."));
+  assert.ok(handler.includes("}, 409)"));
+});
+
 test("saved-order status controls offer only API-supported statuses and valid next steps", () => {
   assert.ok(source.includes("const savedOrderStatuses = ['New', 'Processing', 'Ready to Ship', 'Shipped', 'NDR raised', 'Delivered', 'RTO', 'Cancelled']"));
   assert.ok(source.includes("const allowedOrderStatusChanges = {"));
