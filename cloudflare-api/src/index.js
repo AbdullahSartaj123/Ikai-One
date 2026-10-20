@@ -1142,6 +1142,7 @@ export default {
                 SELECT status FROM ikai.shipment_records
                 WHERE order_id = ${statusMatch[1]}::uuid
                   AND organization_id = ${user.organizationId}::uuid
+                  AND status NOT IN ('Label pending', 'Ready to ship')
                 LIMIT 1
               `;
               const shipmentStatus = linkedShipments[0]?.status;
