@@ -109,6 +109,10 @@ test("admin console clears the reviewed application note after a successful deci
   assert.match(adminPage, /setNotes\(previous => \{[\s\S]*?delete next\[application\.id\][\s\S]*?return next/);
 });
 
+test("platform admin global refresh reloads metrics, applications, records, and audit history", () => {
+  assert.match(adminPage, /onClick=\{\(\) => \{ loadApplications\(\); loadOverview\(\); loadRecords\(\); loadAudit\(\) \}\}/);
+});
+
 test("admin approval decisions refresh both the application queue and platform overview", () => {
   assert.match(adminPage, /await Promise\.all\(\[loadApplications\(\), loadOverview\(\), loadAudit\(\)\]\)/);
 });
