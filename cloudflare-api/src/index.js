@@ -1124,6 +1124,46 @@ export default {
             return json(request, { data: rows[0], message: "Order saved. Courier booking has not been performed." }, 201);
           }
 
+          const activityMatch = url.pathname.match(/^\/api\/orders\/([0-9a-f-]{36})\/activity$/i);
+          if (activityMatch && request.method === "GET") {
+            const orderRows = await sql`
+              SELECT id, order_number, created_at, status FROM ikai.orders
+              WHERE id = ${activityMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+              LIMIT 1
+            `;
+            if (!orderRows[0]) return json(request, { error: "Order not found." }, 404);
+            const order = orderRows[0];
+            const auditRows = await sql`
+              SELECT event_type, entity_type, entity_reference, details, created_at
+              FROM ikai.organization_audit_events
+              WHERE organization_id = ${user.organizationId}::uuid
+                AND entity_type = 'order' AND entity_reference = ${order.order_number}
+              ORDER BY created_at DESC LIMIT 100
+            `;
+            const shipmentRows = await sql`
+              SELECT e.status, e.description, e.location, e.source, e.created_at, s.shipment_number
+              FROM ikai.shipment_events e
+              JOIN ikai.shipment_records s ON s.id = e.shipment_id AND s.organization_id = e.organization_id
+              WHERE s.order_id = ${order.id}::uuid AND s.organization_id = ${user.organizationId}::uuid
+              ORDER BY e.created_at DESC LIMIT 100
+            `;
+            const activity = [
+              ...auditRows.map(event => ({
+                type: "order", event: event.event_type, title: event.event_type === "order_created" ? "Order created" :
+                  event.event_type === "order_status_changed" ? "Order status changed" :
+                  event.event_type === "order_status_synced_from_shipment" ? "Order status updated from shipment" : "Order activity",
+                detail: event.details || {}, reference: event.entity_reference, date: event.created_at
+              })),
+              ...shipmentRows.map(event => ({
+                type: "shipment", event: "shipment_status_changed", title: "Shipment: " + event.status,
+                detail: event.description || "Shipment status recorded internally.",
+                location: event.location || "", source: event.source || "internal",
+                reference: event.shipment_number, date: event.created_at
+              }))
+            ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 100);
+            return json(request, { data: activity, count: activity.length, orderStatus: order.status });
+          }
+
           const statusMatch = url.pathname.match(/^\/api\/orders\/([0-9a-f-]{36})\/status$/i);
           if (statusMatch && request.method === "POST") {
             const body = await readJson(request);
