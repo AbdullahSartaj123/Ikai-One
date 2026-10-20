@@ -47,7 +47,7 @@ test("platform approval routes require an explicitly provisioned platform admin"
   assert.match(worker, /const search = String\(url\.searchParams\.get\("q"\) \|\| ""\)\.trim\(\)\.slice\(0, 100\)/);
   assert.match(worker, /o\.name ILIKE .*o\.slug ILIKE/);
   assert.match(adminPage, /Search shipper organisations/);
-  assert.match(adminPage, /if \(applicationQuery\) params\.set\("q", applicationQuery\)/);
+  assert.ok(adminPage.includes('if (applicationQuery) params.set("q", applicationQuery)'));
   assert.match(adminPage, /setApplicationOffset\(applicationOffset \+ 25\)/);
   assert.match(worker, /approval_status = 'pending'/);
   assert.match(worker, /INSERT INTO ikai\.platform_audit_events/);
