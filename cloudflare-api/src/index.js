@@ -942,7 +942,8 @@ export default {
               WHERE (${search} = ''
                 OR e.event_type ILIKE '%' || ${search} || '%'
                 OR COALESCE(org.name, '') ILIKE '%' || ${search} || '%'
-                OR COALESCE(ai.email, '') ILIKE '%' || ${search} || '%')
+                OR COALESCE(ai.email, '') ILIKE '%' || ${search} || '%'
+                OR COALESCE(e.details::text, '') ILIKE '%' || ${search} || '%')
               ORDER BY e.created_at DESC, e.id DESC
               LIMIT ${limit} OFFSET ${offset}
             `;
@@ -957,7 +958,8 @@ export default {
               WHERE (${search} = ''
                 OR e.event_type ILIKE '%' || ${search} || '%'
                 OR COALESCE(org.name, '') ILIKE '%' || ${search} || '%'
-                OR COALESCE(ai.email, '') ILIKE '%' || ${search} || '%')
+                OR COALESCE(ai.email, '') ILIKE '%' || ${search} || '%'
+                OR COALESCE(e.details::text, '') ILIKE '%' || ${search} || '%')
             `;
             return json(request, { data: rows, pagination: { total: Number(countRows[0]?.total || 0), limit, offset, has_more: offset + rows.length < Number(countRows[0]?.total || 0) } });
           }
