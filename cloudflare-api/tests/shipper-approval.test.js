@@ -217,3 +217,10 @@ test("all inventory, COD, workflow, order and shipment ID routes validate UUID s
     assert.ok(worker.includes(route), "expected route remains covered: " + route);
   }
 });
+
+
+test("platform workflow record browsing omits unneeded raw payload data", () => {
+  assert.match(worker, /SELECT w\.id, w\.organization_id, org\.name AS organization_name, w\.workflow_key,[\s\S]*?w\.reference, w\.title, w\.status, w\.created_at, w\.updated_at/);
+  assert.ok(!worker.includes("w.status, w.payload, w.created_at"), "raw workflow payloads should not be exposed by the admin list endpoint");
+  assert.doesNotMatch(adminPage, /workflow:\s*\[[^\]]*payload/);
+});
