@@ -109,6 +109,31 @@ test("admin console clears the reviewed application note after a successful deci
   assert.match(adminPage, /setNotes\(previous => \{[\s\S]*?delete next\[application\.id\][\s\S]*?return next/);
 });
 
+test("authentication rate limits cover registration, login, verification, and password recovery", () => {
+  const policies = worker.slice(worker.indexOf("const AUTH_RATE_LIMITS = {"), worker.indexOf("};", worker.indexOf("const AUTH_RATE_LIMITS = {")) + 2);
+  for (const endpoint of [
+    '"/api/auth/register": { limit: 5, windowSeconds: 3600 }',
+    '"/api/auth/login": { limit: 10, windowSeconds: 60 }',
+    '"/api/auth/verify-email": { limit: 10, windowSeconds: 600 }',
+    '"/api/auth/resend-verification": { limit: 5, windowSeconds: 3600 }',
+    '"/api/auth/forgot-password": { limit: 5, windowSeconds: 3600 }',
+    '"/api/auth/reset-password": { limit: 10, windowSeconds: 600 }',
+  ]) assert.ok(policies.includes(endpoint), `missing or weakened auth rate-limit policy: ${endpoint}`);
+});
+
+test("authentication rate limits apply only to POST and return a stable 429 response", () => {
+  const start = worker.indexOf("async function applyAuthRateLimit");
+  const end = worker.indexOf("\nasync function register", start);
+  const limiter = worker.slice(start, end);
+  assert.match(limiter, /if \(request\.method !== "POST"\) return null/);
+  assert.match(limiter, /request\.headers\.get\("CF-Connecting-IP"\)/);
+  assert.match(limiter, /INSERT INTO ikai\.auth_rate_limits/);
+  assert.match(limiter, /ON CONFLICT \(bucket_key\) DO UPDATE/);
+  assert.match(limiter, /request_count/);
+  assert.match(limiter, /code: "RATE_LIMITED"/);
+  assert.match(worker, /if \(rateLimitError\) return json\(request, rateLimitError, 429\)/);
+});
+
 test("platform admin global refresh reloads metrics, applications, records, and audit history", () => {
   assert.match(adminPage, /onClick=\{\(\) => \{ loadApplications\(\); loadOverview\(\); loadRecords\(\); loadAudit\(\) \}\}/);
 });
