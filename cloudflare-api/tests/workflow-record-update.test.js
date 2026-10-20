@@ -216,3 +216,31 @@ test("customer follow-up transitions retain shipment link validation and organiz
   assert.match(worker, /\["ndr", "ndr-followups"\]\.includes\(existingRows\[0\]\.workflow_key\)/);
   assert.match(worker, /WHERE id = \$\{recordMatch\[1\]\}::uuid AND organization_id = \$\{user\.organizationId\}::uuid/);
 });
+
+
+test("shipment and linked-order status changes share one guarded SQL statement", () => {
+  const statusStart = worker.indexOf('const statusMatch = url.pathname.match');
+  const statusEnd = worker.indexOf('return json(request, { error: "Method or shipment route not supported." }, 405);', statusStart);
+  assert.ok(statusStart >= 0 && statusEnd > statusStart, "shipment status route must exist");
+  const route = worker.slice(statusStart, statusEnd);
+  const changed = route.indexOf("WITH changed AS (");
+  const shipmentUpdate = route.indexOf("UPDATE ikai.shipment_records SET status", changed);
+  const orderSync = route.indexOf("order_sync AS (", changed);
+  const orderAudit = route.indexOf("order_audit AS (", changed);
+  const result = route.indexOf("SELECT changed.* FROM changed", changed);
+  assert.ok(changed >= 0 && shipmentUpdate > changed && orderSync > shipmentUpdate && orderAudit > orderSync && result > orderAudit,
+    "shipment update, order sync, and order audit must be part of the same SQL statement");
+  assert.match(route, /WHERE id = \\$\\{statusMatch\\[1\\]\\}::uuid[\\s\\S]*AND organization_id = \\$\\{user\\.organizationId\\}::uuid[\\s\\S]*AND status = \\$\\{currentStatus\\}/);
+  assert.match(route, /FROM order_sync JOIN changed ON changed\\.order_id = order_sync\\.id/);
+});
+
+test("shipment lifecycle mapping updates only the linked order when its status actually differs", () => {
+  const statusStart = worker.indexOf('const statusMatch = url.pathname.match');
+  const statusEnd = worker.indexOf('return json(request, { error: "Method or shipment route not supported." }, 405);', statusStart);
+  const route = worker.slice(statusStart, statusEnd);
+  assert.match(route, /o\\.id = changed\\.order_id/);
+  assert.match(route, /o\\.organization_id = changed\\.organization_id/);
+  assert.match(route, /o\\.status IS DISTINCT FROM CASE/);
+  assert.match(route, /'order_status_synced_from_shipment', 'order'/);
+  assert.match(route, /jsonb_build_object\\('status', order_sync\\.status, 'sourceShipment', changed\\.shipment_number\\)/);
+});
