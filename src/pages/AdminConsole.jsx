@@ -199,7 +199,7 @@ export default function AdminConsole() {
       <span className="admin-console-mark"><ShieldCheck size={18}/> IKAI ONE · PLATFORM CONTROL</span>
       <div className="admin-console-title-row">
         <div><span className="admin-console-eyebrow">SECURE ADMINISTRATION</span><h1>Shipper applications</h1><p>Review business registrations before enabling seller dashboard access.</p></div>
-        <button type="button" className="admin-refresh-button" onClick={() => { loadApplications(); loadOverview() }} disabled={loading || overviewLoading}><RefreshCw size={15}/> Refresh</button>
+        <button type="button" className="admin-refresh-button" onClick={() => { loadApplications(); loadOverview(); loadRecords(); loadAudit() }} disabled={loading || overviewLoading}><RefreshCw size={15}/> Refresh</button>
       </div>
       <div className="admin-console-identity"><ShieldCheck size={16}/><span>Signed in as <b>{user?.name || user?.email || 'Platform administrator'}</b></span><span className="admin-secure-pill">Platform admin</span></div>
     </header>
