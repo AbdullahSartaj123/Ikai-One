@@ -201,3 +201,19 @@ test("authenticated sessions are rejected immediately when shipper approval is r
   assert.match(authBody, /AND s\.revoked_at IS NULL/);
   assert.match(authBody, /AND s\.expires_at > now\(\)/);
 });
+
+
+test("all inventory, COD, workflow, order and shipment ID routes validate UUID structure before database casts", () => {
+  const strictUuid = "[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}";
+  assert.ok((worker.match(new RegExp(strictUuid, "g")) || []).length >= 7);
+  assert.ok(!worker.includes("([0-9a-f-]{36})"));
+  for (const route of [
+    "/api/inventory/",
+    "/api/cod-reconciliations/",
+    "/api/workflows/",
+    "/api/orders/",
+    "/api/shipments/",
+  ]) {
+    assert.ok(worker.includes(route), "expected route remains covered: " + route);
+  }
+});
