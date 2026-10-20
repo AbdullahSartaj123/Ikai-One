@@ -1130,12 +1130,25 @@ export default {
             const status = String(body.status || "");
             const allowedStatuses = ["New", "Ready to Ship", "Processing", "Shipped", "Delivered", "Cancelled", "NDR raised", "RTO"];
             if (!allowedStatuses.includes(status)) return json(request, { error: "Invalid order status." }, 400);
+            const currentRows = await sql`
+              SELECT id, status FROM ikai.orders
+              WHERE id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+              LIMIT 1
+            `;
+            if (!currentRows[0]) return json(request, { error: "Order not found." }, 404);
+            const currentStatus = currentRows[0].status;
+            const terminalStatuses = ["Delivered", "RTO", "Cancelled"];
+            if (terminalStatuses.includes(currentStatus) && status !== currentStatus) {
+              return json(request, { error: `Order status cannot move from "${currentStatus}". Terminal orders cannot be changed.` }, 409);
+            }
             const rows = await sql`
               UPDATE ikai.orders SET status = ${status}, updated_by = ${user.id}::uuid, updated_at = now()
-              WHERE id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+              WHERE id = ${statusMatch[1]}::uuid
+                AND organization_id = ${user.organizationId}::uuid
+                AND status = ${currentStatus}
               RETURNING id, order_number, status, updated_at
             `;
-            if (!rows[0]) return json(request, { error: "Order not found." }, 404);
+            if (!rows[0]) return json(request, { error: "Order status changed concurrently. Refresh and try again." }, 409);
             await sql`INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
               VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'order_status_changed', 'order', ${rows[0].order_number}, jsonb_build_object('status', ${status}))`;
             return json(request, { data: rows[0] });
