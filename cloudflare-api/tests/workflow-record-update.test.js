@@ -365,3 +365,28 @@ test("order activity timeline exposes shipment reference, location, and source m
   assert.ok(detail.includes("Location: {event.location}"));
   assert.ok(detail.includes("event.eventName.replaceAll('_',' ')"));
 });
+
+test("shipment lifecycle blocks reopening cancelled and other terminal shipments", async () => {
+  const workerSource = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  const start = workerSource.indexOf('const statusMatch = url.pathname.match(/^\\/api\\/shipments');
+  const end = workerSource.indexOf('const exceptionMatch', start);
+  const route = workerSource.slice(start, end > start ? end : start + 12000);
+  assert.ok(route.includes('"Cancelled": []'));
+  assert.ok(route.includes('"Delivered": []'));
+  assert.ok(route.includes('"Returned": []'));
+  assert.ok(route.includes('if (status !== currentStatus && !(transitions[currentStatus] || []).includes(status))'));
+  assert.ok(route.includes('Shipment status cannot move from'));
+  assert.ok(route.includes('status === currentStatus'));
+});
+
+test("repeating the current shipment status does not create duplicate history events", async () => {
+  const workerSource = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  const start = workerSource.indexOf('const statusMatch = url.pathname.match(/^\\/api\\/shipments');
+  const end = workerSource.indexOf('const exceptionMatch', start);
+  const route = workerSource.slice(start, end > start ? end : start + 12000);
+  assert.ok(route.includes('if (status === currentStatus)'));
+  assert.ok(route.includes('no duplicate event was recorded'));
+  const noOp = route.indexOf('if (status === currentStatus)');
+  const eventInsert = route.indexOf('INSERT INTO ikai.shipment_events');
+  assert.ok(noOp >= 0 && eventInsert > noOp, "same-status no-op must return before history insertion");
+});
