@@ -38,7 +38,7 @@ test("order status API validates transitions, protects terminal orders and detec
   assert.notEqual(start, -1, "order status route should exist");
   assert.notEqual(end, -1, "order status route should end before unsupported-route response");
   const handler = workerSource.slice(start, end);
-  assert.ok(handler.includes("SELECT id, status FROM ikai.orders"));
+  assert.ok(handler.includes("SELECT id, order_number, status, updated_at FROM ikai.orders"));
   assert.ok(handler.includes("WHERE id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid"));
   assert.ok(handler.includes('const allowedNextStatuses = {'));
   assert.ok(handler.includes('"Delivered": []'));
