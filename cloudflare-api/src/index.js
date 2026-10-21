@@ -1326,6 +1326,9 @@ export default {
             `;
             if (!currentRows[0]) return json(request, { error: "Shipment not found." }, 404);
             const currentStatus = currentRows[0].status;
+            if (status === currentStatus) {
+              return json(request, { data: { id: currentRows[0].id, status: currentStatus }, message: "Shipment status is already current; no duplicate event was recorded." });
+            }
             const synchronizedOrderStatus = {
               "Ready to ship": "Ready to Ship",
               "Booked": "Shipped",
