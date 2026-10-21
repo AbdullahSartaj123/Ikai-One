@@ -224,19 +224,21 @@ test("shipment and linked-order status changes share one guarded SQL statement",
   const statusEnd = worker.indexOf('return json(request, { error: "Method or shipment route not supported." }, 405);', statusStart);
   assert.ok(statusStart >= 0 && statusEnd > statusStart, "shipment status route must exist");
   const route = worker.slice(statusStart, statusEnd);
-  const changed = route.indexOf("WITH changed AS (");
-  const shipmentUpdate = route.indexOf("UPDATE ikai.shipment_records SET status", changed);
+  const lockedOrder = route.indexOf("WITH locked_order AS (");
+  const changed = route.indexOf("), changed AS (", lockedOrder);
+  const shipmentUpdate = route.indexOf("UPDATE ikai.shipment_records AS sr SET status", changed);
   const orderSync = route.indexOf("order_sync AS (", changed);
   const orderAudit = route.indexOf("order_audit AS (", changed);
   const result = route.indexOf("SELECT changed.* FROM changed", changed);
-  assert.ok(changed >= 0 && shipmentUpdate > changed && orderSync > shipmentUpdate && orderAudit > orderSync && result > orderAudit,
-    "shipment update, order sync, and order audit must be part of the same SQL statement");
-  assert.ok(route.includes("WHERE id = ${statusMatch[1]}::uuid"));
-  assert.ok(route.includes("AND organization_id = ${user.organizationId}::uuid"));
-  assert.ok(route.includes("AND status = ${currentStatus}"));
+  assert.ok(lockedOrder >= 0 && changed > lockedOrder && shipmentUpdate > changed &&
+    orderSync > shipmentUpdate && orderAudit > orderSync && result > orderAudit,
+    "order lock, shipment update, order sync, and order audit must be part of the same SQL statement");
+  assert.ok(route.includes("WHERE sr.id = ${statusMatch[1]}::uuid"));
+  assert.ok(route.includes("AND sr.organization_id = ${user.organizationId}::uuid"));
+  assert.ok(route.includes("AND sr.status = ${currentStatus}"));
+  assert.ok(route.includes("FOR UPDATE OF o"));
   assert.ok(route.includes("FROM order_sync JOIN changed ON changed.order_id = order_sync.id"));
 });
-
 test("shipment lifecycle mapping updates only the linked order when its status actually differs", () => {
   const statusStart = worker.indexOf('const statusMatch = url.pathname.match');
   const statusEnd = worker.indexOf('return json(request, { error: "Method or shipment route not supported." }, 405);', statusStart);
