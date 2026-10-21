@@ -23,3 +23,14 @@ test("order status update is organization-scoped, concurrency-safe, and audit re
   assert.match(worker, /Order status changed concurrently\. Refresh and try again/);
   assert.match(worker, /'order_status_changed', 'order',[\s\S]*jsonb_build_object\('previousStatus', \$\{currentStatus\}, 'status', \$\{status\}\)/);
 });
+
+test("order status changes and audit events are written in one atomic SQL statement", () => {
+  const update = worker.indexOf("WITH updated AS (");
+  const audit = worker.indexOf("INSERT INTO ikai.organization_audit_events", update);
+  const result = worker.indexOf("SELECT id, order_number, status, updated_at FROM updated", update);
+  const separateAudit = worker.indexOf("await sql`INSERT INTO ikai.organization_audit_events", update);
+  assert.ok(update >= 0, "status update must use a data-modifying CTE");
+  assert.ok(audit > update && result > audit, "audit insert must share the update statement");
+  assert.equal(separateAudit, -1, "status changes must not write audit events in a second query");
+  assert.match(worker.slice(update, result), /FROM updated/);
+});
