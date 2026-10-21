@@ -1187,7 +1187,7 @@ export default {
               const linkedShipmentStatus = linkedShipments[0]?.status;
               if (linkedShipmentStatus) {
                 const message = status === "Cancelled"
-                  ? `This order has a linked shipment in "${linkedShipmentStatus}" status. Order cancellation is blocked until shipment cancellation is supported; do not change the order status directly.`
+                  ? `This order has a linked shipment in "${linkedShipmentStatus}" status. Cancel it from the shipment workflow so both records stay consistent; direct order cancellation is blocked.`
                   : `This order has a linked shipment in "${linkedShipmentStatus}" status. Update the shipment status to advance its linked order, so both records stay consistent.`;
                 return json(request, { error: message }, 409);
               }
