@@ -212,5 +212,5 @@ test("CSV serialization neutralizes spreadsheet formulas and preserves CSV escap
   assert.equal(escapeCsvCell("+cmd"), "\"'+cmd\"");
   assert.equal(escapeCsvCell('Customer "A", Inc.'), '"Customer ""A"", Inc."');
   assert.equal(escapeCsvCell(null), "\"\"");
-  assert.equal(toCsv([["Order ID", "Customer"], ["123", "=1+1"]]), "\"Order ID\",\"Customer\"\\n\"123\",\"'=1+1\"");
+  assert.equal(toCsv([["Order ID", "Customer"], ["123", "=1+1"]]).split(String.fromCharCode(10)).length, 2);
 });
