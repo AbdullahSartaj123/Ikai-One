@@ -206,7 +206,7 @@ test("bulk cancellation skips orders with a status update already in progress", 
 
 test("order CSV export neutralizes spreadsheet formula injection", () => {
   const start = source.indexOf("function exportCsv(");
-  const end = source.indexOf("\\n  async function bulkAction(", start);
+  const end = source.indexOf("async function bulkAction(", start);
   assert.ok(start >= 0 && end > start, "CSV export function should exist");
   const exporter = source.slice(start, end);
   assert.ok(exporter.includes("/^[\\\\u0000-\\\\u0020]*[=+\\\\-@]/.test(cell)"), "formula-like cells should be detected, including leading control characters");
