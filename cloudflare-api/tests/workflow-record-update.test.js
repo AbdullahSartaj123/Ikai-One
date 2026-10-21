@@ -398,3 +398,15 @@ test("resolving a shipment exception can return its linked NDR order to Ready to
   assert.match(api, /WHEN \$\{status\} = 'Ready to ship' THEN 'Ready to Ship'/);
   assert.match(api, /Shipment status would move the linked order from/);
 });
+
+test("shipment status write checks the linked order version to prevent concurrent lifecycle overwrites", async () => {
+  const api = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  const start = api.indexOf('const statusMatch = url.pathname.match(/^\\/api\\/shipments');
+  const end = api.indexOf('return json(request, { error: "Method or shipment route not supported." }', start);
+  const route = api.slice(start, end);
+  assert.match(route, /UPDATE ikai\.shipment_records AS sr SET status = \$\{status\}/);
+  assert.match(route, /AND sr\.status = \$\{currentStatus\}/);
+  assert.match(route, /current_order\.status = \$\{linkedOrderStatus\}/);
+  assert.match(route, /AND o\.status = \$\{linkedOrderStatus\}/);
+  assert.match(route, /Shipment changed concurrently\. Refresh and try again\./);
+});
