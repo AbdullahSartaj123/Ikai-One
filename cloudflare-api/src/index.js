@@ -1273,7 +1273,11 @@ export default {
             }
             const rows = await sql`
               WITH chosen_order AS (
-                SELECT * FROM ikai.orders WHERE id = ${orderId}::uuid AND organization_id = ${user.organizationId}::uuid
+                SELECT * FROM ikai.orders
+                WHERE id = ${orderId}::uuid
+                  AND organization_id = ${user.organizationId}::uuid
+                  AND status IN ('New', 'Processing', 'Ready to Ship')
+                FOR UPDATE
               ), created AS (
                 INSERT INTO ikai.shipment_records
                   (organization_id, order_id, shipment_number, courier, status, origin, destination, destination_postal_code, weight, amount, payment_mode, created_by)
@@ -1299,10 +1303,13 @@ export default {
             if (!rows[0]) {
               const [existing, order] = await Promise.all([
                 sql`SELECT shipment_number FROM ikai.shipment_records WHERE order_id = ${orderId}::uuid AND organization_id = ${user.organizationId}::uuid LIMIT 1`,
-                sql`SELECT id FROM ikai.orders WHERE id = ${orderId}::uuid AND organization_id = ${user.organizationId}::uuid LIMIT 1`
+                sql`SELECT id, status FROM ikai.orders WHERE id = ${orderId}::uuid AND organization_id = ${user.organizationId}::uuid LIMIT 1`
               ]);
               if (existing[0]) return json(request, { error: "A shipment record already exists for this order.", shipmentNumber: existing[0].shipment_number }, 409);
               if (!order[0]) return json(request, { error: "Order not found in this organization." }, 404);
+              if (![ "New", "Processing", "Ready to Ship" ].includes(order[0].status)) {
+                return json(request, { error: `A shipment record cannot be created for an order in "${order[0].status}" status. Only New, Processing, or Ready to Ship orders are eligible.` }, 409);
+              }
               return json(request, { error: "Shipment could not be created. Please retry." }, 409);
             }
             return json(request, { data: rows[0], message: "Shipment record saved. Courier booking has not been performed." }, 201);
