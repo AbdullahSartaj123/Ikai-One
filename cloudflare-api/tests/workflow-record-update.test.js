@@ -424,3 +424,15 @@ test("direct order cancellation explains that linked shipments must be cancelled
   assert.match(route, /direct order cancellation is blocked/);
   assert.doesNotMatch(route, /until shipment cancellation is supported/);
 });
+
+test("repeating the current order status does not create duplicate audit events", async () => {
+  const api = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  const start = api.indexOf('const statusMatch = url.pathname.match(/^\\/api\\/orders');
+  const end = api.indexOf('return json(request, { error: "Method or order route not supported." }', start);
+  const route = api.slice(start, end);
+  assert.match(route, /if \(status === currentStatus\)/);
+  assert.match(route, /Order status is already current; no duplicate audit event was recorded\./);
+  const noOp = route.indexOf('if (status === currentStatus)');
+  const auditInsert = route.indexOf('INSERT INTO ikai.organization_audit_events');
+  assert.ok(noOp >= 0 && auditInsert > noOp, "same-status no-op must return before audit insertion");
+});
