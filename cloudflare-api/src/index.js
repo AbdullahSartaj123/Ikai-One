@@ -1128,16 +1128,41 @@ export default {
           if (statusMatch && request.method === "POST") {
             const body = await readJson(request);
             const status = String(body.status || "");
-            const allowedStatuses = ["New", "Ready to Ship", "Processing", "Shipped", "Delivered", "Cancelled", "NDR raised", "RTO"];
+            const allowedStatuses = ["New", "Ready to Ship", "Processing", "Pickup Scheduled", "In Transit", "Shipped", "Delivered", "Cancelled", "NDR raised", "RTO"];
             if (!allowedStatuses.includes(status)) return json(request, { error: "Invalid order status." }, 400);
+
+            const existingRows = await sql`
+              SELECT id, order_number, status FROM ikai.orders
+              WHERE id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+            `;
+            if (!existingRows[0]) return json(request, { error: "Order not found." }, 404);
+            const currentStatus = existingRows[0].status;
+            if (currentStatus === status) return json(request, { data: existingRows[0], message: "Order already has this status." });
+
+            const orderTransitions = {
+              "New": ["Ready to Ship", "Processing", "Pickup Scheduled", "Cancelled"],
+              "Ready to Ship": ["Processing", "Pickup Scheduled", "In Transit", "Shipped", "NDR raised", "Cancelled"],
+              "Processing": ["Ready to Ship", "Pickup Scheduled", "In Transit", "Shipped", "NDR raised", "Cancelled"],
+              "Pickup Scheduled": ["Ready to Ship", "In Transit", "Shipped", "NDR raised", "Cancelled"],
+              "In Transit": ["Shipped", "Delivered", "NDR raised", "RTO"],
+              "Shipped": ["Delivered", "NDR raised", "RTO"],
+              "NDR raised": ["In Transit", "Shipped", "Delivered", "RTO"],
+              "Delivered": [],
+              "RTO": [],
+              "Cancelled": []
+            };
+            if (!(orderTransitions[currentStatus] || []).includes(status)) {
+              return json(request, { error: `Order status cannot move from "${currentStatus}" to "${status}". Refresh the order and choose a valid next step.` }, 409);
+            }
+
             const rows = await sql`
               UPDATE ikai.orders SET status = ${status}, updated_by = ${user.id}::uuid, updated_at = now()
-              WHERE id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+              WHERE id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid AND status = ${currentStatus}
               RETURNING id, order_number, status, updated_at
             `;
-            if (!rows[0]) return json(request, { error: "Order not found." }, 404);
+            if (!rows[0]) return json(request, { error: "Order status changed concurrently. Refresh and try again." }, 409);
             await sql`INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
-              VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'order_status_changed', 'order', ${rows[0].order_number}, jsonb_build_object('status', ${status}))`;
+              VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'order_status_changed', 'order', ${rows[0].order_number}, jsonb_build_object('previousStatus', ${currentStatus}, 'status', ${status}))`;
             return json(request, { data: rows[0] });
           }
           return json(request, { error: "Method or order route not supported." }, 405);
