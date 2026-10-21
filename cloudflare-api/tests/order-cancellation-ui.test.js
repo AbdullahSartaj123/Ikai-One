@@ -25,7 +25,7 @@ test("bulk cancellation excludes delivered, RTO and already-cancelled orders", (
 });
 
 test("row cancellation uses saved-order status update and disables terminal or unsaved rows", () => {
-  assert.match(source, /disabled=\{!order\.uuid\|\|\['Delivered','RTO','Cancelled'\]\.includes\(order\.status\)\}/);
+  assert.match(source, /disabled=\{!order\.uuid\|\|updatingOrderIds\.includes\(order\.uuid\)\|\|\['Delivered','RTO','Cancelled'\]\.includes\(order\.status\)\}/);
   assert.match(source, /updateOrderStatus\(order,'Cancelled'\)/);
 });
 
@@ -197,4 +197,9 @@ test("partial bulk cancellation failures reload saved statuses and report refres
   assert.ok(handler.includes("const refreshed = await loadOrders()"));
   assert.ok(handler.includes("Latest saved statuses reloaded."));
   assert.ok(handler.includes("Saved statuses could not be refreshed; use Refresh and retry."));
+});
+
+test("bulk cancellation skips orders with a status update already in progress", () => {
+  assert.match(source, /selectedOrders\.filter\(order => order\.uuid && !updatingOrderIds\.includes\(order\.uuid\) && !\['Delivered','RTO','Cancelled'\]\.includes\(order\.status\)\)/);
+  assert.match(source, /disabled=\{!order\.uuid\|\|updatingOrderIds\.includes\(order\.uuid\)\|\|\['Delivered','RTO','Cancelled'\]\.includes\(order\.status\)\}/);
 });
