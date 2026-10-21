@@ -408,7 +408,7 @@ test("shipment status write checks the linked order version to prevent concurren
   assert.match(route, /AND sr\.status = \$\{currentStatus\}/);
   assert.match(route, /WITH locked_order AS/);
   assert.match(route, /FOR UPDATE OF o/);
-  assert.match(route, /locked_order\\.status = \\$\\{linkedOrderStatus\\}/);
+  assert.match(route, /locked_order\.status = \$\{linkedOrderStatus\}/);
   assert.match(route, /AND o\.status = \$\{linkedOrderStatus\}/);
   assert.match(route, /Shipment changed concurrently\. Refresh and try again\./);
 });
