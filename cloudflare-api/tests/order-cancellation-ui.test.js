@@ -170,3 +170,17 @@ test("order detail only offers shipment creation for eligible saved order status
   assert.ok(detail.includes("Shipment creation is available for New, Processing, or Ready to Ship orders only."));
   assert.ok(detail.includes("origin:''"), "do not invent a default shipment origin city");
 });
+
+test("bulk order cancellation prevents overlapping requests and keeps selection stable while running", () => {
+  assert.ok(source.includes("const [bulkActionInProgress,setBulkActionInProgress] = useState(false)"));
+  const start = source.indexOf("async function bulkAction(action)");
+  const end = source.indexOf("\\n  function openFilters()", start);
+  const handler = source.slice(start, end);
+  assert.ok(handler.includes("if (bulkActionInProgress) return"));
+  assert.ok(handler.includes("setBulkActionInProgress(true)"));
+  assert.ok(handler.includes("setBulkActionInProgress(false)"));
+  assert.ok(handler.includes("try {"));
+  assert.ok(handler.includes("finally {"));
+  assert.ok(source.includes("disabled={bulkActionInProgress} onClick={()=>{setBulkMenuOpen(false);bulkAction(label)}}"));
+  assert.ok(source.includes('disabled={bulkActionInProgress} onClick={()=>setSelected([])}>Clear selection</button>'));
+});
