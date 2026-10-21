@@ -20,13 +20,14 @@ test("bulk cancellation persists each eligible saved order through the status AP
   assert.doesNotMatch(handler, /Demo: cancellation requested/);
 });
 
-test("bulk cancellation excludes delivered, RTO and already-cancelled orders", () => {
-  assert.match(source, /!\['Delivered','RTO','Cancelled'\]\.includes\(order\.status\)/);
-  assert.match(source, /No selected saved orders can be cancelled/);
+test("bulk cancellation only includes statuses accepted by the order cancellation lifecycle", () => {
+  assert.match(source, /const cancelableOrderStatuses = \['New', 'Processing', 'Ready to Ship'\]/);
+  assert.match(source, /cancelableOrderStatuses\.includes\(order\.status\)/);
+  assert.match(source, /Only New, Processing and Ready to Ship orders are eligible/);
 });
 
-test("row cancellation uses saved-order status update and disables terminal or unsaved rows", () => {
-  assert.match(source, /disabled=\{!order\.uuid\|\|updatingOrderIds\.includes\(order\.uuid\)\|\|\['Delivered','RTO','Cancelled'\]\.includes\(order\.status\)\}/);
+test("row cancellation is disabled for statuses the API will reject", () => {
+  assert.match(source, /disabled=\{!order\.uuid\|\|updatingOrderIds\.includes\(order\.uuid\)\|\|!cancelableOrderStatuses\.includes\(order\.status\)\}/);
   assert.match(source, /updateOrderStatus\(order,'Cancelled'\)/);
 });
 
