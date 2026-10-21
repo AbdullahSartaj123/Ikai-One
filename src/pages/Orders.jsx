@@ -52,11 +52,13 @@ function OrdersList() {
       setOrders((payload.data || []).map(mapApiOrder))
       setOrdersSource('database')
       setLoadError('')
+      return true
     } catch (error) {
       setOrders([])
       setSelected([])
       setOrdersSource('unavailable')
       setLoadError(error.message || 'Orders could not be loaded.')
+      return false
     } finally {
       setRefreshing(false)
     }
@@ -157,7 +159,8 @@ function OrdersList() {
           setSelected([])
           showToast('Cancelled '+succeeded.size+' saved order(s).')
         } else {
-          showToast('Cancelled '+succeeded.size+' order(s); '+failed+' failed. Refresh to verify saved statuses.')
+          const refreshed = await loadOrders()
+          showToast('Cancelled '+succeeded.size+' order(s); '+failed+' failed. '+(refreshed ? 'Latest saved statuses reloaded.' : 'Saved statuses could not be refreshed; use Refresh and retry.'))
         }
       } finally {
         setBulkActionInProgress(false)
