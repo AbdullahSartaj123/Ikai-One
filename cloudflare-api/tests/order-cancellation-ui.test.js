@@ -147,3 +147,24 @@ test("shipment detail confirms cancellation and explains linked order cancellati
   assert.ok(shipmentPageSource.includes("'Cancelled'"));
   assert.ok(shipmentPageSource.includes("Shipment and linked order cancelled."));
 });
+
+test("shipment creation is blocked for cancelled, shipped, delivered, and returned orders", async () => {
+  const workerSource = readFileSync(new URL("../src/index.js", import.meta.url), "utf8");
+  const start = workerSource.indexOf('if (url.pathname === "/api/shipments" && request.method === "POST")');
+  const end = workerSource.indexOf('const eventMatch = url.pathname.match', start);
+  const handler = workerSource.slice(start, end);
+  assert.ok(start >= 0 && end > start);
+  assert.ok(handler.includes('SELECT id, order_number, status FROM ikai.orders'));
+  assert.ok(handler.includes('if (![ "New", "Processing", "Ready to Ship" ].includes(chosenOrder[0].status))'));
+  assert.ok(handler.includes('return json(request, { error: `A shipment record cannot be created for an order in "${chosenOrder[0].status}" status.'));
+  assert.ok(handler.includes('Order not found in this organization.'));
+});
+
+test("order detail only offers shipment creation for eligible saved order statuses", () => {
+  const start = source.indexOf("function OrderDetail()");
+  const detail = source.slice(start);
+  assert.ok(detail.includes("const shipmentEligible = Boolean(savedOrder?.uuid && ['New','Processing','Ready to Ship'].includes(savedOrder.status))"));
+  assert.ok(detail.includes("disabled={shipmentSaving||!shipmentEligible}"));
+  assert.ok(detail.includes("Shipment creation is available for New, Processing, or Ready to Ship orders only."));
+  assert.ok(detail.includes("origin:''"), "do not invent a default shipment origin city");
+});
