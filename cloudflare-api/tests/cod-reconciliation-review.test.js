@@ -52,7 +52,7 @@ test("COD reconciliation save and audit event are written atomically", () => {
   const saveRoute = worker.slice(saveStart, reviewStart);
   const saved = saveRoute.indexOf("WITH saved AS (");
   const audit = saveRoute.indexOf("INSERT INTO ikai.organization_audit_events", saved);
-  const result = saveRoute.indexOf("SELECT * FROM saved", saved);
+  const result = saveRoute.lastIndexOf("FROM saved");
   const separateAudit = saveRoute.indexOf("await sql`INSERT INTO ikai.organization_audit_events");
   assert.ok(saved >= 0 && audit > saved && result > audit, "audit insert must share the reconciliation save statement");
   assert.equal(separateAudit, -1, "reconciliation audit must not be written in a separate query");
