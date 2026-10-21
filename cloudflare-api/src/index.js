@@ -1171,12 +1171,18 @@ export default {
             const allowedStatuses = ["New", "Ready to Ship", "Processing", "Shipped", "Delivered", "Cancelled", "NDR raised", "RTO"];
             if (!allowedStatuses.includes(status)) return json(request, { error: "Invalid order status." }, 400);
             const currentRows = await sql`
-              SELECT id, status FROM ikai.orders
+              SELECT id, order_number, status, updated_at FROM ikai.orders
               WHERE id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
               LIMIT 1
             `;
             if (!currentRows[0]) return json(request, { error: "Order not found." }, 404);
             const currentStatus = currentRows[0].status;
+            if (status === currentStatus) {
+              return json(request, {
+                data: currentRows[0],
+                message: "Order status is already current; no duplicate audit event was recorded."
+              });
+            }
             if (status !== currentStatus) {
               const linkedShipments = await sql`
                 SELECT status FROM ikai.shipment_records
