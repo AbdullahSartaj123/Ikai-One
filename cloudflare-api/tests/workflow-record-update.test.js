@@ -33,7 +33,7 @@ test("frontend edit reference field matcher uses word boundaries correctly", () 
 
 test("shipment status endpoint enforces lifecycle transitions and terminal states", async () => {
   const api = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
-  assert.match(api, /"Label pending": \["Ready to ship", "Booked", "Exception"\]/);
+  assert.match(api, /"Label pending": \["Ready to ship", "Booked", "Exception", "Cancelled"\]/);
   assert.match(api, /"In transit": \["Out for delivery", "Delivered", "Exception", "Returned"\]/);
   assert.match(api, /"Delivered": \[\]/);
   assert.match(api, /"Returned": \[\]/);
@@ -46,6 +46,7 @@ test("shipment status endpoint enforces lifecycle transitions and terminal state
 test("shipment status UI only offers transitions allowed by the API", async () => {
   const shipments = await readFile(new URL("../../src/pages/Shipments.jsx", import.meta.url), "utf8");
   assert.match(shipments, /const shipmentTransitions=\{/);
+  assert.match(shipments, /'Label pending':\['Ready to ship','Booked','Exception','Cancelled'\]/);
   assert.match(shipments, /const allowedStatusOptions=\[shipment\?\.status,\.\.\.\(shipmentTransitions\[shipment\?\.status\]\|\|\[\]\)\]/);
   assert.match(shipments, /statusDraft===shipment\.status\?'Choose next status':'Save internal status'/);
   assert.match(shipments, /'Delivered':\[\]/);
@@ -86,7 +87,7 @@ test("shipment list can create a persisted shipment from a saved order without b
   assert.match(shipmentsPage, /apiRequest\('\/api\/orders\?limit=100'\)/);
   assert.match(shipmentsPage, /apiRequest\('\/api\/shipments'/);
   assert.match(shipmentsPage, /orderId:shipmentDraft\.orderId/);
-  assert.match(shipmentsPage, /disabled=\{loading\|\|dataSource==='demo'\}/);
+  assert.match(shipmentsPage, /disabled=\{loading\|\|dataSource==='unavailable'\}/);
   assert.match(shipmentsPage, /This creates an internal shipment record and history event only/);
   assert.match(api, /courierBookingConfirmed', false/);
   assert.match(api, /Shipment record saved\. Courier booking has not been performed\./);
@@ -223,19 +224,21 @@ test("shipment and linked-order status changes share one guarded SQL statement",
   const statusEnd = worker.indexOf('return json(request, { error: "Method or shipment route not supported." }, 405);', statusStart);
   assert.ok(statusStart >= 0 && statusEnd > statusStart, "shipment status route must exist");
   const route = worker.slice(statusStart, statusEnd);
-  const changed = route.indexOf("WITH changed AS (");
-  const shipmentUpdate = route.indexOf("UPDATE ikai.shipment_records SET status", changed);
+  const lockedOrder = route.indexOf("WITH locked_order AS (");
+  const changed = route.indexOf("), changed AS (", lockedOrder);
+  const shipmentUpdate = route.indexOf("UPDATE ikai.shipment_records AS sr SET status", changed);
   const orderSync = route.indexOf("order_sync AS (", changed);
   const orderAudit = route.indexOf("order_audit AS (", changed);
   const result = route.indexOf("SELECT changed.* FROM changed", changed);
-  assert.ok(changed >= 0 && shipmentUpdate > changed && orderSync > shipmentUpdate && orderAudit > orderSync && result > orderAudit,
-    "shipment update, order sync, and order audit must be part of the same SQL statement");
-  assert.ok(route.includes("WHERE id = ${statusMatch[1]}::uuid"));
-  assert.ok(route.includes("AND organization_id = ${user.organizationId}::uuid"));
-  assert.ok(route.includes("AND status = ${currentStatus}"));
+  assert.ok(lockedOrder >= 0 && changed > lockedOrder && shipmentUpdate > changed &&
+    orderSync > shipmentUpdate && orderAudit > orderSync && result > orderAudit,
+    "order lock, shipment update, order sync, and order audit must be part of the same SQL statement");
+  assert.ok(route.includes("WHERE sr.id = ${statusMatch[1]}::uuid"));
+  assert.ok(route.includes("AND sr.organization_id = ${user.organizationId}::uuid"));
+  assert.ok(route.includes("AND sr.status = ${currentStatus}"));
+  assert.ok(route.includes("FOR UPDATE OF o"));
   assert.ok(route.includes("FROM order_sync JOIN changed ON changed.order_id = order_sync.id"));
 });
-
 test("shipment lifecycle mapping updates only the linked order when its status actually differs", () => {
   const statusStart = worker.indexOf('const statusMatch = url.pathname.match');
   const statusEnd = worker.indexOf('return json(request, { error: "Method or shipment route not supported." }, 405);', statusStart);
@@ -245,4 +248,224 @@ test("shipment lifecycle mapping updates only the linked order when its status a
   assert.ok(route.includes("o.status IS DISTINCT FROM CASE"));
   assert.ok(route.includes("'order_status_synced_from_shipment', 'order'"));
   assert.ok(route.includes("jsonb_build_object('status', order_sync.status, 'sourceShipment', changed.shipment_number)"));
+});
+
+test("shipment detail loads only saved API records and exposes retry states", async () => {
+  const shipments = await readFile(new URL("../../src/pages/Shipments.jsx", import.meta.url), "utf8");
+  const start = shipments.indexOf("function ShipmentDetail()");
+  const end = shipments.indexOf("function SelectedTracking()", start);
+  const detail = shipments.slice(start, end);
+  assert.ok(detail.includes("const [shipment,setShipment]=useState(null)"), "detail must not initialize from mock shipments");
+  assert.ok(detail.includes("setShipmentLoadState('unavailable')"));
+  assert.ok(detail.includes("No demo records are shown."));
+  assert.ok(detail.includes("onClick={reloadShipment}"));
+  assert.ok(detail.includes("setShipmentLoadState('not-found')"));
+});
+
+test("shipment status conflicts reload the latest saved shipment state", async () => {
+  const shipments = await readFile(new URL("../../src/pages/Shipments.jsx", import.meta.url), "utf8");
+  const start = shipments.indexOf("const saveInternalStatus=async()=>");
+  const end = shipments.indexOf("const [exceptionAction", start);
+  const save = shipments.slice(start, end);
+  assert.ok(save.includes("if(error.status===409)"));
+  assert.ok(save.includes("await reloadShipment()"));
+  assert.ok(save.includes("Latest saved state reloaded."));
+  assert.ok(save.includes("setStatusDraft(latest?.status||'Label pending')"));
+});
+
+test("orders workspace refreshes saved orders when the tab regains focus", async () => {
+  const orders = await readFile(new URL("../../src/pages/Orders.jsx", import.meta.url), "utf8");
+  const listStart = orders.indexOf("function OrdersList()");
+  const detailStart = orders.indexOf("function OrderDetail()");
+  const list = orders.slice(listStart, detailStart);
+  assert.ok(list.includes("window.addEventListener('focus', refresh)"));
+  assert.ok(list.includes("document.addEventListener('visibilitychange', refresh)"));
+  assert.ok(list.includes("refresh()"));
+});
+
+test("order detail refreshes order and linked shipment state together on demand and on focus", async () => {
+  const orders = await readFile(new URL("../../src/pages/Orders.jsx", import.meta.url), "utf8");
+  const start = orders.indexOf("function OrderDetail()");
+  const detail = orders.slice(start);
+  assert.ok(detail.includes("const [refreshKey,setRefreshKey]=useState(0)"));
+  assert.ok(detail.includes("},[orderId,refreshKey])"), "order and shipment reads should rerun after refresh");
+  assert.ok(detail.includes("const refreshRecords=()=>{setRefreshingRecords(true);setRefreshKey(key=>key+1)}"));
+  assert.ok(detail.includes("onClick={refreshRecords}"));
+  assert.ok(detail.includes("window.addEventListener('focus',refresh)"));
+  assert.ok(detail.includes("document.addEventListener('visibilitychange',refresh)"));
+});
+
+test("order activity endpoint combines tenant-scoped order audit and shipment events", async () => {
+  const workerSource = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  const start = workerSource.indexOf("const activityMatch = url.pathname.match");
+  const end = workerSource.indexOf("const statusMatch = url.pathname.match", start);
+  const route = workerSource.slice(start, end);
+  assert.ok(start >= 0 && end > start, "order activity route must exist before the order status route");
+  assert.ok(route.includes("organization_id = ${user.organizationId}::uuid"));
+  assert.ok(route.includes("entity_type = 'order'"));
+  assert.ok(route.includes("FROM ikai.shipment_events e"));
+  assert.ok(route.includes("s.order_id = ${order.id}::uuid"));
+  assert.ok(route.includes("ORDER BY created_at DESC LIMIT 100"));
+  assert.ok(route.includes("ORDER BY e.created_at DESC LIMIT 100"));
+  assert.ok(route.includes("return json(request, { data: activity, count: activity.length, orderStatus: order.status })"));
+});
+
+test("order detail timeline renders persisted activity and linked shipment events", async () => {
+  const orders = await readFile(new URL("../../src/pages/Orders.jsx", import.meta.url), "utf8");
+  const start = orders.indexOf("function OrderDetail()");
+  const detail = orders.slice(start);
+  assert.ok(detail.includes("apiRequest('/api/orders/'+encodeURIComponent(savedOrder.uuid)+'/activity')"));
+  assert.ok(detail.includes("event.type==='shipment'"));
+  assert.ok(detail.includes("event.event==='order_status_synced_from_shipment'") || detail.includes("event.detail?.sourceShipment"));
+  assert.ok(detail.includes("activityTimeline.map((event,index)"));
+  assert.ok(detail.includes("activityError"));
+});
+
+test("order activity distinguishes an empty history from an unavailable activity service", async () => {
+  const orders = await readFile(new URL("../../src/pages/Orders.jsx", import.meta.url), "utf8");
+  const start = orders.indexOf("function OrderDetail()");
+  const detail = orders.slice(start);
+  assert.ok(detail.includes("activityError?'Unavailable'"));
+  assert.ok(detail.includes("Retry activity"));
+  assert.ok(detail.includes("No activity recorded yet."));
+  assert.ok(detail.includes("no order-status or shipment-history events were returned."));
+  assert.ok(!detail.includes("? (activityEvents.length ? activityEvents.map"), "timeline mapper should not fabricate events when saved history is empty");
+  assert.ok(detail.includes(": orderFallbackTimeline(orderId)"), "demo orders retain their demo timeline");
+});
+
+test("order detail does not show demo records when the saved order service fails", async () => {
+  const orders = await readFile(new URL("../../src/pages/Orders.jsx", import.meta.url), "utf8");
+  const start = orders.indexOf("function OrderDetail()");
+  const detail = orders.slice(start);
+  assert.ok(detail.includes("setDetailLoadError(error.message||'Saved order could not be loaded.')"));
+  assert.ok(detail.includes("savedOrder||(!detailLoadError?mockOrders.find(item=>item.id===orderId):null)"));
+  assert.ok(detail.includes("No demo order is shown when saved records cannot be reached."));
+  assert.ok(detail.includes("Retry loading"));
+});
+
+test("order detail does not offer shipment creation when shipment lookup is unavailable", async () => {
+  const orders = await readFile(new URL("../../src/pages/Orders.jsx", import.meta.url), "utf8");
+  const start = orders.indexOf("function OrderDetail()");
+  const detail = orders.slice(start);
+  assert.ok(detail.includes("setShipmentLoadError(error.message||'Saved shipment could not be loaded.')"));
+  assert.ok(detail.includes("Shipment availability is unknown until the service responds."));
+  assert.ok(detail.includes("Retry shipment lookup"));
+  const panelStart = detail.indexOf("DELIVERY</span><h2>Shipment information</h2>");
+  const panelEnd = detail.indexOf("Internal record only.", panelStart);
+  const panel = detail.slice(panelStart, panelEnd);
+  assert.ok(panel.indexOf("shipmentLoadError?") < panel.indexOf("Create shipment record"));
+});
+
+test("order activity timeline exposes shipment reference, location, and source metadata", async () => {
+  const orders = await readFile(new URL("../../src/pages/Orders.jsx", import.meta.url), "utf8");
+  const start = orders.indexOf("function OrderDetail()");
+  const detail = orders.slice(start);
+  assert.ok(detail.includes("reference:event.reference||''"));
+  assert.ok(detail.includes("location:event.location||''"));
+  assert.ok(detail.includes("source:event.type==='shipment'?'Shipment':'Order'"));
+  assert.ok(detail.includes("Reference: {event.reference}"));
+  assert.ok(detail.includes("Location: {event.location}"));
+  assert.ok(detail.includes("event.eventName.replaceAll('_',' ')"));
+});
+
+test("shipment lifecycle blocks reopening cancelled and other terminal shipments", async () => {
+  const workerSource = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  const start = workerSource.indexOf('const statusMatch = url.pathname.match(/^\\/api\\/shipments');
+  const end = workerSource.indexOf('const exceptionMatch', start);
+  const route = workerSource.slice(start, end > start ? end : start + 12000);
+  assert.ok(route.includes('"Cancelled": []'));
+  assert.ok(route.includes('"Delivered": []'));
+  assert.ok(route.includes('"Returned": []'));
+  assert.ok(route.includes('if (status !== currentStatus && !(transitions[currentStatus] || []).includes(status))'));
+  assert.ok(route.includes('Shipment status cannot move from'));
+  assert.ok(route.includes('status === currentStatus'));
+});
+
+test("repeating the current shipment status does not create duplicate history events", async () => {
+  const workerSource = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  const start = workerSource.indexOf('const statusMatch = url.pathname.match(/^\\/api\\/shipments');
+  const end = workerSource.indexOf('const exceptionMatch', start);
+  const route = workerSource.slice(start, end > start ? end : start + 12000);
+  assert.ok(route.includes('if (status === currentStatus)'));
+  assert.ok(route.includes('no duplicate event was recorded'));
+  const noOp = route.indexOf('if (status === currentStatus)');
+  const eventInsert = route.indexOf('INSERT INTO ikai.shipment_events');
+  assert.ok(noOp >= 0 && eventInsert > noOp, "same-status no-op must return before history insertion");
+});
+
+test("resolving a shipment exception can return its linked NDR order to Ready to Ship", async () => {
+  const api = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  assert.match(api, /"NDR raised": \["Ready to Ship", "Shipped", "Delivered", "RTO"\]/);
+  assert.match(api, /"Exception": \["Ready to ship", "Booked", "Picked up", "In transit", "Out for delivery", "Returned"\]/);
+  assert.match(api, /WHEN \$\{status\} = 'Ready to ship' THEN 'Ready to Ship'/);
+  assert.match(api, /Shipment status would move the linked order from/);
+});
+
+test("shipment status write checks the linked order version to prevent concurrent lifecycle overwrites", async () => {
+  const api = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  const start = api.indexOf('const statusMatch = url.pathname.match(/^\\/api\\/shipments');
+  const end = api.indexOf('return json(request, { error: "Method or shipment route not supported." }', start);
+  const route = api.slice(start, end);
+  assert.match(route, /UPDATE ikai\.shipment_records AS sr SET status = \$\{status\}/);
+  assert.match(route, /AND sr\.status = \$\{currentStatus\}/);
+  assert.match(route, /WITH locked_order AS/);
+  assert.match(route, /FOR UPDATE OF o/);
+  assert.match(route, /locked_order\.status = \$\{linkedOrderStatus\}/);
+  assert.match(route, /AND o\.status = \$\{linkedOrderStatus\}/);
+  assert.match(route, /Shipment changed concurrently\. Refresh and try again\./);
+});
+
+test("direct order cancellation explains that linked shipments must be cancelled in the shipment workflow", async () => {
+  const api = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  const start = api.indexOf('const statusMatch = url.pathname.match(/^\\/api\\/orders');
+  const end = api.indexOf('return json(request, { error: "Method or order route not supported." }', start);
+  const route = api.slice(start, end);
+  assert.match(route, /Cancel it from the shipment workflow so both records stay consistent/);
+  assert.match(route, /direct order cancellation is blocked/);
+  assert.doesNotMatch(route, /until shipment cancellation is supported/);
+});
+
+test("repeating the current order status does not create duplicate audit events", async () => {
+  const api = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  const start = api.indexOf('const statusMatch = url.pathname.match(/^\\/api\\/orders');
+  const end = api.indexOf('return json(request, { error: "Method or order route not supported." }', start);
+  const route = api.slice(start, end);
+  assert.match(route, /if \(status === currentStatus\)/);
+  assert.match(route, /Order status is already current; no duplicate audit event was recorded\./);
+  const noOp = route.indexOf('if (status === currentStatus)');
+  const auditInsert = route.indexOf('INSERT INTO ikai.organization_audit_events');
+  assert.ok(noOp >= 0 && auditInsert > noOp, "same-status no-op must return before audit insertion");
+});
+
+test("order cancellation and shipment creation serialize on the order row", async () => {
+  const api = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  const orderStart = api.indexOf('const statusMatch = url.pathname.match(/^\\/api\\/orders');
+  const orderEnd = api.indexOf('return json(request, { error: "Method or order route not supported." }', orderStart);
+  const orderRoute = api.slice(orderStart, orderEnd);
+  const cancellationStart = orderRoute.indexOf('if (status === "Cancelled")');
+  const cancellationEnd = orderRoute.indexOf('const rows = await sql', cancellationStart);
+  const cancellation = orderRoute.slice(cancellationStart, cancellationEnd);
+  assert.ok(cancellation.includes("await sql.transaction(["));
+  assert.ok(cancellation.includes("SELECT id FROM ikai.orders"));
+  assert.ok(cancellation.includes("FOR UPDATE"));
+  assert.ok(cancellation.includes("AND NOT EXISTS ("));
+  assert.ok(cancellation.includes("FROM ikai.shipment_records AS sr"));
+  assert.ok(cancellation.includes("FROM updated"));
+  assert.ok(cancellation.includes("cancelledRows || []"));
+  const shipmentStart = api.indexOf('if (url.pathname === "/api/shipments" && request.method === "POST")');
+  const shipmentEnd = api.indexOf('const eventMatch = url.pathname.match(/^\\/api\\/shipments', shipmentStart);
+  const shipmentRoute = api.slice(shipmentStart, shipmentEnd);
+  assert.match(shipmentRoute, /status IN \('New', 'Processing', 'Ready to Ship'\)\s*FOR UPDATE/);
+});
+
+test("shipment creation locks and revalidates order eligibility in the insert statement", async () => {
+  const api = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  const routeStart = api.indexOf('if (url.pathname === "/api/shipments" && request.method === "POST")');
+  const routeEnd = api.indexOf('const eventMatch = url.pathname.match(/^\\/api\\/shipments', routeStart);
+  assert.ok(routeStart >= 0 && routeEnd > routeStart, "shipment creation route must exist");
+  const route = api.slice(routeStart, routeEnd);
+  assert.match(route, /WITH chosen_order AS \(\s*SELECT \* FROM ikai\.orders[\s\S]*?status IN \('New', 'Processing', 'Ready to Ship'\)\s*FOR UPDATE\s*\), created AS/);
+  assert.match(route, /SELECT id, status FROM ikai\.orders WHERE id = \$\{orderId\}::uuid/);
+  assert.match(route, /A shipment record cannot be created for an order in/);
+  assert.match(route, /ON CONFLICT \(organization_id, order_id\) DO NOTHING/);
 });

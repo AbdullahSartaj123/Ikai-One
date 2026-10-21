@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import StatusBadge from '../components/StatusBadge.jsx'
 import { apiRequest } from '../lib/api.js'
+import { toCsv } from '../lib/csv.js'
 import { mockOrders, orderStatuses, paymentModes, orderCouriers, orderChannels } from '../data/orders.js'
 
 const columnDefinitions = [
@@ -17,6 +18,18 @@ const columnDefinitions = [
 ]
 const initialFilters = { from: '', to: '', paymentMode: 'All', courier: 'All', pincode: '', state: 'All' }
 const stateOptions = [...new Set(mockOrders.map(order => order.state))].sort()
+const savedOrderStatuses = ['New', 'Processing', 'Ready to Ship', 'Shipped', 'NDR raised', 'Delivered', 'RTO', 'Cancelled']
+const cancelableOrderStatuses = ['New', 'Processing', 'Ready to Ship']
+const allowedOrderStatusChanges = {
+  'New': ['New', 'Processing', 'Ready to Ship', 'Cancelled'],
+  'Processing': ['Processing', 'Ready to Ship', 'Cancelled', 'NDR raised'],
+  'Ready to Ship': ['Ready to Ship', 'Shipped', 'Cancelled', 'NDR raised'],
+  'Shipped': ['Shipped', 'Delivered', 'NDR raised', 'RTO'],
+  'NDR raised': ['NDR raised', 'Shipped', 'Delivered', 'RTO'],
+  'Delivered': ['Delivered'],
+  'RTO': ['RTO'],
+  'Cancelled': ['Cancelled']
+}
 const fmtMoney = amount => 'Rs ' + Number(amount || 0).toLocaleString('en-PK')
 const fmtDate = value => new Date(value).toLocaleDateString('en-PK', { day: '2-digit', month: 'short', year: 'numeric' })
 const fmtDateTime = value => new Date(value).toLocaleString('en-PK', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
@@ -33,6 +46,7 @@ function OrdersList() {
   const [ordersSource,setOrdersSource] = useState('loading')
   const [loadError,setLoadError] = useState('')
   const [refreshing,setRefreshing] = useState(false)
+  const [updatingOrderIds,setUpdatingOrderIds] = useState([])
   async function loadOrders(showLoading = false) {
     if (showLoading) setRefreshing(true)
     try {
@@ -40,32 +54,44 @@ function OrdersList() {
       setOrders((payload.data || []).map(mapApiOrder))
       setOrdersSource('database')
       setLoadError('')
+      return true
     } catch (error) {
+      setOrders([])
+      setSelected([])
       setOrdersSource('unavailable')
       setLoadError(error.message || 'Orders could not be loaded.')
+      return false
     } finally {
       setRefreshing(false)
     }
   }
   useEffect(() => {
     let active = true
-    apiRequest('/api/orders?limit=100').then(payload => {
-      if (active) { setOrders((payload.data || []).map(mapApiOrder)); setOrdersSource('database'); setLoadError('') }
-    }).catch(error => {
-      if (active) { setOrdersSource('unavailable'); setLoadError(error.message || 'Orders could not be loaded.') }
-    })
-    return () => { active = false }
+    const refresh = () => { if (active) loadOrders() }
+    refresh()
+    window.addEventListener('focus', refresh)
+    document.addEventListener('visibilitychange', refresh)
+    return () => { active = false; window.removeEventListener('focus', refresh); document.removeEventListener('visibilitychange', refresh) }
   }, [])
   async function updateOrderStatus(order, status) {
     if (!order.uuid) { showToast('This order has no saved database ID.'); return }
+    if (updatingOrderIds.includes(order.uuid)) { showToast('This order is already being updated.'); return }
     const previousStatus = order.status
+    setUpdatingOrderIds(current => [...current, order.uuid])
     setOrders(current => current.map(item => item.id === order.id ? {...item,status} : item))
     try {
       await apiRequest('/api/orders/' + order.uuid + '/status', {method:'POST', body:{status}})
       showToast(order.id + ' status saved as ' + status + '.')
     } catch (error) {
-      setOrders(current => current.map(item => item.id === order.id ? {...item,status:previousStatus} : item))
-      showToast(error.message || 'Order status could not be saved.')
+      if (error.status === 409) {
+        await loadOrders()
+        showToast((error.message || 'Order status changed elsewhere.') + ' Latest saved statuses reloaded.')
+      } else {
+        setOrders(current => current.map(item => item.id === order.id ? {...item,status:previousStatus} : item))
+        showToast(error.message || 'Order status could not be saved.')
+      }
+    } finally {
+      setUpdatingOrderIds(current => current.filter(id => id !== order.uuid))
     }
   }
   const activeOrders = orders
@@ -82,6 +108,7 @@ function OrdersList() {
   const [menuId,setMenuId] = useState('')
   const [toast,setToast] = useState('')
   const [bulkMenuOpen,setBulkMenuOpen] = useState(false)
+  const [bulkActionInProgress,setBulkActionInProgress] = useState(false)
   const [channelFilter,setChannelFilter] = useState('All')
   const [showOnlyFlagged,setShowOnlyFlagged] = useState(false)
 
@@ -111,15 +138,37 @@ function OrdersList() {
   function showToast(message){setToast(message);setTimeout(()=>setToast(''),3500)}
   function exportCsv(orders = selectedOrders.length ? selectedOrders : filtered) {
     const headings=['Order ID','Channel','Customer','Phone','Product','SKU','Payment Mode','Amount PKR','Weight kg','Date','Status','Courier','City','State','Pincode']
-    const csv=[headings,...orders.map(o=>[o.id,o.channel,o.customer,o.phone,o.product,o.sku,o.paymentMode,o.amount,o.weight,o.date,o.status,o.courier,o.city,o.state,o.pincode])].map(row=>row.map(value=>'"'+String(value ?? '').replaceAll('"','""')+'"').join(',')).join('\n')
+    const csv=toCsv([headings,...orders.map(o=>[o.id,o.channel,o.customer,o.phone,o.product,o.sku,o.paymentMode,o.amount,o.weight,o.date,o.status,o.courier,o.city,o.state,o.pincode])])
     const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));const a=document.createElement('a');a.href=url;a.download='ikai-orders-'+new Date().toISOString().slice(0,10)+'.csv';a.click();URL.revokeObjectURL(url)
     showToast('Exported '+orders.length+' saved order(s) to CSV.')
   }
-  function bulkAction(action) {
+  async function bulkAction(action) {
+    if (bulkActionInProgress) return
     if (!selected.length && !['Export CSV'].includes(action)) { showToast('Select at least one order first.');return }
     if (action === 'Export CSV') { exportCsv();return }
     if (action === 'Print Label' || action === 'Print Manifest') { showToast(action+' print view prepared for '+selected.length+' selected order(s). Use your browser print dialog.');window.print();return }
-    if (action === 'Cancel') { showToast('Demo: cancellation requested for '+selected.length+' selected order(s). Mock records are unchanged.');return }
+    if (action === 'Cancel') {
+      const eligible = selectedOrders.filter(order => order.uuid && !updatingOrderIds.includes(order.uuid) && cancelableOrderStatuses.includes(order.status))
+      if (!eligible.length) { showToast('No selected saved orders can be cancelled. Only New, Processing and Ready to Ship orders are eligible.');return }
+      if (!window.confirm('Cancel '+eligible.length+' saved order(s)? This changes their status in Ikai.One.')) return
+      setBulkActionInProgress(true)
+      try {
+        const results = await Promise.allSettled(eligible.map(order => apiRequest('/api/orders/' + order.uuid + '/status', { method: 'POST', body: { status: 'Cancelled' } })))
+        const succeeded = new Set(eligible.filter((order,index) => results[index].status === 'fulfilled').map(order => order.uuid))
+        if (succeeded.size) setOrders(current => current.map(order => succeeded.has(order.uuid) ? { ...order, status: 'Cancelled' } : order))
+        const failed = results.length - succeeded.size
+        if (!failed) {
+          setSelected([])
+          showToast('Cancelled '+succeeded.size+' saved order(s).')
+        } else {
+          const refreshed = await loadOrders()
+          showToast('Cancelled '+succeeded.size+' order(s); '+failed+' failed. '+(refreshed ? 'Latest saved statuses reloaded.' : 'Saved statuses could not be refreshed; use Refresh and retry.'))
+        }
+      } finally {
+        setBulkActionInProgress(false)
+      }
+      return
+    }
     if (action === 'Ship Now') { navigate('/app/orders/new');return }
     showToast(action+' is a mock action.')
   }
@@ -128,7 +177,7 @@ function OrdersList() {
   function resetFilters(){setDraftFilters(initialFilters);setFilters(initialFilters);setChannelFilter('All');setShowOnlyFlagged(false);setPage(1)}
   function toggleColumn(key){setVisibleColumns(current=>current.includes(key)?current.filter(item=>item!==key):[...current,key])}
   const actionOptions=[['Ship Now',Truck],['Cancel',Ban],['Export CSV',Download],['Print Label',Printer],['Print Manifest',ClipboardList]]
-  const tabs=orderStatuses.map(status=>({label:status,count:status==='All'?activeOrders.length:activeOrders.filter(order=>order.status===status).length}))
+  const tabs=['All', ...savedOrderStatuses].map(status=>({label:status,count:status==='All'?activeOrders.length:activeOrders.filter(order=>order.status===status).length}))
   return <div className="orders-page page-stack">
     <div className="page-heading orders-page-heading"><div><div className="page-eyebrow"><span/> ORDER MANAGEMENT</div><h1>Orders</h1><p>Manage orders from every sales channel in one place.</p><small className={'orders-data-state '+(ordersSource==='database'?'connected':'')}>{ordersSource==='database'?'Connected to saved organization orders':ordersSource==='loading'?'Loading saved orders…':'Saved orders unavailable — '+loadError}</small></div><div className="heading-actions"><button className="secondary-button" onClick={()=>loadOrders(true)} disabled={refreshing}><RotateCcw size={15}/>{refreshing?'Refreshing…':'Refresh'}</button><button className="secondary-button" onClick={()=>exportCsv(filtered)}><Download size={15}/> Export view</button><button className="primary-button" onClick={()=>navigate('/app/orders/new')}><Plus size={17}/> Create order</button></div></div>
     {toast&&<div className="orders-toast"><Check size={16}/>{toast}<button onClick={()=>setToast('')}><X size={15}/></button></div>}
@@ -141,9 +190,9 @@ function OrdersList() {
         <div className="orders-column-wrap"><button className="outline-button" onClick={()=>setColumnsOpen(!columnsOpen)}><Settings2 size={15}/> Columns</button>{columnsOpen&&<div className="orders-column-popover"><div className="orders-popover-heading"><b>Show columns</b><button onClick={()=>setColumnsOpen(false)}><X size={14}/></button></div>{columnDefinitions.map(column=><label key={column.key}><input type="checkbox" checked={visibleColumns.includes(column.key)} onChange={()=>toggleColumn(column.key)}/>{column.label}</label>)}<button className="orders-reset-columns" onClick={()=>setVisibleColumns(columnDefinitions.map(column=>column.key))}>Reset columns</button></div>}</div>
         <button className={'outline-button orders-flag-button'+(showOnlyFlagged?' active':'')} onClick={()=>{setShowOnlyFlagged(!showOnlyFlagged);setPage(1)}}><CircleAlert size={15}/> Exceptions</button>
       </div>
-      {selected.length>0&&<div className="orders-bulkbar"><span><CheckCheck size={16}/><b>{selected.length}</b> selected</span><button onClick={()=>setBulkMenuOpen(!bulkMenuOpen)}>Bulk actions <ChevronDown size={14}/></button>{bulkMenuOpen&&<div className="orders-bulk-menu">{actionOptions.map(([label,Icon])=><button key={label} onClick={()=>{setBulkMenuOpen(false);bulkAction(label)}}><Icon size={15}/>{label}</button>)}</div>}<button className="bulk-clear" onClick={()=>setSelected([])}>Clear selection</button></div>}
-      <div className="orders-table-scroll"><table className="orders-table"><thead><tr><th className="orders-check-cell"><input type="checkbox" checked={allPageSelected} onChange={togglePage} aria-label="Select all orders on this page"/></th>{columnDefinitions.filter(column=>visibleColumns.includes(column.key)).map(column=><th key={column.key}>{column.label}</th>)}<th className="orders-action-head">Actions</th></tr></thead><tbody>{pageRows.map(order=><tr key={order.id}><td className="orders-check-cell"><input type="checkbox" checked={selected.includes(order.id)} onChange={()=>toggleOne(order.id)} aria-label={'Select '+order.id}/></td>{visibleColumns.includes('id')&&<td><Link className="orders-id-link" to={'/app/orders/'+order.id}>{order.id}</Link><small className="orders-subline">#{order.id.slice(-4)}</small></td>}{visibleColumns.includes('channel')&&<td><span className={'orders-channel channel-'+order.channel.toLowerCase().replace(/[^a-z]/g,'')}>{order.channel}</span></td>}{visibleColumns.includes('customer')&&<td><span className="orders-customer"><i>{order.customer.split(' ').map(part=>part[0]).join('').slice(0,2)}</i><span><b>{order.customer}</b><small>{order.phone}</small></span></span></td>}{visibleColumns.includes('product')&&<td><span className="orders-product"><b>{order.product}</b><small>SKU: {order.sku} · Qty {order.quantity}</small></span></td>}{visibleColumns.includes('paymentMode')&&<td><span className={'payment-chip '+(order.paymentMode==='COD'?'cod':'prepaid')}>{order.paymentMode}</span></td>}{visibleColumns.includes('amount')&&<td className="orders-amount">{fmtMoney(order.amount)}</td>}{visibleColumns.includes('weight')&&<td>{order.weight.toFixed(2)} kg</td>}{visibleColumns.includes('date')&&<td><span className="orders-date">{fmtDate(order.date)}</span><small className="orders-subline">{new Date(order.date).toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'})}</small></td>}{visibleColumns.includes('status')&&<td>{order.uuid?<select aria-label={'Update status for '+order.id} value={order.status} onChange={event=>updateOrderStatus(order,event.target.value)} className="orders-status-select">{orderStatuses.filter(status=>status!=='All').map(status=><option key={status} value={status}>{status}</option>)}</select>:<StatusPill status={order.status}/>}</td>}{visibleColumns.includes('courier')&&<td><span className="orders-courier"><Truck size={13}/>{order.courier}</span></td>}<td className="orders-row-action"><button onClick={()=>setMenuId(menuId===order.id?'':order.id)} aria-label={'Actions for '+order.id}><MoreHorizontal size={18}/></button>{menuId===order.id&&<div className="orders-row-menu"><Link to={'/app/orders/'+order.id}><Eye size={14}/>View details</Link><button onClick={()=>{setSelected([order.id]);setMenuId('');showToast('Selected '+order.id+' for bulk actions.')}}><CheckCheck size={14}/>Select order</button><button onClick={()=>{setMenuId('');showToast('Label prepared for '+order.id);window.print()}}><Printer size={14}/>Print label</button><button onClick={()=>{setMenuId('');showToast('Demo: cancellation requested for '+order.id)}}><Ban size={14}/>Cancel order</button></div>}</td></tr>)}</tbody></table>
-        {pageRows.length===0&&<div className="orders-empty"><Package size={28}/><b>No orders found</b><span>Change your search or filters and try again.</span><button className="outline-button" onClick={()=>{setSearch('');resetFilters();setTab('All')}}>Clear all filters</button></div>}
+      {selected.length>0&&<div className="orders-bulkbar"><span><CheckCheck size={16}/><b>{selected.length}</b> selected</span><button onClick={()=>setBulkMenuOpen(!bulkMenuOpen)}>Bulk actions <ChevronDown size={14}/></button>{bulkMenuOpen&&<div className="orders-bulk-menu">{actionOptions.map(([label,Icon])=><button key={label} disabled={bulkActionInProgress} onClick={()=>{setBulkMenuOpen(false);bulkAction(label)}}><Icon size={15}/>{bulkActionInProgress&&label==='Cancel'?'Cancelling…':label}</button>)}</div>}<button className="bulk-clear" disabled={bulkActionInProgress} onClick={()=>setSelected([])}>Clear selection</button></div>}
+      <div className="orders-table-scroll"><table className="orders-table"><thead><tr><th className="orders-check-cell"><input type="checkbox" checked={allPageSelected} onChange={togglePage} aria-label="Select all orders on this page"/></th>{columnDefinitions.filter(column=>visibleColumns.includes(column.key)).map(column=><th key={column.key}>{column.label}</th>)}<th className="orders-action-head">Actions</th></tr></thead><tbody>{pageRows.map(order=><tr key={order.id}><td className="orders-check-cell"><input type="checkbox" checked={selected.includes(order.id)} onChange={()=>toggleOne(order.id)} aria-label={'Select '+order.id}/></td>{visibleColumns.includes('id')&&<td><Link className="orders-id-link" to={'/app/orders/'+order.id}>{order.id}</Link><small className="orders-subline">#{order.id.slice(-4)}</small></td>}{visibleColumns.includes('channel')&&<td><span className={'orders-channel channel-'+order.channel.toLowerCase().replace(/[^a-z]/g,'')}>{order.channel}</span></td>}{visibleColumns.includes('customer')&&<td><span className="orders-customer"><i>{order.customer.split(' ').map(part=>part[0]).join('').slice(0,2)}</i><span><b>{order.customer}</b><small>{order.phone}</small></span></span></td>}{visibleColumns.includes('product')&&<td><span className="orders-product"><b>{order.product}</b><small>SKU: {order.sku} · Qty {order.quantity}</small></span></td>}{visibleColumns.includes('paymentMode')&&<td><span className={'payment-chip '+(order.paymentMode==='COD'?'cod':'prepaid')}>{order.paymentMode}</span></td>}{visibleColumns.includes('amount')&&<td className="orders-amount">{fmtMoney(order.amount)}</td>}{visibleColumns.includes('weight')&&<td>{order.weight.toFixed(2)} kg</td>}{visibleColumns.includes('date')&&<td><span className="orders-date">{fmtDate(order.date)}</span><small className="orders-subline">{new Date(order.date).toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'})}</small></td>}{visibleColumns.includes('status')&&<td>{order.uuid?<select aria-label={'Update status for '+order.id} value={order.status} disabled={updatingOrderIds.includes(order.uuid)} onChange={event=>updateOrderStatus(order,event.target.value)} className="orders-status-select">{(allowedOrderStatusChanges[order.status] || [order.status]).map(status=><option key={status} value={status}>{status}</option>)}</select>:<StatusPill status={order.status}/>}</td>}{visibleColumns.includes('courier')&&<td><span className="orders-courier"><Truck size={13}/>{order.courier}</span></td>}<td className="orders-row-action"><button onClick={()=>setMenuId(menuId===order.id?'':order.id)} aria-label={'Actions for '+order.id}><MoreHorizontal size={18}/></button>{menuId===order.id&&<div className="orders-row-menu"><Link to={'/app/orders/'+order.id}><Eye size={14}/>View details</Link><button onClick={()=>{setSelected([order.id]);setMenuId('');showToast('Selected '+order.id+' for bulk actions.')}}><CheckCheck size={14}/>Select order</button><button onClick={()=>{setMenuId('');showToast('Label prepared for '+order.id);window.print()}}><Printer size={14}/>Print label</button><button disabled={!order.uuid||updatingOrderIds.includes(order.uuid)||!cancelableOrderStatuses.includes(order.status)} onClick={()=>{setMenuId('');if(window.confirm('Cancel saved order '+order.id+'?'))updateOrderStatus(order,'Cancelled')}}><Ban size={14}/>Cancel order</button></div>}</td></tr>)}</tbody></table>
+        {pageRows.length===0&&<div className="orders-empty"><Package size={28}/><b>{ordersSource==='unavailable'?'Saved orders are unavailable':'No orders found'}</b><span>{ordersSource==='unavailable'?'The orders API could not be reached. Refresh to try again; no stale records are shown.':'Change your search or filters and try again.'}</span>{ordersSource!=='unavailable'&&<button className="outline-button" onClick={()=>{setSearch('');resetFilters();setTab('All')}}>Clear all filters</button>}</div>}
       </div>
       <div className="orders-pagination"><span>Showing <b>{filtered.length?((currentPage-1)*pageSize+1):0}–{Math.min(currentPage*pageSize,filtered.length)}</b> of <b>{filtered.length}</b> orders</span><div className="orders-page-size"><label>Rows per page<select value={pageSize} onChange={event=>{setPageSize(Number(event.target.value));setPage(1)}}><option value={10}>10</option><option value={20}>20</option><option value={50}>50</option></select></label></div><div className="orders-page-controls"><button disabled={currentPage===1} onClick={()=>setPage(currentPage-1)} aria-label="Previous page"><ChevronLeft size={16}/></button><span>Page <b>{currentPage}</b> of <b>{totalPages}</b></span><button disabled={currentPage===totalPages} onClick={()=>setPage(currentPage+1)} aria-label="Next page"><ChevronRight size={16}/></button></div></div>
     </section>
@@ -204,25 +253,57 @@ function CreateOrder() {
   </div>
 }
 function CheckCircle2Icon(){return <Check size={16}/>}
+function orderFallbackTimeline(orderId){return [{title:'Order activity unavailable',detail:'This order is not currently loaded from saved records.',date:new Date().toISOString(),complete:false,key:'fallback-'+orderId}]}
 function OrderDetail() {
   const {orderId}=useParams()
   const navigate=useNavigate()
   const [savedOrder,setSavedOrder]=useState(null)
   const [detailLoading,setDetailLoading]=useState(true)
+  const [detailLoadError,setDetailLoadError]=useState('')
   const [shipment,setShipment]=useState(null)
   const [shipmentLoading,setShipmentLoading]=useState(true)
+  const [shipmentLoadError,setShipmentLoadError]=useState('')
   const [shipmentSaving,setShipmentSaving]=useState(false)
   const [shipmentMessage,setShipmentMessage]=useState('')
-  useEffect(()=>{let active=true;apiRequest('/api/orders?limit=100').then(payload=>{if(active){const row=(payload.data||[]).find(item=>item.order_number===orderId);if(row){const mapped=mapApiOrder(row);mapped.unitPrice=mapped.quantity?mapped.amount/mapped.quantity:0;mapped.timeline=[{title:'Order saved',detail:'Order record created in your organization workspace.',date:row.created_at,complete:true}];setSavedOrder(mapped)}}}).catch(()=>{}).finally(()=>{if(active)setDetailLoading(false)});return()=>{active=false}},[orderId])
-  useEffect(()=>{let active=true;setShipmentLoading(true);apiRequest('/api/shipments?limit=100&search='+encodeURIComponent(orderId)).then(payload=>{if(active){const found=(payload.data||[]).find(row=>row.order_number===orderId);setShipment(found||null)}}).catch(()=>{if(active)setShipment(null)}).finally(()=>{if(active)setShipmentLoading(false)});return()=>{active=false}},[orderId])
-  async function createShipmentFromOrder(){if(!savedOrder?.uuid){setShipmentMessage('The saved order identifier is unavailable. Refresh and try again.');return}setShipmentSaving(true);setShipmentMessage('');try{const result=await apiRequest('/api/shipments',{method:'POST',body:{orderId:savedOrder.uuid,courier:savedOrder.courier||'Not booked',origin:'Lahore',destination:[savedOrder.address,savedOrder.city,savedOrder.state].filter(Boolean).join(', '),destinationPostalCode:savedOrder.pincode||''}});setShipment(result.data||null);setShipmentMessage('Internal shipment record created. No courier was booked.')}catch(error){setShipmentMessage(error.message||'Could not create shipment record.');try{const payload=await apiRequest('/api/shipments?limit=100&search='+encodeURIComponent(orderId));setShipment((payload.data||[]).find(row=>row.order_number===orderId)||null)}catch{}}finally{setShipmentSaving(false)}}
-  const order=savedOrder||mockOrders.find(item=>item.id===orderId)
-  if(!order)return <div className="orders-not-found panel"><Package size={28}/><h2>{detailLoading?'Loading order…':'Order not found'}</h2><p>{detailLoading?'Looking up the saved order in your workspace.':'That order could not be found in saved records or the demo dataset.'}</p><button className="primary-button" onClick={()=>navigate('/app/orders')}>Back to orders</button></div>
-  return <div className="page-stack orders-detail-page"><div className="page-heading"><div><button className="orders-back-link" onClick={()=>navigate('/app/orders')}><ArrowLeft size={15}/> Back to orders</button><div className="orders-detail-title"><h1>{order.id}</h1><StatusPill status={order.status}/></div><p>Placed on {fmtDateTime(order.date)} · Channel: {order.channel}</p></div><div className="heading-actions"><button className="secondary-button" onClick={()=>{window.print()}}><Printer size={15}/> Print details</button><button className="primary-button" onClick={()=>navigate('/app/orders/new')}><Plus size={16}/> Create similar order</button></div></div>
-    <div className="orders-detail-layout"><div className="orders-detail-main"><section className="panel orders-detail-card"><div className="orders-detail-card-head"><div><span className="panel-eyebrow">ORDER ACTIVITY</span><h2>Order timeline</h2></div><span className="orders-timeline-count">{order.timeline.filter(item=>item.complete).length} events</span></div><div className="orders-timeline">{order.timeline.map((event,index)=><div className={'orders-timeline-event '+(event.complete?'complete':'pending')} key={event.title}><span className="orders-timeline-marker">{event.complete?<Check size={13}/>:<Clock3 size={13}/>}</span><div><b>{event.title}</b><p>{event.detail}</p><small>{fmtDateTime(event.date)}</small></div>{index===0&&<span className="orders-timeline-first">START</span>}</div>)}</div></section>
+  const [activityEvents,setActivityEvents]=useState([])
+  const [activityLoading,setActivityLoading]=useState(true)
+  const [activityError,setActivityError]=useState('')
+  const [refreshingRecords,setRefreshingRecords]=useState(false)
+  const [refreshKey,setRefreshKey]=useState(0)
+  useEffect(()=>{let active=true;setDetailLoading(true);setDetailLoadError('');apiRequest('/api/orders?limit=100&search='+encodeURIComponent(orderId)).then(payload=>{if(active){const row=(payload.data||[]).find(item=>item.order_number===orderId);if(row){const mapped=mapApiOrder(row);mapped.unitPrice=mapped.quantity?mapped.amount/mapped.quantity:0;mapped.timeline=[{title:'Order saved',detail:'Order record created in your organization workspace.',date:row.created_at,complete:true}];setSavedOrder(mapped)}else setSavedOrder(null)}}).catch(error=>{if(active){setSavedOrder(null);setDetailLoadError(error.message||'Saved order could not be loaded.')}}).finally(()=>{if(active)setDetailLoading(false)});return()=>{active=false}},[orderId,refreshKey])
+  useEffect(()=>{let active=true;setShipmentLoading(true);setShipmentLoadError('');apiRequest('/api/shipments?limit=100&search='+encodeURIComponent(orderId)).then(payload=>{if(active){const found=(payload.data||[]).find(row=>row.order_number===orderId);setShipment(found||null)}}).catch(error=>{if(active){setShipment(null);setShipmentLoadError(error.message||'Saved shipment could not be loaded.')}}).finally(()=>{if(active)setShipmentLoading(false)});return()=>{active=false}},[orderId,refreshKey])
+  useEffect(()=>{let active=true;if(!savedOrder?.uuid){setActivityEvents([]);setActivityLoading(Boolean(detailLoading));return()=>{active=false}}setActivityLoading(true);setActivityError('');apiRequest('/api/orders/'+encodeURIComponent(savedOrder.uuid)+'/activity').then(payload=>{if(active)setActivityEvents(Array.isArray(payload.data)?payload.data:[])}).catch(error=>{if(active){setActivityEvents([]);setActivityError(error.message||'Order activity history could not be loaded.')}}).finally(()=>{if(active)setActivityLoading(false)});return()=>{active=false}},[savedOrder?.uuid,refreshKey,detailLoading])
+  useEffect(()=>{const refresh=()=>{if(document.visibilityState==='visible'){setRefreshingRecords(true);setRefreshKey(key=>key+1)}};window.addEventListener('focus',refresh);document.addEventListener('visibilitychange',refresh);return()=>{window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',refresh)}},[])
+  useEffect(()=>{if(!detailLoading&&!shipmentLoading)setRefreshingRecords(false)},[detailLoading,shipmentLoading])
+  const refreshRecords=()=>{setRefreshingRecords(true);setRefreshKey(key=>key+1)}
+  const activityTimeline = savedOrder
+    ? activityEvents.map((event,index)=>({
+        title:event.title||'Order activity',
+        detail:typeof event.detail==='string' ? event.detail : event.detail?.fromStatus&&event.detail?.status
+          ? 'Status changed from '+event.detail.fromStatus+' to '+event.detail.status+'.'
+          : event.detail?.status&&event.detail?.sourceShipment ? 'Status set to '+event.detail.status+' from shipment '+event.detail.sourceShipment+'.'
+          : event.detail?.status ? 'Saved status: '+event.detail.status+'.'
+          : event.event==='order_created' ? 'Order record created in your organization workspace.'
+          : event.type==='shipment' ? 'Internal shipment history event.'
+          : 'Order activity recorded in your organization workspace.',
+        date:event.date,
+        complete:true,
+        source:event.type==='shipment'?'Shipment':'Order',
+        reference:event.reference||'',
+        location:event.location||'',
+        eventName:event.event||'',
+        key:(event.type||'order')+'-'+event.event+'-'+event.date+'-'+index
+      }))
+    : orderFallbackTimeline(orderId)
+  const shipmentEligible = Boolean(savedOrder?.uuid && ['New','Processing','Ready to Ship'].includes(savedOrder.status))
+  async function createShipmentFromOrder(){if(!savedOrder?.uuid){setShipmentMessage('The saved order identifier is unavailable. Refresh and try again.');return}if(!shipmentEligible){setShipmentMessage('Shipment records can only be created for orders in New, Processing, or Ready to Ship status.');return}setShipmentSaving(true);setShipmentMessage('');try{const result=await apiRequest('/api/shipments',{method:'POST',body:{orderId:savedOrder.uuid,courier:savedOrder.courier||'Not booked',origin:'',destination:[savedOrder.address,savedOrder.city,savedOrder.state].filter(Boolean).join(', '),destinationPostalCode:savedOrder.pincode||''}});setShipment(result.data||null);setShipmentMessage('Internal shipment record created. No courier was booked.')}catch(error){setShipmentMessage(error.message||'Could not create shipment record.');try{const payload=await apiRequest('/api/shipments?limit=100&search='+encodeURIComponent(orderId));setShipment((payload.data||[]).find(row=>row.order_number===orderId)||null)}catch{}}finally{setShipmentSaving(false)}}
+  const order=savedOrder||(!detailLoadError?mockOrders.find(item=>item.id===orderId):null)
+  if(!order)return <div className="orders-not-found panel"><Package size={28}/><h2>{detailLoading?'Loading order…':detailLoadError?'Order service unavailable':'Order not found'}</h2><p>{detailLoading?'Looking up the saved order in your workspace.':detailLoadError?(detailLoadError+' No demo order is shown when saved records cannot be reached.'):'That order could not be found in saved records or the demo dataset.'}</p><button className="secondary-button" onClick={refreshRecords} disabled={refreshingRecords}>{refreshingRecords?'Retrying…':'Retry loading'}</button><button className="primary-button" onClick={()=>navigate('/app/orders')}>Back to orders</button></div>
+  return <div className="page-stack orders-detail-page"><div className="page-heading"><div><button className="orders-back-link" onClick={()=>navigate('/app/orders')}><ArrowLeft size={15}/> Back to orders</button><div className="orders-detail-title"><h1>{order.id}</h1><StatusPill status={order.status}/></div><p>Placed on {fmtDateTime(order.date)} · Channel: {order.channel}</p></div><div className="heading-actions"><button className="secondary-button" onClick={refreshRecords} disabled={refreshingRecords}><RotateCcw size={15}/>{refreshingRecords?'Refreshing…':'Refresh status'}</button><button className="secondary-button" onClick={()=>{window.print()}}><Printer size={15}/> Print details</button><button className="primary-button" onClick={()=>navigate('/app/orders/new')}><Plus size={16}/> Create similar order</button></div></div>
+    <div className="orders-detail-layout"><div className="orders-detail-main"><section className="panel orders-detail-card"><div className="orders-detail-card-head"><div><span className="panel-eyebrow">ORDER ACTIVITY</span><h2>Order timeline</h2></div><span className="orders-timeline-count">{activityLoading?'Loading…':activityError?'Unavailable':activityTimeline.length+' events'}</span></div>{activityLoading&&<p className="billing-muted">Loading saved order and shipment history…</p>}{activityError&&<div className="orders-form-error"><CircleAlert size={15}/><span>{activityError}</span><button type="button" className="secondary-button" onClick={refreshRecords} disabled={refreshingRecords}>{refreshingRecords?'Retrying…':'Retry activity'}</button></div>}<div className="orders-timeline">{activityTimeline.map((event,index)=><div className={'orders-timeline-event '+(event.complete?'complete':'pending')} key={event.key||event.title+'-'+event.date}><span className="orders-timeline-marker">{event.complete?<Check size={13}/>:<Clock3 size={13}/>}</span><div><b>{event.title}</b><p>{event.detail}</p>{event.reference&&<small>Reference: {event.reference}</small>}{event.location&&<small>Location: {event.location}</small>}{event.source&&<small>Source: {event.source}{event.eventName?' · '+event.eventName.replaceAll('_',' '):''}</small>}<small>{fmtDateTime(event.date)}</small></div>{index===0&&<span className="orders-timeline-first">LATEST</span>}</div>)}</div>{savedOrder&&!activityLoading&&!activityError&&activityEvents.length===0&&<div className="billing-muted"><b>No activity recorded yet.</b><p>The saved order exists, but no order-status or shipment-history events were returned.</p></div>}</section>
       <section className="panel orders-detail-card"><div className="orders-detail-card-head"><div><span className="panel-eyebrow">ITEMS</span><h2>Products ordered</h2></div><span className="orders-timeline-count">{order.quantity} item(s)</span></div><div className="orders-detail-product"><span className="orders-detail-product-icon"><Package size={21}/></span><div><b>{order.product}</b><small>SKU: {order.sku} · Quantity: {order.quantity}</small></div><span>{fmtMoney(order.unitPrice)}<small>per unit</small></span><b>{fmtMoney(order.amount)}</b></div><div className="orders-detail-total"><span>Order total</span><b>{fmtMoney(order.amount)}</b></div></section></div>
       <aside className="orders-detail-aside"><section className="panel orders-detail-card"><div className="orders-detail-card-head"><div><span className="panel-eyebrow">RECIPIENT</span><h2>Customer information</h2></div><UserRound size={18}/></div><div className="orders-detail-customer"><span>{order.customer.split(' ').map(part=>part[0]).join('').slice(0,2)}</span><div><b>{order.customer}</b><small>{order.phone}</small><small>{order.email}</small></div></div><div className="orders-detail-info-row"><span>Delivery address</span><b>{order.address}, {order.city}</b></div><div className="orders-detail-info-row"><span>State / region</span><b>{order.state}</b></div><div className="orders-detail-info-row"><span>Pincode</span><b>{order.pincode}</b></div><div className="orders-detail-info-row"><span>Payment mode</span><b><span className={'payment-chip '+(order.paymentMode==='COD'?'cod':'prepaid')}>{order.paymentMode}</span></b></div></section>
-      <section className="panel orders-detail-card"><div className="orders-detail-card-head"><div><span className="panel-eyebrow">DELIVERY</span><h2>Shipment information</h2></div><Truck size={18}/></div>{shipmentLoading?<p className="billing-muted">Checking saved shipment records…</p>:shipment?<><div className="orders-detail-info-row"><span>Shipment reference</span><b>{shipment.shipment_number}</b></div><div className="orders-detail-info-row"><span>Shipment status</span><b>{shipment.status}</b></div><div className="orders-detail-info-row"><span>Courier partner</span><b>{shipment.courier||'Not booked'}</b></div><div className="orders-detail-info-row"><span>Tracking ID</span><b>{shipment.tracking_number||'Not assigned'}</b></div><Link className="outline-button orders-track-button" to={'/app/shipments/'+(shipment.tracking_number||shipment.shipment_number)}>Open shipment details <ArrowRight size={14}/></Link></>:<><div className="orders-detail-info-row"><span>Courier preference</span><b>{order.courier||'Not booked'}</b></div><div className="orders-detail-info-row"><span>Tracking ID</span><b>{order.trackingId||'Not assigned'}</b></div><div className="orders-detail-info-row"><span>Package weight</span><b>{order.weight.toFixed(2)} kg</b></div><div className="orders-detail-info-row"><span>COD / order value</span><b>{fmtMoney(order.amount)}</b></div><button className="primary-button orders-track-button" disabled={shipmentSaving||!savedOrder?.uuid} onClick={createShipmentFromOrder}><Package size={14}/>{shipmentSaving?'Creating…':'Create shipment record'}</button></>}{shipmentMessage&&<p className="orders-form-error">{shipmentMessage}</p>}<p className="billing-muted">Internal record only. Courier booking and live tracking require a connected courier integration.</p></section></aside></div>
+      <section className="panel orders-detail-card"><div className="orders-detail-card-head"><div><span className="panel-eyebrow">DELIVERY</span><h2>Shipment information</h2></div><Truck size={18}/></div>{shipmentLoading?<p className="billing-muted">Checking saved shipment records…</p>:shipmentLoadError?<div className="orders-form-error"><span>{shipmentLoadError} Shipment availability is unknown until the service responds.</span><button type="button" className="secondary-button" onClick={refreshRecords} disabled={refreshingRecords}>{refreshingRecords?'Retrying…':'Retry shipment lookup'}</button></div>:shipment?<><div className="orders-detail-info-row"><span>Shipment reference</span><b>{shipment.shipment_number}</b></div><div className="orders-detail-info-row"><span>Shipment status</span><b>{shipment.status}</b></div><div className="orders-detail-info-row"><span>Courier partner</span><b>{shipment.courier||'Not booked'}</b></div><div className="orders-detail-info-row"><span>Tracking ID</span><b>{shipment.tracking_number||'Not assigned'}</b></div><Link className="outline-button orders-track-button" to={'/app/shipments/'+(shipment.tracking_number||shipment.shipment_number)}>Open shipment details <ArrowRight size={14}/></Link></>:<><div className="orders-detail-info-row"><span>Courier preference</span><b>{order.courier||'Not booked'}</b></div><div className="orders-detail-info-row"><span>Tracking ID</span><b>{order.trackingId||'Not assigned'}</b></div><div className="orders-detail-info-row"><span>Package weight</span><b>{order.weight.toFixed(2)} kg</b></div><div className="orders-detail-info-row"><span>COD / order value</span><b>{fmtMoney(order.amount)}</b></div><button className="primary-button orders-track-button" disabled={shipmentSaving||!shipmentEligible} title={!shipmentEligible?'Only New, Processing, or Ready to Ship orders can have a shipment record created.':undefined} onClick={createShipmentFromOrder}><Package size={14}/>{shipmentSaving?'Creating…':'Create shipment record'}</button>{savedOrder&&!shipmentEligible&&<p className="billing-muted">Shipment creation is available for New, Processing, or Ready to Ship orders only.</p>}</>}{shipmentMessage&&<p className="orders-form-error">{shipmentMessage}</p>}<p className="billing-muted">Internal record only. Courier booking and live tracking require a connected courier integration.</p></section></aside></div>
   </div>
 }
 export default function OrdersModule(){return <Routes><Route index element={<OrdersList/>}/><Route path="new" element={<CreateOrder/>}/><Route path=":orderId" element={<OrderDetail/>}/><Route path="*" element={<Navigate to="/app/orders" replace/>}/></Routes>}

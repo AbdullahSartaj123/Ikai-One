@@ -1124,20 +1124,150 @@ export default {
             return json(request, { data: rows[0], message: "Order saved. Courier booking has not been performed." }, 201);
           }
 
+          const activityMatch = url.pathname.match(/^\/api\/orders\/([0-9a-f-]{36})\/activity$/i);
+          if (activityMatch && request.method === "GET") {
+            const orderRows = await sql`
+              SELECT id, order_number, created_at, status FROM ikai.orders
+              WHERE id = ${activityMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+              LIMIT 1
+            `;
+            if (!orderRows[0]) return json(request, { error: "Order not found." }, 404);
+            const order = orderRows[0];
+            const auditRows = await sql`
+              SELECT event_type, entity_type, entity_reference, details, created_at
+              FROM ikai.organization_audit_events
+              WHERE organization_id = ${user.organizationId}::uuid
+                AND entity_type = 'order' AND entity_reference = ${order.order_number}
+              ORDER BY created_at DESC LIMIT 100
+            `;
+            const shipmentRows = await sql`
+              SELECT e.status, e.description, e.location, e.source, e.created_at, s.shipment_number
+              FROM ikai.shipment_events e
+              JOIN ikai.shipment_records s ON s.id = e.shipment_id AND s.organization_id = e.organization_id
+              WHERE s.order_id = ${order.id}::uuid AND s.organization_id = ${user.organizationId}::uuid
+              ORDER BY e.created_at DESC LIMIT 100
+            `;
+            const activity = [
+              ...auditRows.map(event => ({
+                type: "order", event: event.event_type, title: event.event_type === "order_created" ? "Order created" :
+                  event.event_type === "order_status_changed" ? "Order status changed" :
+                  event.event_type === "order_status_synced_from_shipment" ? "Order status updated from shipment" : "Order activity",
+                detail: event.details || {}, reference: event.entity_reference, date: event.created_at
+              })),
+              ...shipmentRows.map(event => ({
+                type: "shipment", event: "shipment_status_changed", title: "Shipment: " + event.status,
+                detail: event.description || "Shipment status recorded internally.",
+                location: event.location || "", source: event.source || "internal",
+                reference: event.shipment_number, date: event.created_at
+              }))
+            ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 100);
+            return json(request, { data: activity, count: activity.length, orderStatus: order.status });
+          }
+
           const statusMatch = url.pathname.match(/^\/api\/orders\/([0-9a-f-]{36})\/status$/i);
           if (statusMatch && request.method === "POST") {
             const body = await readJson(request);
             const status = String(body.status || "");
             const allowedStatuses = ["New", "Ready to Ship", "Processing", "Shipped", "Delivered", "Cancelled", "NDR raised", "RTO"];
             if (!allowedStatuses.includes(status)) return json(request, { error: "Invalid order status." }, 400);
+            const currentRows = await sql`
+              SELECT id, order_number, status, updated_at FROM ikai.orders
+              WHERE id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+              LIMIT 1
+            `;
+            if (!currentRows[0]) return json(request, { error: "Order not found." }, 404);
+            const currentStatus = currentRows[0].status;
+            if (status === currentStatus) {
+              return json(request, {
+                data: currentRows[0],
+                message: "Order status is already current; no duplicate audit event was recorded."
+              });
+            }
+            if (status !== currentStatus) {
+              const linkedShipments = await sql`
+                SELECT status FROM ikai.shipment_records
+                WHERE order_id = ${statusMatch[1]}::uuid
+                  AND organization_id = ${user.organizationId}::uuid
+                LIMIT 1
+              `;
+              const linkedShipmentStatus = linkedShipments[0]?.status;
+              if (linkedShipmentStatus) {
+                const message = status === "Cancelled"
+                  ? `This order has a linked shipment in "${linkedShipmentStatus}" status. Cancel it from the shipment workflow so both records stay consistent; direct order cancellation is blocked.`
+                  : `This order has a linked shipment in "${linkedShipmentStatus}" status. Update the shipment status to advance its linked order, so both records stay consistent.`;
+                return json(request, { error: message }, 409);
+              }
+            }
+            const allowedNextStatuses = {
+              "New": ["Processing", "Ready to Ship", "Cancelled"],
+              "Processing": ["Ready to Ship", "Cancelled", "NDR raised"],
+              "Ready to Ship": ["Shipped", "Cancelled", "NDR raised"],
+              "Shipped": ["Delivered", "NDR raised", "RTO"],
+              "NDR raised": ["Ready to Ship", "Shipped", "Delivered", "RTO"],
+              "Delivered": [],
+              "RTO": [],
+              "Cancelled": []
+            };
+            if (status !== currentStatus && !(allowedNextStatuses[currentStatus] || []).includes(status)) {
+              return json(request, { error: `Order status cannot move from "${currentStatus}" to "${status}". Refresh the order and choose a valid next step.` }, 409);
+            }
+            if (status === "Cancelled") {
+              // Cancellation and shipment creation both lock the order row. The
+              // second transaction statement gets a fresh READ COMMITTED snapshot
+              // after the lock, so it can see a shipment committed by a competing
+              // shipment-creation request before deciding whether cancellation is safe.
+              const [lockedRows, cancelledRows] = await sql.transaction([
+                sql`SELECT id FROM ikai.orders
+                  WHERE id = ${statusMatch[1]}::uuid
+                    AND organization_id = ${user.organizationId}::uuid
+                  FOR UPDATE`,
+                sql`
+                  WITH updated AS (
+                    UPDATE ikai.orders AS o
+                    SET status = 'Cancelled', updated_by = ${user.id}::uuid, updated_at = now()
+                    WHERE o.id = ${statusMatch[1]}::uuid
+                      AND o.organization_id = ${user.organizationId}::uuid
+                      AND o.status = ${currentStatus}
+                      AND NOT EXISTS (
+                        SELECT 1 FROM ikai.shipment_records AS sr
+                        WHERE sr.order_id = o.id
+                          AND sr.organization_id = o.organization_id
+                      )
+                    RETURNING o.id, o.order_number, o.status, o.updated_at
+                  ), audit AS (
+                    INSERT INTO ikai.organization_audit_events
+                      (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
+                    SELECT ${user.organizationId}::uuid, ${user.id}::uuid, 'order_status_changed', 'order',
+                      updated.order_number, jsonb_build_object('fromStatus', ${currentStatus}, 'status', updated.status)
+                    FROM updated
+                    RETURNING id
+                  )
+                  SELECT updated.* FROM updated
+                `
+              ]);
+              const rows = cancelledRows || [];
+              if (rows[0]) return json(request, { data: rows[0] });
+              if (!lockedRows?.length) return json(request, { error: "Order not found." }, 404);
+              const [latestOrder, linkedShipment] = await Promise.all([
+                sql`SELECT status FROM ikai.orders WHERE id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid LIMIT 1`,
+                sql`SELECT status FROM ikai.shipment_records WHERE order_id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid LIMIT 1`
+              ]);
+              if (linkedShipment[0]) {
+                return json(request, { error: `This order has a linked shipment in "${linkedShipment[0].status}" status. Cancel it from the shipment workflow so both records stay consistent; direct order cancellation is blocked.` }, 409);
+              }
+              if (latestOrder[0]?.status !== currentStatus) return json(request, { error: "Order status changed concurrently. Refresh and try again." }, 409);
+              return json(request, { error: "Order cancellation could not be saved. Refresh and try again." }, 409);
+            }
             const rows = await sql`
               UPDATE ikai.orders SET status = ${status}, updated_by = ${user.id}::uuid, updated_at = now()
-              WHERE id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+              WHERE id = ${statusMatch[1]}::uuid
+                AND organization_id = ${user.organizationId}::uuid
+                AND status = ${currentStatus}
               RETURNING id, order_number, status, updated_at
             `;
-            if (!rows[0]) return json(request, { error: "Order not found." }, 404);
+            if (!rows[0]) return json(request, { error: "Order status changed concurrently. Refresh and try again." }, 409);
             await sql`INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
-              VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'order_status_changed', 'order', ${rows[0].order_number}, jsonb_build_object('status', ${status}))`;
+              VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'order_status_changed', 'order', ${rows[0].order_number}, jsonb_build_object('fromStatus', ${currentStatus}, 'status', ${status}))`;
             return json(request, { data: rows[0] });
           }
           return json(request, { error: "Method or order route not supported." }, 405);
@@ -1171,6 +1301,15 @@ export default {
             if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(orderId)) {
               return json(request, { error: "Choose a valid saved order before creating a shipment." }, 400);
             }
+            const chosenOrder = await sql`
+              SELECT id, order_number, status FROM ikai.orders
+              WHERE id = ${orderId}::uuid AND organization_id = ${user.organizationId}::uuid
+              LIMIT 1
+            `;
+            if (!chosenOrder[0]) return json(request, { error: "Order not found in this organization." }, 404);
+            if (![ "New", "Processing", "Ready to Ship" ].includes(chosenOrder[0].status)) {
+              return json(request, { error: `A shipment record cannot be created for an order in "${chosenOrder[0].status}" status. Only New, Processing, or Ready to Ship orders are eligible.` }, 409);
+            }
             const existingShipment = await sql`
               SELECT shipment_number FROM ikai.shipment_records
               WHERE order_id = ${orderId}::uuid AND organization_id = ${user.organizationId}::uuid
@@ -1181,7 +1320,11 @@ export default {
             }
             const rows = await sql`
               WITH chosen_order AS (
-                SELECT * FROM ikai.orders WHERE id = ${orderId}::uuid AND organization_id = ${user.organizationId}::uuid
+                SELECT * FROM ikai.orders
+                WHERE id = ${orderId}::uuid
+                  AND organization_id = ${user.organizationId}::uuid
+                  AND status IN ('New', 'Processing', 'Ready to Ship')
+                FOR UPDATE
               ), created AS (
                 INSERT INTO ikai.shipment_records
                   (organization_id, order_id, shipment_number, courier, status, origin, destination, destination_postal_code, weight, amount, payment_mode, created_by)
@@ -1207,10 +1350,13 @@ export default {
             if (!rows[0]) {
               const [existing, order] = await Promise.all([
                 sql`SELECT shipment_number FROM ikai.shipment_records WHERE order_id = ${orderId}::uuid AND organization_id = ${user.organizationId}::uuid LIMIT 1`,
-                sql`SELECT id FROM ikai.orders WHERE id = ${orderId}::uuid AND organization_id = ${user.organizationId}::uuid LIMIT 1`
+                sql`SELECT id, status FROM ikai.orders WHERE id = ${orderId}::uuid AND organization_id = ${user.organizationId}::uuid LIMIT 1`
               ]);
               if (existing[0]) return json(request, { error: "A shipment record already exists for this order.", shipmentNumber: existing[0].shipment_number }, 409);
               if (!order[0]) return json(request, { error: "Order not found in this organization." }, 404);
+              if (![ "New", "Processing", "Ready to Ship" ].includes(order[0].status)) {
+                return json(request, { error: `A shipment record cannot be created for an order in "${order[0].status}" status. Only New, Processing, or Ready to Ship orders are eligible.` }, 409);
+              }
               return json(request, { error: "Shipment could not be created. Please retry." }, 409);
             }
             return json(request, { data: rows[0], message: "Shipment record saved. Courier booking has not been performed." }, 201);
@@ -1226,38 +1372,89 @@ export default {
           if (statusMatch && request.method === "POST") {
             const body = await readJson(request);
             const status = String(body.status || "").trim();
-            const allowed = ["Label pending", "Ready to ship", "Booked", "Picked up", "In transit", "Out for delivery", "Delivered", "Exception", "Returned"];
+            const allowed = ["Label pending", "Ready to ship", "Booked", "Picked up", "In transit", "Out for delivery", "Delivered", "Exception", "Returned", "Cancelled"];
             if (!allowed.includes(status)) return json(request, { error: "Invalid internal shipment status." }, 400);
             const description = String(body.description || "Internal status updated. This does not contact a courier.").trim().slice(0,500);
             const location = String(body.location || "").trim().slice(0,200);
             const currentRows = await sql`
-              SELECT id, status FROM ikai.shipment_records
-              WHERE id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+              SELECT s.id, s.status, o.status AS order_status
+              FROM ikai.shipment_records s
+              LEFT JOIN ikai.orders o
+                ON o.id = s.order_id AND o.organization_id = s.organization_id
+              WHERE s.id = ${statusMatch[1]}::uuid AND s.organization_id = ${user.organizationId}::uuid
               LIMIT 1
             `;
             if (!currentRows[0]) return json(request, { error: "Shipment not found." }, 404);
             const currentStatus = currentRows[0].status;
+            if (status === currentStatus) {
+              return json(request, { data: { id: currentRows[0].id, status: currentStatus }, message: "Shipment status is already current; no duplicate event was recorded." });
+            }
+            const synchronizedOrderStatus = {
+              "Ready to ship": "Ready to Ship",
+              "Booked": "Shipped",
+              "Picked up": "Shipped",
+              "In transit": "Shipped",
+              "Out for delivery": "Shipped",
+              "Delivered": "Delivered",
+              "Exception": "NDR raised",
+              "Returned": "RTO",
+              "Cancelled": "Cancelled"
+            }[status];
+            if (synchronizedOrderStatus && ["Delivered", "RTO", "Cancelled"].includes(currentRows[0].order_status) && currentRows[0].order_status !== synchronizedOrderStatus) {
+              return json(request, { error: `The linked order is already ${currentRows[0].order_status} and cannot be changed by a shipment status update.` }, 409);
+            }
+            const allowedOrderNextStatuses = {
+              "New": ["Processing", "Ready to Ship", "Cancelled"],
+              "Processing": ["Ready to Ship", "Cancelled", "NDR raised"],
+              "Ready to Ship": ["Shipped", "Cancelled", "NDR raised"],
+              "Shipped": ["Delivered", "NDR raised", "RTO"],
+              "NDR raised": ["Ready to Ship", "Shipped", "Delivered", "RTO"],
+              "Delivered": [],
+              "RTO": [],
+              "Cancelled": []
+            };
+            const linkedOrderStatus = currentRows[0].order_status;
+            if (synchronizedOrderStatus && linkedOrderStatus && synchronizedOrderStatus !== linkedOrderStatus &&
+                !(allowedOrderNextStatuses[linkedOrderStatus] || []).includes(synchronizedOrderStatus)) {
+              return json(request, { error: `Shipment status would move the linked order from "${linkedOrderStatus}" to "${synchronizedOrderStatus}", which is not an allowed order transition.` }, 409);
+            }
             const transitions = {
-              "Label pending": ["Ready to ship", "Booked", "Exception"],
-              "Ready to ship": ["Booked", "Picked up", "Exception"],
+              "Label pending": ["Ready to ship", "Booked", "Exception", "Cancelled"],
+              "Ready to ship": ["Booked", "Picked up", "Exception", "Cancelled"],
               "Booked": ["Picked up", "In transit", "Exception"],
               "Picked up": ["In transit", "Out for delivery", "Exception", "Returned"],
               "In transit": ["Out for delivery", "Delivered", "Exception", "Returned"],
               "Out for delivery": ["Delivered", "Exception", "Returned"],
               "Exception": ["Ready to ship", "Booked", "Picked up", "In transit", "Out for delivery", "Returned"],
               "Delivered": [],
-              "Returned": []
+              "Returned": [],
+              "Cancelled": []
             };
             if (status !== currentStatus && !(transitions[currentStatus] || []).includes(status)) {
               return json(request, { error: `Shipment status cannot move from "${currentStatus}" to "${status}". Refresh the shipment and choose a valid next step.` }, 409);
             }
             const rows = await sql`
-              WITH changed AS (
-                UPDATE ikai.shipment_records SET status = ${status}, updated_at = now()
-                WHERE id = ${statusMatch[1]}::uuid
-                  AND organization_id = ${user.organizationId}::uuid
-                  AND status = ${currentStatus}
-                RETURNING *
+              WITH locked_order AS (
+                SELECT o.id, o.status
+                FROM ikai.orders o
+                JOIN ikai.shipment_records existing_shipment
+                  ON existing_shipment.order_id = o.id
+                  AND existing_shipment.organization_id = o.organization_id
+                WHERE existing_shipment.id = ${statusMatch[1]}::uuid
+                  AND existing_shipment.organization_id = ${user.organizationId}::uuid
+                  AND o.status = ${linkedOrderStatus}
+                FOR UPDATE OF o
+              ), changed AS (
+                UPDATE ikai.shipment_records AS sr SET status = ${status}, updated_at = now()
+                WHERE sr.id = ${statusMatch[1]}::uuid
+                  AND sr.organization_id = ${user.organizationId}::uuid
+                  AND sr.status = ${currentStatus}
+                  AND EXISTS (
+                    SELECT 1 FROM locked_order
+                    WHERE locked_order.id = sr.order_id
+                      AND locked_order.status = ${linkedOrderStatus}
+                  )
+                RETURNING sr.*
               ), event AS (
                 INSERT INTO ikai.shipment_events (organization_id, shipment_id, status, description, location, source, created_by)
                 SELECT organization_id, id, ${status}, ${description}, ${location}, 'internal', ${user.id}::uuid FROM changed
@@ -1270,19 +1467,22 @@ export default {
                     WHEN ${status} = 'Delivered' THEN 'Delivered'
                     WHEN ${status} = 'Exception' THEN 'NDR raised'
                     WHEN ${status} = 'Returned' THEN 'RTO'
+                    WHEN ${status} = 'Cancelled' THEN 'Cancelled'
                   END,
                   updated_by = ${user.id}::uuid,
                   updated_at = now()
                 FROM changed
                 WHERE o.id = changed.order_id
                   AND o.organization_id = changed.organization_id
-                  AND ${status} IN ('Ready to ship', 'Booked', 'Picked up', 'In transit', 'Out for delivery', 'Delivered', 'Exception', 'Returned')
+                  AND o.status = ${linkedOrderStatus}
+                  AND ${status} IN ('Ready to ship', 'Booked', 'Picked up', 'In transit', 'Out for delivery', 'Delivered', 'Exception', 'Returned', 'Cancelled')
                   AND o.status IS DISTINCT FROM CASE
                     WHEN ${status} = 'Ready to ship' THEN 'Ready to Ship'
                     WHEN ${status} IN ('Booked', 'Picked up', 'In transit', 'Out for delivery') THEN 'Shipped'
                     WHEN ${status} = 'Delivered' THEN 'Delivered'
                     WHEN ${status} = 'Exception' THEN 'NDR raised'
                     WHEN ${status} = 'Returned' THEN 'RTO'
+                    WHEN ${status} = 'Cancelled' THEN 'Cancelled'
                   END
                 RETURNING o.id, o.organization_id, o.order_number, o.status
               ), order_audit AS (
@@ -1297,7 +1497,7 @@ export default {
             `;
             if (!rows[0]) return json(request, { error: "Shipment changed concurrently. Refresh and try again." }, 409);
             await sql`INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
-              VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'shipment_status_changed', 'shipment', ${rows[0].shipment_number}, jsonb_build_object('status', ${status}, 'courierBookingConfirmed', false))`;
+              VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'shipment_status_changed', 'shipment', ${rows[0].shipment_number}, jsonb_build_object('fromStatus', ${currentStatus}, 'status', ${status}, 'courierBookingConfirmed', false))`;
             return json(request, { data: rows[0], message: "Internal status saved. No courier was contacted." });
           }
           return json(request, { error: "Method or shipment route not supported." }, 405);
