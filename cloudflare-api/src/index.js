@@ -1248,6 +1248,15 @@ export default {
             if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(orderId)) {
               return json(request, { error: "Choose a valid saved order before creating a shipment." }, 400);
             }
+            const chosenOrder = await sql`
+              SELECT id, order_number, status FROM ikai.orders
+              WHERE id = ${orderId}::uuid AND organization_id = ${user.organizationId}::uuid
+              LIMIT 1
+            `;
+            if (!chosenOrder[0]) return json(request, { error: "Order not found in this organization." }, 404);
+            if (![ "New", "Processing", "Ready to Ship" ].includes(chosenOrder[0].status)) {
+              return json(request, { error: `A shipment record cannot be created for an order in "${chosenOrder[0].status}" status. Only New, Processing, or Ready to Ship orders are eligible.` }, 409);
+            }
             const existingShipment = await sql`
               SELECT shipment_number FROM ikai.shipment_records
               WHERE order_id = ${orderId}::uuid AND organization_id = ${user.organizationId}::uuid
