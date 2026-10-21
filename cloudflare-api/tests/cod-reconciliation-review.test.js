@@ -13,12 +13,17 @@ test("COD reconciliation review is organization-scoped and cannot be submitted t
   assert.match(worker, /'cod_reconciliation_reviewed', 'cod_reconciliation'/);
 });
 
-test("COD reconciliation review records audit only after a successful conditional update", () => {
+test("COD reconciliation review and audit event are written atomically", () => {
   const reviewStart = worker.indexOf('const reviewMatch = url.pathname.match');
   const reviewEnd = worker.indexOf('return json(request, { error: "Method or reconciliation route not supported." }, 405);', reviewStart);
   assert.ok(reviewStart >= 0 && reviewEnd > reviewStart, "review route must exist");
   const reviewRoute = worker.slice(reviewStart, reviewEnd);
-  assert.ok(reviewRoute.indexOf("if (!rows[0]) return json(request, { error: \"Reconciliation changed concurrently.") < reviewRoute.indexOf("cod_reconciliation_reviewed"));
+  const updated = reviewRoute.indexOf("WITH updated AS (");
+  const audit = reviewRoute.indexOf("INSERT INTO ikai.organization_audit_events", updated);
+  const result = reviewRoute.indexOf("SELECT id, order_reference, status, follow_up_note, reviewed_at, updated_at FROM updated", updated);
+  assert.ok(updated >= 0 && audit > updated && result > audit, "audit insert must share the status update statement");
+  assert.equal(reviewRoute.indexOf("await sql`\\n              INSERT INTO ikai.organization_audit_events"), -1, "review audit must not be written in a separate query");
+  assert.ok(reviewRoute.indexOf("if (!rows[0])") > result, "concurrency conflict must be handled before success response");
 });
 
 
