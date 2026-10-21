@@ -327,6 +327,6 @@ test("order activity distinguishes an empty history from an unavailable activity
   assert.ok(detail.includes("Retry activity"));
   assert.ok(detail.includes("No activity recorded yet."));
   assert.ok(detail.includes("no order-status or shipment-history events were returned."));
-  assert.ok(detail.includes("savedOrder ?\n    ? activityEvents.map") === false, "timeline mapper should not fabricate events when saved history is empty");
+  assert.ok(!detail.includes("? (activityEvents.length ? activityEvents.map"), "timeline mapper should not fabricate events when saved history is empty");
   assert.ok(detail.includes(": orderFallbackTimeline(orderId)"), "demo orders retain their demo timeline");
 });
