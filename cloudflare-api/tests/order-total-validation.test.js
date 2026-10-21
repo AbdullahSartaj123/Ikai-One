@@ -24,3 +24,22 @@ test("order line prices and line totals stay within the PostgreSQL numeric(14,2)
   assert.match(worker, /Number\\(item\\.quantity\\) \\* Number\\(item\\.price\\) > 999999999999\\.99/);
   assert.match(worker, /total > 999999999999\\.99/);
 });
+
+test("order prices reject fractional cents instead of relying on PostgreSQL rounding", () => {
+  assert.match(worker, /function hasAtMostTwoDecimalPlaces\(value\) \{[\s\S]*?return \/\^\\d\+\(\?:\\\.\\d\{1,2\}\)\?\$\//);
+  assert.match(worker, /!hasAtMostTwoDecimalPlaces\(item\.price\)/);
+  const validation = worker.indexOf("!hasAtMostTwoDecimalPlaces(item.price)");
+  const insert = worker.indexOf("INSERT INTO ikai.orders", validation);
+  assert.ok(validation >= 0, "fractional-cent validation must exist");
+  assert.ok(insert > validation, "reject fractional cents before database writes");
+});
+
+test("the decimal-place rule accepts whole amounts and one or two decimal digits", () => {
+  const hasAtMostTwoDecimalPlaces = value => /^\d+(?:\.\d{1,2})?$/.test(String(value ?? "").trim());
+  for (const value of [0, 1, 1.2, 1.25, "1.20", "999999999999.99"]) {
+    assert.equal(hasAtMostTwoDecimalPlaces(value), true, String(value));
+  }
+  for (const value of [1.005, "1.005", "0.001", "1.234"]) {
+    assert.equal(hasAtMostTwoDecimalPlaces(value), false, String(value));
+  }
+});
