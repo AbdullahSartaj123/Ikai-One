@@ -437,6 +437,27 @@ test("repeating the current order status does not create duplicate audit events"
   assert.ok(noOp >= 0 && auditInsert > noOp, "same-status no-op must return before audit insertion");
 });
 
+test("order cancellation and shipment creation serialize on the order row", async () => {
+  const api = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  const orderStart = api.indexOf('const statusMatch = url.pathname.match(/^\\/api\\/orders');
+  const orderEnd = api.indexOf('return json(request, { error: "Method or order route not supported." }', orderStart);
+  const orderRoute = api.slice(orderStart, orderEnd);
+  const cancellationStart = orderRoute.indexOf('if (status === "Cancelled")');
+  const cancellationEnd = orderRoute.indexOf('const rows = await sql', cancellationStart);
+  const cancellation = orderRoute.slice(cancellationStart, cancellationEnd);
+  assert.ok(cancellation.includes("await sql.transaction(["));
+  assert.ok(cancellation.includes("SELECT id FROM ikai.orders"));
+  assert.ok(cancellation.includes("FOR UPDATE"));
+  assert.ok(cancellation.includes("AND NOT EXISTS ("));
+  assert.ok(cancellation.includes("FROM ikai.shipment_records AS sr"));
+  assert.ok(cancellation.includes("FROM updated"));
+  assert.ok(cancellation.includes("cancelledRows || []"));
+  const shipmentStart = api.indexOf('if (url.pathname === "/api/shipments" && request.method === "POST")');
+  const shipmentEnd = api.indexOf('const eventMatch = url.pathname.match(/^\\/api\\/shipments', shipmentStart);
+  const shipmentRoute = api.slice(shipmentStart, shipmentEnd);
+  assert.match(shipmentRoute, /status IN \('New', 'Processing', 'Ready to Ship'\)\s*FOR UPDATE/);
+});
+
 test("shipment creation locks and revalidates order eligibility in the insert statement", async () => {
   const api = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
   const routeStart = api.indexOf('if (url.pathname === "/api/shipments" && request.method === "POST")');
