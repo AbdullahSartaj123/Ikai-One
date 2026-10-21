@@ -353,3 +353,15 @@ test("order detail does not offer shipment creation when shipment lookup is unav
   const panel = detail.slice(panelStart, panelEnd);
   assert.ok(panel.indexOf("shipmentLoadError?") < panel.indexOf("Create shipment record"));
 });
+
+test("order activity timeline exposes shipment reference, location, and source metadata", async () => {
+  const orders = await readFile(new URL("../../src/pages/Orders.jsx", import.meta.url), "utf8");
+  const start = orders.indexOf("function OrderDetail()");
+  const detail = orders.slice(start);
+  assert.ok(detail.includes("reference:event.reference||''"));
+  assert.ok(detail.includes("location:event.location||''"));
+  assert.ok(detail.includes("source:event.type==='shipment'?'Shipment':'Order'"));
+  assert.ok(detail.includes("Reference: {event.reference}"));
+  assert.ok(detail.includes("Location: {event.location}"));
+  assert.ok(detail.includes("event.eventName.replaceAll('_',' ')"));
+});
