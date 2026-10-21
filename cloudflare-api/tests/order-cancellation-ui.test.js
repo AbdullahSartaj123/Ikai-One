@@ -184,3 +184,17 @@ test("bulk order cancellation prevents overlapping requests and keeps selection 
   assert.ok(source.includes("disabled={bulkActionInProgress} onClick={()=>{setBulkMenuOpen(false);bulkAction(label)}}"));
   assert.ok(source.includes('disabled={bulkActionInProgress} onClick={()=>setSelected([])}>Clear selection</button>'));
 });
+
+test("partial bulk cancellation failures reload saved statuses and report refresh outcome", () => {
+  const loadStart = source.indexOf("async function loadOrders(showLoading = false)");
+  const loadEnd = source.indexOf("\\n  useEffect(() => {", loadStart);
+  const loader = source.slice(loadStart, loadEnd);
+  assert.ok(loader.includes("return true"));
+  assert.ok(loader.includes("return false"));
+  const start = source.indexOf("async function bulkAction(action)");
+  const end = source.indexOf("\\n  function openFilters()", start);
+  const handler = source.slice(start, end);
+  assert.ok(handler.includes("const refreshed = await loadOrders()"));
+  assert.ok(handler.includes("Latest saved statuses reloaded."));
+  assert.ok(handler.includes("Saved statuses could not be refreshed; use Refresh and retry."));
+});
