@@ -202,8 +202,8 @@ test("partial bulk cancellation failures reload saved statuses and report refres
 });
 
 test("bulk cancellation skips orders with a status update already in progress", () => {
-  assert.match(source, /selectedOrders\.filter\(order => order\.uuid && !updatingOrderIds\.includes\(order\.uuid\) && !\['Delivered','RTO','Cancelled'\]\.includes\(order\.status\)\)/);
-  assert.match(source, /disabled=\{!order\.uuid\|\|updatingOrderIds\.includes\(order\.uuid\)\|\|\['Delivered','RTO','Cancelled'\]\.includes\(order\.status\)\}/);
+  assert.match(source, /selectedOrders\.filter\(order => order\.uuid && !updatingOrderIds\.includes\(order\.uuid\) && cancelableOrderStatuses\.includes\(order\.status\)\)/);
+  assert.match(source, /disabled=\{!order\.uuid\|\|updatingOrderIds\.includes\(order\.uuid\)\|\|!cancelableOrderStatuses\.includes\(order\.status\)\}/);
 });
 
 test("CSV serialization neutralizes spreadsheet formulas and preserves CSV escaping", () => {
