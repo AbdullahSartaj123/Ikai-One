@@ -330,3 +330,26 @@ test("order activity distinguishes an empty history from an unavailable activity
   assert.ok(!detail.includes("? (activityEvents.length ? activityEvents.map"), "timeline mapper should not fabricate events when saved history is empty");
   assert.ok(detail.includes(": orderFallbackTimeline(orderId)"), "demo orders retain their demo timeline");
 });
+
+test("order detail does not show demo records when the saved order service fails", async () => {
+  const orders = await readFile(new URL("../../src/pages/Orders.jsx", import.meta.url), "utf8");
+  const start = orders.indexOf("function OrderDetail()");
+  const detail = orders.slice(start);
+  assert.ok(detail.includes("setDetailLoadError(error.message||'Saved order could not be loaded.')"));
+  assert.ok(detail.includes("savedOrder||(!detailLoadError?mockOrders.find(item=>item.id===orderId):null)"));
+  assert.ok(detail.includes("No demo order is shown when saved records cannot be reached."));
+  assert.ok(detail.includes("Retry loading"));
+});
+
+test("order detail does not offer shipment creation when shipment lookup is unavailable", async () => {
+  const orders = await readFile(new URL("../../src/pages/Orders.jsx", import.meta.url), "utf8");
+  const start = orders.indexOf("function OrderDetail()");
+  const detail = orders.slice(start);
+  assert.ok(detail.includes("setShipmentLoadError(error.message||'Saved shipment could not be loaded.')"));
+  assert.ok(detail.includes("Shipment availability is unknown until the service responds."));
+  assert.ok(detail.includes("Retry shipment lookup"));
+  const panelStart = detail.indexOf("DELIVERY</span><h2>Shipment information</h2>");
+  const panelEnd = detail.indexOf("Internal record only.", panelStart);
+  const panel = detail.slice(panelStart, panelEnd);
+  assert.ok(panel.indexOf("shipmentLoadError?") < panel.indexOf("Create shipment record"));
+});
