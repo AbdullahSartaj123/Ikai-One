@@ -1,0 +1,33 @@
+name: Cloudflare API tests
+
+on:
+  pull_request:
+    paths:
+      - "cloudflare-api/**"
+      - ".github/workflows/cloudflare-api-tests.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "cloudflare-api/**"
+      - ".github/workflows/cloudflare-api-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Worker dependencies
+        working-directory: cloudflare-api
+        run: npm install --no-audit --no-fund
+      - name: Run Cloudflare API tests
+        working-directory: cloudflare-api
+        run: npm test
