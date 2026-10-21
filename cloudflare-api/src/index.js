@@ -1189,13 +1189,24 @@ export default {
             }
 
             const rows = await sql`
-              UPDATE ikai.orders SET status = ${status}, updated_by = ${user.id}::uuid, updated_at = now()
-              WHERE id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid AND status = ${currentStatus}
-              RETURNING id, order_number, status, updated_at
+              WITH updated AS (
+                UPDATE ikai.orders
+                SET status = ${status}, updated_by = ${user.id}::uuid, updated_at = now()
+                WHERE id = ${statusMatch[1]}::uuid
+                  AND organization_id = ${user.organizationId}::uuid
+                  AND status = ${currentStatus}
+                RETURNING id, organization_id, order_number, status, updated_at
+              ), audit AS (
+                INSERT INTO ikai.organization_audit_events
+                  (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
+                SELECT organization_id, ${user.id}::uuid, 'order_status_changed', 'order', order_number,
+                  jsonb_build_object('previousStatus', ${currentStatus}, 'status', ${status})
+                FROM updated
+                RETURNING id
+              )
+              SELECT id, order_number, status, updated_at FROM updated
             `;
             if (!rows[0]) return json(request, { error: "Order status changed concurrently. Refresh and try again." }, 409);
-            await sql`INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
-              VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'order_status_changed', 'order', ${rows[0].order_number}, jsonb_build_object('previousStatus', ${currentStatus}, 'status', ${status}))`;
             return json(request, { data: rows[0] });
           }
           return json(request, { error: "Method or order route not supported." }, 405);
