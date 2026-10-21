@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { escapeCsvCell, toCsv } from "../../src/lib/csv.js";
 import { readFileSync } from "node:fs";
 
 const source = readFileSync(new URL("../../src/pages/Orders.jsx", import.meta.url), "utf8");
@@ -204,12 +205,12 @@ test("bulk cancellation skips orders with a status update already in progress", 
   assert.match(source, /disabled=\{!order\.uuid\|\|updatingOrderIds\.includes\(order\.uuid\)\|\|\['Delivered','RTO','Cancelled'\]\.includes\(order\.status\)\}/);
 });
 
-test("order CSV export neutralizes spreadsheet formula injection", () => {
-  const start = source.indexOf("function exportCsv(");
-  const end = source.indexOf("async function bulkAction(", start);
-  assert.ok(start >= 0 && end > start, "CSV export function should exist");
-  const exporter = source.slice(start, end);
-  assert.ok(exporter.includes("const safe=") && exporter.includes("test(cell)"), "formula-like cells should be detected, including leading control characters");
-  assert.ok(exporter.includes(`?"\'"+cell:cell`), "formula-like cells should be prefixed with an apostrophe before CSV quoting");
-  assert.ok(exporter.includes("replaceAll("), "CSV quoting should still escape embedded double quotes");
+test("CSV serialization neutralizes spreadsheet formulas and preserves CSV escaping", () => {
+  assert.equal(escapeCsvCell("=1+1"), "\"'=1+1\"");
+  assert.equal(escapeCsvCell("  @SUM(A1:A2)"), "\"'  @SUM(A1:A2)\"");
+  assert.equal(escapeCsvCell("\t-2+3"), "\"'\t-2+3\"");
+  assert.equal(escapeCsvCell("+cmd"), "\"'+cmd\"");
+  assert.equal(escapeCsvCell('Customer "A", Inc.'), "\"Customer \"\"A\"\"", Inc.\"");
+  assert.equal(escapeCsvCell(null), "\"\"");
+  assert.equal(toCsv([["Order ID", "Customer"], ["123", "=1+1"]]), "\"Order ID\",\"Customer\"\\n\"123\",\"'=1+1\"");
 });
