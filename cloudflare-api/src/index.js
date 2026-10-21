@@ -1211,6 +1211,53 @@ export default {
             if (status !== currentStatus && !(allowedNextStatuses[currentStatus] || []).includes(status)) {
               return json(request, { error: `Order status cannot move from "${currentStatus}" to "${status}". Refresh the order and choose a valid next step.` }, 409);
             }
+            if (status === "Cancelled") {
+              // Cancellation and shipment creation both lock the order row. The
+              // second transaction statement gets a fresh READ COMMITTED snapshot
+              // after the lock, so it can see a shipment committed by a competing
+              // shipment-creation request before deciding whether cancellation is safe.
+              const [lockedRows, cancelledRows] = await sql.transaction([
+                sql`SELECT id FROM ikai.orders
+                  WHERE id = ${statusMatch[1]}::uuid
+                    AND organization_id = ${user.organizationId}::uuid
+                  FOR UPDATE`,
+                sql`
+                  WITH updated AS (
+                    UPDATE ikai.orders AS o
+                    SET status = 'Cancelled', updated_by = ${user.id}::uuid, updated_at = now()
+                    WHERE o.id = ${statusMatch[1]}::uuid
+                      AND o.organization_id = ${user.organizationId}::uuid
+                      AND o.status = ${currentStatus}
+                      AND NOT EXISTS (
+                        SELECT 1 FROM ikai.shipment_records AS sr
+                        WHERE sr.order_id = o.id
+                          AND sr.organization_id = o.organization_id
+                      )
+                    RETURNING o.id, o.order_number, o.status, o.updated_at
+                  ), audit AS (
+                    INSERT INTO ikai.organization_audit_events
+                      (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
+                    SELECT ${user.organizationId}::uuid, ${user.id}::uuid, 'order_status_changed', 'order',
+                      updated.order_number, jsonb_build_object('fromStatus', ${currentStatus}, 'status', updated.status)
+                    FROM updated
+                    RETURNING id
+                  )
+                  SELECT updated.* FROM updated
+                `
+              ]);
+              const rows = cancelledRows || [];
+              if (rows[0]) return json(request, { data: rows[0] });
+              if (!lockedRows?.length) return json(request, { error: "Order not found." }, 404);
+              const [latestOrder, linkedShipment] = await Promise.all([
+                sql`SELECT status FROM ikai.orders WHERE id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid LIMIT 1`,
+                sql`SELECT status FROM ikai.shipment_records WHERE order_id = ${statusMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid LIMIT 1`
+              ]);
+              if (linkedShipment[0]) {
+                return json(request, { error: `This order has a linked shipment in "${linkedShipment[0].status}" status. Cancel it from the shipment workflow so both records stay consistent; direct order cancellation is blocked.` }, 409);
+              }
+              if (latestOrder[0]?.status !== currentStatus) return json(request, { error: "Order status changed concurrently. Refresh and try again." }, 409);
+              return json(request, { error: "Order cancellation could not be saved. Refresh and try again." }, 409);
+            }
             const rows = await sql`
               UPDATE ikai.orders SET status = ${status}, updated_by = ${user.id}::uuid, updated_at = now()
               WHERE id = ${statusMatch[1]}::uuid
