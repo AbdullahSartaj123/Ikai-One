@@ -877,27 +877,36 @@ export default {
             const effectiveDeliveredAt = linked.shipment_delivered_at || deliveredAt;
             const status = amountRemitted === 0 ? "pending" : amountRemitted === codExpected ? "matched" : "short_paid";
             const rows = await sql`
-              INSERT INTO ikai.cod_reconciliations
-                (organization_id, order_reference, awb, courier_name, delivered_at, cod_expected, amount_remitted, status, follow_up_note, remittance_reference, created_by)
-              VALUES
-                (${user.organizationId}::uuid, ${orderReference}, ${awb}, ${courierName}, ${effectiveDeliveredAt}, ${codExpected}, ${amountRemitted}, ${status}, ${note}, ${remittanceReference}, ${user.id}::uuid)
-              ON CONFLICT (organization_id, order_reference) DO UPDATE SET
-                awb = EXCLUDED.awb, courier_name = EXCLUDED.courier_name,
-                delivered_at = EXCLUDED.delivered_at, cod_expected = EXCLUDED.cod_expected,
-                amount_remitted = EXCLUDED.amount_remitted, status = EXCLUDED.status,
-                follow_up_note = COALESCE(EXCLUDED.follow_up_note, ikai.cod_reconciliations.follow_up_note),
-                remittance_reference = COALESCE(EXCLUDED.remittance_reference, ikai.cod_reconciliations.remittance_reference),
-                updated_at = now()
-              WHERE ikai.cod_reconciliations.status NOT IN ('under_review', 'resolved')
-              RETURNING id, order_reference, awb, courier_name, delivered_at, cod_expected, amount_remitted, (cod_expected - amount_remitted) AS difference, status, follow_up_note, remittance_reference, created_at, updated_at
+              WITH saved AS (
+                INSERT INTO ikai.cod_reconciliations
+                  (organization_id, order_reference, awb, courier_name, delivered_at, cod_expected, amount_remitted, status, follow_up_note, remittance_reference, created_by)
+                VALUES
+                  (${user.organizationId}::uuid, ${orderReference}, ${awb}, ${courierName}, ${effectiveDeliveredAt}, ${codExpected}, ${amountRemitted}, ${status}, ${note}, ${remittanceReference}, ${user.id}::uuid)
+                ON CONFLICT (organization_id, order_reference) DO UPDATE SET
+                  awb = EXCLUDED.awb, courier_name = EXCLUDED.courier_name,
+                  delivered_at = EXCLUDED.delivered_at, cod_expected = EXCLUDED.cod_expected,
+                  amount_remitted = EXCLUDED.amount_remitted, status = EXCLUDED.status,
+                  follow_up_note = COALESCE(EXCLUDED.follow_up_note, ikai.cod_reconciliations.follow_up_note),
+                  remittance_reference = COALESCE(EXCLUDED.remittance_reference, ikai.cod_reconciliations.remittance_reference),
+                  updated_at = now()
+                WHERE ikai.cod_reconciliations.status NOT IN ('under_review', 'resolved')
+                RETURNING id, organization_id, order_reference, awb, courier_name, delivered_at,
+                  cod_expected, amount_remitted, (cod_expected - amount_remitted) AS difference,
+                  status, follow_up_note, remittance_reference, created_at, updated_at
+              ), audit AS (
+                INSERT INTO ikai.organization_audit_events
+                  (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
+                SELECT organization_id, ${user.id}::uuid, 'cod_reconciliation_saved', 'cod_reconciliation',
+                  order_reference,
+                  jsonb_build_object('status', status, 'codExpected', cod_expected, 'amountRemitted', amount_remitted)
+                FROM saved
+                RETURNING id
+              )
+              SELECT * FROM saved
             `;
             if (!rows[0]) {
               return json(request, { error: "This reconciliation is under review or resolved and cannot be overwritten. Refresh the record and continue through the review workflow." }, 409);
             }
-            await sql`
-              INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
-              VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'cod_reconciliation_saved', 'cod_reconciliation', ${orderReference}, jsonb_build_object('status', ${status}, 'codExpected', ${codExpected}, 'amountRemitted', ${amountRemitted}))
-            `;
             return json(request, { data: rows[0] }, 201);
           }
 
