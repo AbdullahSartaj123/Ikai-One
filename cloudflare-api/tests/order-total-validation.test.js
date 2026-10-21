@@ -62,7 +62,7 @@ test("package measurements respect PostgreSQL numeric precision and scale", () =
 test("measurement precision logic accepts the database scale and rejects excess decimal places", () => {
   const hasAtMostDecimalPlaces = (value, maxPlaces) => {
     const text = String(value ?? "").trim();
-    if (!/^\\d+(?:\\.\\d+)?$/.test(text)) return false;
+    if (!/^\d+(?:\.\d+)?$/.test(text)) return false;
     const fraction = text.split(".")[1];
     return !fraction || fraction.length <= maxPlaces;
   };
