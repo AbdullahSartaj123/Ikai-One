@@ -26,7 +26,8 @@ test("order line prices and line totals stay within the PostgreSQL numeric(14,2)
 });
 
 test("order prices reject fractional cents instead of relying on PostgreSQL rounding", () => {
-  assert.match(worker, /function hasAtMostTwoDecimalPlaces\(value\) \{[\s\S]*?return \/\^\\d\+\(\?:\\\.\\d\{1,2\}\)\?\$\//);
+  assert.match(worker, /function hasAtMostDecimalPlaces\(value, maxPlaces\)/);
+  assert.match(worker, /return hasAtMostDecimalPlaces\(value, 2\)/);
   assert.match(worker, /!hasAtMostTwoDecimalPlaces\(item\.price\)/);
   const validation = worker.indexOf("!hasAtMostTwoDecimalPlaces(item.price)");
   const insert = worker.indexOf("INSERT INTO ikai.orders", validation);
@@ -41,5 +42,34 @@ test("the decimal-place rule accepts whole amounts and one or two decimal digits
   }
   for (const value of [1.005, "1.005", "0.001", "1.234"]) {
     assert.equal(hasAtMostTwoDecimalPlaces(value), false, String(value));
+  }
+});
+
+test("package measurements respect PostgreSQL numeric precision and scale", () => {
+  assert.match(worker, /weight > 9999999\.999/);
+  assert.match(worker, /hasAtMostDecimalPlaces\(body\.weight, 3\)/);
+  assert.match(worker, /length > 99999999\.99/);
+  assert.match(worker, /hasAtMostDecimalPlaces\(body\.length \?\? 1, 2\)/);
+  assert.match(worker, /width > 99999999\.99/);
+  assert.match(worker, /hasAtMostDecimalPlaces\(body\.width \?\? 1, 2\)/);
+  assert.match(worker, /height > 99999999\.99/);
+  assert.match(worker, /hasAtMostDecimalPlaces\(body\.height \?\? 1, 2\)/);
+  const validation = worker.indexOf("hasAtMostDecimalPlaces(body.weight, 3)");
+  const insert = worker.indexOf("INSERT INTO ikai.orders", validation);
+  assert.ok(validation >= 0 && insert > validation, "measurement checks must run before order persistence");
+});
+
+test("measurement precision logic accepts the database scale and rejects excess decimal places", () => {
+  const hasAtMostDecimalPlaces = (value, maxPlaces) => {
+    const text = String(value ?? "").trim();
+    if (!/^\\d+(?:\\.\\d+)?$/.test(text)) return false;
+    const fraction = text.split(".")[1];
+    return !fraction || fraction.length <= maxPlaces;
+  };
+  for (const [value, places] of [["2.125", 3], ["1.20", 2], [12, 2], ["9999999.999", 3]]) {
+    assert.equal(hasAtMostDecimalPlaces(value, places), true, String(value));
+  }
+  for (const [value, places] of [["2.1234", 3], ["1.201", 2], ["1e-3", 3], ["-1", 2]]) {
+    assert.equal(hasAtMostDecimalPlaces(value, places), false, String(value));
   }
 });
