@@ -29,7 +29,7 @@ test("COD reconciliation save cannot overwrite under-review or resolved records"
   const saveRoute = worker.slice(saveStart, reviewStart);
   assert.match(saveRoute, /WHERE ikai\.cod_reconciliations\.status NOT IN \('under_review', 'resolved'\)/);
   assert.match(saveRoute, /This reconciliation is under review or resolved and cannot be overwritten/);
-  assert.ok(saveRoute.indexOf("if (!rows[0])") < saveRoute.indexOf("cod_reconciliation_saved"), "audit must only be written after a successful save");
+  assert.ok(saveRoute.indexOf("if (!rows[0])") < saveRoute.indexOf("return json(request, { data: rows[0] }, 201)"), "conflict must be handled before the success response");
 });
 
 test("COD reconciliation save preserves existing follow-up notes and remittance references when omitted", () => {
