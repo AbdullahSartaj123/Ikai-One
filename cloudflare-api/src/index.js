@@ -1361,12 +1361,17 @@ export default {
                   jsonb_build_object('status', order_sync.status, 'sourceShipment', changed.shipment_number)
                 FROM order_sync JOIN changed ON changed.order_id = order_sync.id
                 RETURNING id
+              ), shipment_audit AS (
+                INSERT INTO ikai.organization_audit_events
+                  (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
+                SELECT organization_id, ${user.id}::uuid, 'shipment_status_changed', 'shipment', shipment_number,
+                  jsonb_build_object('status', ${status}, 'courierBookingConfirmed', false)
+                FROM changed
+                RETURNING id
               )
               SELECT changed.* FROM changed
             `;
             if (!rows[0]) return json(request, { error: "Shipment changed concurrently. Refresh and try again." }, 409);
-            await sql`INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
-              VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'shipment_status_changed', 'shipment', ${rows[0].shipment_number}, jsonb_build_object('status', ${status}, 'courierBookingConfirmed', false))`;
             return json(request, { data: rows[0], message: "Internal status saved. No courier was contacted." });
           }
           return json(request, { error: "Method or shipment route not supported." }, 405);
