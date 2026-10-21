@@ -107,7 +107,7 @@ function validPassword(value) {
 
 function hasAtMostTwoDecimalPlaces(value) {
   const text = String(value ?? "").trim();
-  return /^\\d+(?:\\.\\d{1,2})?$/.test(text);
+  return /^\d+(?:\.\d{1,2})?$/.test(text);
 }
 
 function safeName(value) {
