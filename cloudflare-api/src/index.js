@@ -105,6 +105,11 @@ function validPassword(value) {
   return typeof value === "string" && value.length >= 12 && value.length <= 128;
 }
 
+function hasAtMostTwoDecimalPlaces(value) {
+  const text = String(value ?? "").trim();
+  return /^\\d+(?:\\.\\d{1,2})?$/.test(text);
+}
+
 function safeName(value) {
   return String(value || "").replace(/[&<>"']/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -1090,7 +1095,7 @@ export default {
                 !["COD", "Prepaid"].includes(paymentMode) || !Number.isFinite(weight) || weight <= 0 ||
                 !Number.isFinite(length) || length <= 0 || !Number.isFinite(width) || width <= 0 ||
                 !Number.isFinite(height) || height <= 0 || !items.length || items.length > 100 ||
-                items.some(item => !String(item.name || "").trim() || !Number.isSafeInteger(Number(item.quantity)) || Number(item.quantity) < 1 || !Number.isFinite(Number(item.price)) || Number(item.price) < 0 || Number(item.price) > 999999999999.99 || !Number.isFinite(Number(item.quantity) * Number(item.price)) || Number(item.quantity) * Number(item.price) > 999999999999.99)) {
+                items.some(item => !String(item.name || "").trim() || !Number.isSafeInteger(Number(item.quantity)) || Number(item.quantity) < 1 || !hasAtMostTwoDecimalPlaces(item.price) || !Number.isFinite(Number(item.price)) || Number(item.price) < 0 || Number(item.price) > 999999999999.99 || !Number.isFinite(Number(item.quantity) * Number(item.price)) || Number(item.quantity) * Number(item.price) > 999999999999.99)) {
               return json(request, { error: "Complete customer, address, package and product details with valid quantities and prices." }, 400);
             }
             if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json(request, { error: "Enter a valid email address." }, 400);
