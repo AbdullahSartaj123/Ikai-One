@@ -34,3 +34,16 @@ test("order status changes and audit events are written in one atomic SQL statem
   assert.equal(separateAudit, -1, "status changes must not write audit events in a second query");
   assert.match(worker.slice(update, result), /FROM updated/);
 });
+
+test("shipment status changes and shipment audit are written in one atomic SQL statement", async () => {
+  const source = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  const shipmentStatus = source.indexOf("const statusMatch = url.pathname.match(/^\\/api\\/shipments");
+  const update = source.indexOf("WITH changed AS (", shipmentStatus);
+  const shipmentAudit = source.indexOf("), shipment_audit AS (", update);
+  const result = source.indexOf("SELECT changed.* FROM changed", update);
+  const separateAudit = source.indexOf("await sql`INSERT INTO ikai.organization_audit_events", update);
+  assert.ok(shipmentStatus >= 0 && update > shipmentStatus, "shipment status route must exist");
+  assert.ok(shipmentAudit > update && result > shipmentAudit, "shipment audit insert must share the status statement");
+  assert.equal(separateAudit, -1, "shipment status must not write its audit event in a second query");
+  assert.match(source.slice(shipmentAudit, result), /'shipment_status_changed', 'shipment'/);
+});
