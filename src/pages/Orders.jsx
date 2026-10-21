@@ -146,7 +146,7 @@ function OrdersList() {
     if (action === 'Export CSV') { exportCsv();return }
     if (action === 'Print Label' || action === 'Print Manifest') { showToast(action+' print view prepared for '+selected.length+' selected order(s). Use your browser print dialog.');window.print();return }
     if (action === 'Cancel') {
-      const eligible = selectedOrders.filter(order => order.uuid && !['Delivered','RTO','Cancelled'].includes(order.status))
+      const eligible = selectedOrders.filter(order => order.uuid && !updatingOrderIds.includes(order.uuid) && !['Delivered','RTO','Cancelled'].includes(order.status))
       if (!eligible.length) { showToast('No selected saved orders can be cancelled. Delivered, RTO and already-cancelled orders are excluded.');return }
       if (!window.confirm('Cancel '+eligible.length+' saved order(s)? This changes their status in Ikai.One.')) return
       setBulkActionInProgress(true)
