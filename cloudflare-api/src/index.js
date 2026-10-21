@@ -1197,7 +1197,7 @@ export default {
               "Processing": ["Ready to Ship", "Cancelled", "NDR raised"],
               "Ready to Ship": ["Shipped", "Cancelled", "NDR raised"],
               "Shipped": ["Delivered", "NDR raised", "RTO"],
-              "NDR raised": ["Shipped", "Delivered", "RTO"],
+              "NDR raised": ["Ready to Ship", "Shipped", "Delivered", "RTO"],
               "Delivered": [],
               "RTO": [],
               "Cancelled": []
