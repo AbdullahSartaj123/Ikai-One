@@ -414,3 +414,13 @@ test("shipment status write checks the linked order version to prevent concurren
   assert.match(route, /AND o\.status = \$\{linkedOrderStatus\}/);
   assert.match(route, /Shipment changed concurrently\. Refresh and try again\./);
 });
+
+test("direct order cancellation explains that linked shipments must be cancelled in the shipment workflow", async () => {
+  const api = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  const start = api.indexOf('const statusMatch = url.pathname.match(/^\\/api\\/orders');
+  const end = api.indexOf('return json(request, { error: "Method or order route not supported." }', start);
+  const route = api.slice(start, end);
+  assert.match(route, /Cancel it from the shipment workflow so both records stay consistent/);
+  assert.match(route, /direct order cancellation is blocked/);
+  assert.doesNotMatch(route, /until shipment cancellation is supported/);
+});
