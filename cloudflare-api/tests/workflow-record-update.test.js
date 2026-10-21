@@ -390,3 +390,11 @@ test("repeating the current shipment status does not create duplicate history ev
   const eventInsert = route.indexOf('INSERT INTO ikai.shipment_events');
   assert.ok(noOp >= 0 && eventInsert > noOp, "same-status no-op must return before history insertion");
 });
+
+test("resolving a shipment exception can return its linked NDR order to Ready to Ship", async () => {
+  const api = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  assert.match(api, /"NDR raised": \["Ready to Ship", "Shipped", "Delivered", "RTO"\]/);
+  assert.match(api, /"Exception": \["Ready to ship", "Booked", "Picked up", "In transit", "Out for delivery", "Returned"\]/);
+  assert.match(api, /WHEN \$\{status\} = 'Ready to ship' THEN 'Ready to Ship'/);
+  assert.match(api, /Shipment status would move the linked order from/);
+});
