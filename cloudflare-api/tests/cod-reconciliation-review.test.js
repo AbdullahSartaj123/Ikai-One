@@ -22,7 +22,7 @@ test("COD reconciliation review and audit event are written atomically", () => {
   const audit = reviewRoute.indexOf("INSERT INTO ikai.organization_audit_events", updated);
   const result = reviewRoute.indexOf("SELECT id, order_reference, status, follow_up_note, reviewed_at, updated_at FROM updated", updated);
   assert.ok(updated >= 0 && audit > updated && result > audit, "audit insert must share the status update statement");
-  assert.equal(reviewRoute.indexOf("await sql`\\n              INSERT INTO ikai.organization_audit_events"), -1, "review audit must not be written in a separate query");
+  assert.doesNotMatch(reviewRoute, /await sql`\s*INSERT INTO ikai\.organization_audit_events/, "review audit must not be written in a separate query");
   assert.ok(reviewRoute.indexOf("if (!rows[0])") > result, "concurrency conflict must be handled before success response");
 });
 
