@@ -58,7 +58,9 @@ test("direct order status changes are blocked when a shipment is linked", () => 
   assert.ok(handler.includes("SELECT status FROM ikai.shipment_records"));
   assert.ok(handler.includes("WHERE order_id = ${statusMatch[1]}::uuid"));
   assert.ok(handler.includes("AND organization_id = ${user.organizationId}::uuid"));
-  assert.ok(handler.includes("Order cancellation is blocked until shipment cancellation is supported"));
+  assert.ok(handler.includes("Cancel it from the shipment workflow so both records stay consistent"));
+  assert.ok(handler.includes("direct order cancellation is blocked"));
+  assert.ok(!handler.includes("until shipment cancellation is supported"));
   assert.ok(handler.includes("Update the shipment status to advance its linked order"));
   assert.ok(handler.includes("}, 409)"));
 });
