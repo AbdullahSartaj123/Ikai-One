@@ -1375,11 +1375,17 @@ export default {
             }
             const rows = await sql`
               WITH changed AS (
-                UPDATE ikai.shipment_records SET status = ${status}, updated_at = now()
-                WHERE id = ${statusMatch[1]}::uuid
-                  AND organization_id = ${user.organizationId}::uuid
-                  AND status = ${currentStatus}
-                RETURNING *
+                UPDATE ikai.shipment_records AS sr SET status = ${status}, updated_at = now()
+                WHERE sr.id = ${statusMatch[1]}::uuid
+                  AND sr.organization_id = ${user.organizationId}::uuid
+                  AND sr.status = ${currentStatus}
+                  AND EXISTS (
+                    SELECT 1 FROM ikai.orders current_order
+                    WHERE current_order.id = sr.order_id
+                      AND current_order.organization_id = sr.organization_id
+                      AND current_order.status = ${linkedOrderStatus}
+                  )
+                RETURNING sr.*
               ), event AS (
                 INSERT INTO ikai.shipment_events (organization_id, shipment_id, status, description, location, source, created_by)
                 SELECT organization_id, id, ${status}, ${description}, ${location}, 'internal', ${user.id}::uuid FROM changed
@@ -1399,6 +1405,7 @@ export default {
                 FROM changed
                 WHERE o.id = changed.order_id
                   AND o.organization_id = changed.organization_id
+                  AND o.status = ${linkedOrderStatus}
                   AND ${status} IN ('Ready to ship', 'Booked', 'Picked up', 'In transit', 'Out for delivery', 'Delivered', 'Exception', 'Returned', 'Cancelled')
                   AND o.status IS DISTINCT FROM CASE
                     WHEN ${status} = 'Ready to ship' THEN 'Ready to Ship'
