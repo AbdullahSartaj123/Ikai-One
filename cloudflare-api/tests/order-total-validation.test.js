@@ -80,3 +80,20 @@ test("measurement precision logic accepts the database scale and rejects excess 
     assert.equal(hasAtMostDecimalPlaces(value, places), false, String(value));
   }
 });
+
+test("order item quantities stay within PostgreSQL integer range before persistence", () => {
+  assert.match(worker, /Number\(item\.quantity\) > 2147483647/);
+  const validation = worker.indexOf("Number(item.quantity) > 2147483647");
+  const insert = worker.indexOf("INSERT INTO ikai.orders", validation);
+  assert.ok(validation >= 0, "quantity range guard must exist");
+  assert.ok(insert > validation, "reject out-of-range quantities before database writes");
+});
+
+test("PostgreSQL integer quantity boundary is enforced", () => {
+  const validQuantity = value => Number.isSafeInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 2147483647;
+  assert.equal(validQuantity(1), true);
+  assert.equal(validQuantity("2147483647"), true);
+  assert.equal(validQuantity("2147483648"), false);
+  assert.equal(validQuantity(1.5), false);
+  assert.equal(validQuantity(0), false);
+});
