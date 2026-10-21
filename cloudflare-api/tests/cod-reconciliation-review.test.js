@@ -39,3 +39,17 @@ test("COD reconciliation save preserves existing follow-up notes and remittance 
   assert.match(saveRoute, /follow_up_note = COALESCE\(EXCLUDED\.follow_up_note, ikai\.cod_reconciliations\.follow_up_note\)/);
   assert.match(saveRoute, /remittance_reference = COALESCE\(EXCLUDED\.remittance_reference, ikai\.cod_reconciliations\.remittance_reference\)/);
 });
+
+test("COD reconciliation save and audit event are written atomically", () => {
+  const saveStart = worker.indexOf('if (url.pathname === "/api/cod-reconciliations" && request.method === "POST")');
+  const reviewStart = worker.indexOf('const reviewMatch = url.pathname.match', saveStart);
+  assert.ok(saveStart >= 0 && reviewStart > saveStart, "COD save route must exist");
+  const saveRoute = worker.slice(saveStart, reviewStart);
+  const saved = saveRoute.indexOf("WITH saved AS (");
+  const audit = saveRoute.indexOf("INSERT INTO ikai.organization_audit_events", saved);
+  const result = saveRoute.indexOf("SELECT * FROM saved", saved);
+  const separateAudit = saveRoute.indexOf("await sql`INSERT INTO ikai.organization_audit_events");
+  assert.ok(saved >= 0 && audit > saved && result > audit, "audit insert must share the reconciliation save statement");
+  assert.equal(separateAudit, -1, "reconciliation audit must not be written in a separate query");
+  assert.ok(saveRoute.indexOf("if (!rows[0])") < result + saveRoute.indexOf("return json(request, { data: rows[0] }, 201)"), "conflict must be handled before success response");
+});
