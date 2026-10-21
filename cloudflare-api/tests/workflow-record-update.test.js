@@ -436,3 +436,15 @@ test("repeating the current order status does not create duplicate audit events"
   const auditInsert = route.indexOf('INSERT INTO ikai.organization_audit_events');
   assert.ok(noOp >= 0 && auditInsert > noOp, "same-status no-op must return before audit insertion");
 });
+
+test("shipment creation locks and revalidates order eligibility in the insert statement", async () => {
+  const api = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
+  const routeStart = api.indexOf('if (url.pathname === "/api/shipments" && request.method === "POST")');
+  const routeEnd = api.indexOf('const eventMatch = url.pathname.match(/^\\/api\\/shipments', routeStart);
+  assert.ok(routeStart >= 0 && routeEnd > routeStart, "shipment creation route must exist");
+  const route = api.slice(routeStart, routeEnd);
+  assert.match(route, /WITH chosen_order AS \(\s*SELECT \* FROM ikai\.orders[\s\S]*?status IN \('New', 'Processing', 'Ready to Ship'\)\s*FOR UPDATE\s*\), created AS/);
+  assert.match(route, /SELECT id, status FROM ikai\.orders WHERE id = \$\{orderId\}::uuid/);
+  assert.match(route, /A shipment record cannot be created for an order in/);
+  assert.match(route, /ON CONFLICT \(organization_id, order_id\) DO NOTHING/);
+});
