@@ -136,7 +136,7 @@ function OrdersList() {
   function showToast(message){setToast(message);setTimeout(()=>setToast(''),3500)}
   function exportCsv(orders = selectedOrders.length ? selectedOrders : filtered) {
     const headings=['Order ID','Channel','Customer','Phone','Product','SKU','Payment Mode','Amount PKR','Weight kg','Date','Status','Courier','City','State','Pincode']
-    const csv=[headings,...orders.map(o=>[o.id,o.channel,o.customer,o.phone,o.product,o.sku,o.paymentMode,o.amount,o.weight,o.date,o.status,o.courier,o.city,o.state,o.pincode])].map(row=>row.map(value=>'"'+String(value ?? '').replaceAll('"','""')+'"').join(',')).join('\n')
+    const csv=[headings,...orders.map(o=>[o.id,o.channel,o.customer,o.phone,o.product,o.sku,o.paymentMode,o.amount,o.weight,o.date,o.status,o.courier,o.city,o.state,o.pincode])].map(row=>row.map(value=>{const cell=String(value ?? '');const safe=/^[\\u0000-\\u0020]*[=+\\-@]/.test(cell)?"'"+cell:cell;return '"'+safe.replaceAll('"','""')+'"'}).join(',')).join('\n')
     const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));const a=document.createElement('a');a.href=url;a.download='ikai-orders-'+new Date().toISOString().slice(0,10)+'.csv';a.click();URL.revokeObjectURL(url)
     showToast('Exported '+orders.length+' saved order(s) to CSV.')
   }
