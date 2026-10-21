@@ -318,3 +318,15 @@ test("order detail timeline renders persisted activity and linked shipment event
   assert.ok(detail.includes("activityTimeline.map((event,index)"));
   assert.ok(detail.includes("activityError"));
 });
+
+test("order activity distinguishes an empty history from an unavailable activity service", async () => {
+  const orders = await readFile(new URL("../../src/pages/Orders.jsx", import.meta.url), "utf8");
+  const start = orders.indexOf("function OrderDetail()");
+  const detail = orders.slice(start);
+  assert.ok(detail.includes("activityError?'Unavailable'"));
+  assert.ok(detail.includes("Retry activity"));
+  assert.ok(detail.includes("No activity recorded yet."));
+  assert.ok(detail.includes("no order-status or shipment-history events were returned."));
+  assert.ok(detail.includes("savedOrder ?\n    ? activityEvents.map") === false, "timeline mapper should not fabricate events when saved history is empty");
+  assert.ok(detail.includes(": orderFallbackTimeline(orderId)"), "demo orders retain their demo timeline");
+});
