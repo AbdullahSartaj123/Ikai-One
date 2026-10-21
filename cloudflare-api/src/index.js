@@ -1374,16 +1374,25 @@ export default {
               return json(request, { error: `Shipment status cannot move from "${currentStatus}" to "${status}". Refresh the shipment and choose a valid next step.` }, 409);
             }
             const rows = await sql`
-              WITH changed AS (
+              WITH locked_order AS (
+                SELECT o.id, o.status
+                FROM ikai.orders o
+                JOIN ikai.shipment_records existing_shipment
+                  ON existing_shipment.order_id = o.id
+                  AND existing_shipment.organization_id = o.organization_id
+                WHERE existing_shipment.id = ${statusMatch[1]}::uuid
+                  AND existing_shipment.organization_id = ${user.organizationId}::uuid
+                  AND o.status = ${linkedOrderStatus}
+                FOR UPDATE OF o
+              ), changed AS (
                 UPDATE ikai.shipment_records AS sr SET status = ${status}, updated_at = now()
                 WHERE sr.id = ${statusMatch[1]}::uuid
                   AND sr.organization_id = ${user.organizationId}::uuid
                   AND sr.status = ${currentStatus}
                   AND EXISTS (
-                    SELECT 1 FROM ikai.orders current_order
-                    WHERE current_order.id = sr.order_id
-                      AND current_order.organization_id = sr.organization_id
-                      AND current_order.status = ${linkedOrderStatus}
+                    SELECT 1 FROM locked_order
+                    WHERE locked_order.id = sr.order_id
+                      AND locked_order.status = ${linkedOrderStatus}
                   )
                 RETURNING sr.*
               ), event AS (
