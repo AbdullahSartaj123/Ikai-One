@@ -902,7 +902,9 @@ export default {
                 FROM saved
                 RETURNING id
               )
-              SELECT * FROM saved
+              SELECT id, order_reference, awb, courier_name, delivered_at, cod_expected, amount_remitted,
+                difference, status, follow_up_note, remittance_reference, created_at, updated_at
+              FROM saved
             `;
             if (!rows[0]) {
               return json(request, { error: "This reconciliation is under review or resolved and cannot be overwritten. Refresh the record and continue through the review workflow." }, 409);
