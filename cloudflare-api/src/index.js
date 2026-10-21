@@ -116,6 +116,19 @@ function hasAtMostTwoDecimalPlaces(value) {
   return hasAtMostDecimalPlaces(value, 2);
 }
 
+function moneyToCents(value) {
+  const text = String(value ?? "").trim();
+  if (!/^\d+(?:\.\d{1,2})?$/.test(text)) return null;
+  const [whole, fraction = ""] = text.split(".");
+  return BigInt(whole) * 100n + BigInt((fraction + "00").slice(0, 2));
+}
+
+function centsToMoney(cents) {
+  const whole = cents / 100n;
+  const fraction = String(cents % 100n).padStart(2, "0");
+  return `${whole}.${fraction}`;
+}
+
 function safeName(value) {
   return String(value || "").replace(/[&<>"']/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
@@ -1102,14 +1115,21 @@ export default {
                 !Number.isFinite(length) || length <= 0 || length > 99999999.99 || !hasAtMostDecimalPlaces(body.length ?? 1, 2) ||
                 !Number.isFinite(width) || width <= 0 || width > 99999999.99 || !hasAtMostDecimalPlaces(body.width ?? 1, 2) ||
                 !Number.isFinite(height) || height <= 0 || height > 99999999.99 || !hasAtMostDecimalPlaces(body.height ?? 1, 2) || !items.length || items.length > 100 ||
-                items.some(item => !String(item.name || "").trim() || !Number.isSafeInteger(Number(item.quantity)) || Number(item.quantity) < 1 || !hasAtMostTwoDecimalPlaces(item.price) || !Number.isFinite(Number(item.price)) || Number(item.price) < 0 || Number(item.price) > 999999999999.99 || !Number.isFinite(Number(item.quantity) * Number(item.price)) || Number(item.quantity) * Number(item.price) > 999999999999.99)) {
+                items.some(item => {
+                  const priceCents = moneyToCents(item.price);
+                  if (!String(item.name || "").trim() || !Number.isSafeInteger(Number(item.quantity)) || Number(item.quantity) < 1 ||
+                      priceCents === null || priceCents < 0n || priceCents > 99999999999999n) return true;
+                  return BigInt(Number(item.quantity)) * priceCents > 99999999999999n;
+                })) {
               return json(request, { error: "Complete customer, address, package and product details with valid quantities and prices." }, 400);
             }
             if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json(request, { error: "Enter a valid email address." }, 400);
-            const total = items.reduce((sum, item) => sum + Number(item.quantity) * Number(item.price), 0);
-            if (!Number.isFinite(total) || total > 999999999999.99) return json(request, { error: "The order total exceeds the database-supported amount limit. Adjust item quantities or prices." }, 400);
+            const maxOrderCents = 99999999999999n;
+            const totalCents = items.reduce((sum, item) => sum + BigInt(Number(item.quantity)) * moneyToCents(item.price), 0n);
+            if (totalCents > maxOrderCents) return json(request, { error: "The order total exceeds the database-supported amount limit. Adjust item quantities or prices." }, 400);
+            const total = centsToMoney(totalCents);
             const orderNumber = "IKO-" + Date.now().toString(36).toUpperCase() + "-" + Array.from(crypto.getRandomValues(new Uint8Array(3)), byte => byte.toString(16).padStart(2, "0")).join("").toUpperCase();
-            const itemJson = JSON.stringify(items.map(item => ({ sku: String(item.sku || "").trim().slice(0, 100) || null, name: String(item.name).trim().slice(0, 200), quantity: Number(item.quantity), price: Number(item.price) })));
+            const itemJson = JSON.stringify(items.map(item => ({ sku: String(item.sku || "").trim().slice(0, 100) || null, name: String(item.name).trim().slice(0, 200), quantity: Number(item.quantity), price: centsToMoney(moneyToCents(item.price)) })));
             const rows = await sql`
               WITH new_order AS (
                 INSERT INTO ikai.orders
