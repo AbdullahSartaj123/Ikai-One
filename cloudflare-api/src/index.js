@@ -647,7 +647,7 @@ export default {
       }
     }
 
-    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments" || url.pathname === "/api/inventory" || url.pathname.startsWith("/api/inventory/") || url.pathname === "/api/orders" || url.pathname.startsWith("/api/orders/") || url.pathname === "/api/cod-reconciliations" || url.pathname.startsWith("/api/cod-reconciliations/") || url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f-]{36}(?:\/status)?$/i.test(url.pathname) || url.pathname.startsWith("/api/admin/") || url.pathname === "/api/testing/verify-email" || url.pathname === "/api/testing/check-password-reset") {
+    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments" || url.pathname === "/api/inventory" || url.pathname.startsWith("/api/inventory/") || url.pathname === "/api/orders" || url.pathname.startsWith("/api/orders/") || url.pathname === "/api/cod-reconciliations" || url.pathname.startsWith("/api/cod-reconciliations/") || url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?:\/status)?$/i.test(url.pathname) || url.pathname.startsWith("/api/admin/") || url.pathname === "/api/testing/verify-email" || url.pathname === "/api/testing/check-password-reset") {
       if (!env.DATABASE_URL) return json(request, { error: "Database is not configured." }, 503);
       let sql;
       try {
@@ -797,7 +797,7 @@ export default {
             return json(request, { data: rows[0] }, 201);
           }
 
-          const adjustMatch = url.pathname.match(/^\/api\/inventory\/([0-9a-f-]{36})\/adjust$/i);
+          const adjustMatch = url.pathname.match(/^\/api\/inventory\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/adjust$/i);
           if (adjustMatch && request.method === "POST") {
             const body = await readJson(request);
             const delta = Number(body.quantityDelta);
@@ -839,7 +839,7 @@ export default {
             return json(request, { data: rows[0] });
           }
 
-          const movementsMatch = url.pathname.match(/^\/api\/inventory\/([0-9a-f-]{36})\/movements$/i);
+          const movementsMatch = url.pathname.match(/^\/api\/inventory\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/movements$/i);
           if (movementsMatch && request.method === "GET") {
             const requestedLimit = Number(url.searchParams.get("limit") || "50");
             if (!Number.isInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > 100) return json(request, { error: "limit must be an integer between 1 and 100." }, 400);
@@ -948,7 +948,7 @@ export default {
             return json(request, { data: rows[0] }, 201);
           }
 
-          const reviewMatch = url.pathname.match(/^\/api\/cod-reconciliations\/([0-9a-f-]{36})\/review$/i);
+          const reviewMatch = url.pathname.match(/^\/api\/cod-reconciliations\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/review$/i);
           if (reviewMatch && request.method === "POST") {
             const body = await readJson(request);
             const note = String(body.followUpNote || "").trim().slice(0, 2000) || null;
@@ -987,7 +987,7 @@ export default {
           return json(request, { error: "Method or reconciliation route not supported." }, 405);
         }
 
-        if (url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f-]{36}(?:\/status)?$/i.test(url.pathname)) {
+        if (url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?:\/status)?$/i.test(url.pathname)) {
           const user = await authenticate(request, env);
           if (!user) return json(request, { error: "Authentication required." }, 401);
 
@@ -1050,7 +1050,7 @@ export default {
             return json(request, { data: rows[0] }, 201);
           }
 
-          const recordMatch = url.pathname.match(/^\/api\/workflows\/([0-9a-f-]{36})\/status$/i);
+          const recordMatch = url.pathname.match(/^\/api\/workflows\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/status$/i);
           if (recordMatch && request.method === "POST") {
             const body = await readJson(request);
             const status = String(body.status || "").trim().slice(0, 60);
@@ -1705,7 +1705,7 @@ export default {
           return json(request, { error: "Method or reconciliation route not supported." }, 405);
         }
 
-        if (url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f-]{36}(?:\/status)?$/i.test(url.pathname)) {
+        if (url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?:\/status)?$/i.test(url.pathname)) {
           const user = await authenticate(request, env);
           if (!user) return json(request, { error: "Authentication required." }, 401);
 
@@ -1928,7 +1928,7 @@ export default {
             return json(request, { data: rows[0], message: "Order saved. Courier booking has not been performed." }, 201);
           }
 
-          const statusMatch = url.pathname.match(/^\/api\/orders\/([0-9a-f-]{36})\/status$/i);
+          const statusMatch = url.pathname.match(/^\/api\/orders\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/status$/i);
           if (statusMatch && request.method === "POST") {
             const body = await readJson(request);
             const status = String(body.status || "");
@@ -2056,13 +2056,13 @@ export default {
             return json(request, { data: rows[0], message: "Shipment record saved. Courier booking has not been performed." }, 201);
           }
 
-          const eventMatch = url.pathname.match(/^\/api\/shipments\/([0-9a-f-]{36})\/events$/i);
+          const eventMatch = url.pathname.match(/^\/api\/shipments\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/events$/i);
           if (eventMatch && request.method === "GET") {
             const rows = await sql`SELECT id, status, description, location, source, created_at FROM ikai.shipment_events WHERE shipment_id = ${eventMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid ORDER BY created_at DESC LIMIT 100`;
             return json(request, { data: rows, count: rows.length });
           }
 
-          const statusMatch = url.pathname.match(/^\/api\/shipments\/([0-9a-f-]{36})\/status$/i);
+          const statusMatch = url.pathname.match(/^\/api\/shipments\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/status$/i);
           if (statusMatch && request.method === "POST") {
             const body = await readJson(request);
             const status = String(body.status || "").trim();
