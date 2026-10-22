@@ -4,7 +4,13 @@ import { escapeCsvCell, toCsv } from "../../src/lib/csv.js";
 import { readFileSync } from "node:fs";
 
 const source = readFileSync(new URL("../../src/pages/Orders.jsx", import.meta.url), "utf8");
+const workerSource = readFileSync(new URL("../src/index.js", import.meta.url), "utf8");
 
+test("Pickup Scheduled orders remain visible and cancelable under the backend lifecycle", () => {
+  assert.match(source, /const savedOrderStatuses = \['New', 'Processing', 'Ready to Ship', 'Pickup Scheduled', 'In Transit'/);
+  assert.match(source, /const cancelableOrderStatuses = \['New', 'Processing', 'Ready to Ship', 'Pickup Scheduled'\]/);
+  assert.match(workerSource, /"Pickup Scheduled": \["Ready to Ship", "In Transit", "Shipped", "NDR raised", "Cancelled"\]/);
+});
 test("bulk cancellation persists each eligible saved order through the status API", () => {
   const start = source.indexOf("async function bulkAction(action)");
   const end = source.indexOf("\n  function openFilters()", start);
