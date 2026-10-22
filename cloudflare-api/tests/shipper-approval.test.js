@@ -288,3 +288,24 @@ test("admin prefix guard closes before tenant inventory routes", () => {
   assert.ok(inventoryStart > adminEnd);
   assert.ok(!worker.slice(inventoryStart, inventoryStart + 300).includes("isPlatformAdmin"), "tenant inventory routes must not inherit the platform-admin guard");
 });
+
+
+test("staging verification helper can test the pending-approval gate before isolated test approval", () => {
+  const helperStart = worker.indexOf('if (url.pathname === "/api/testing/verify-email" && request.method === "POST")');
+  const helperEnd = worker.indexOf('if (url.pathname === "/api/testing/check-password-reset" && request.method === "POST")', helperStart);
+  assert.ok(helperStart >= 0 && helperEnd > helperStart, "verification test helper must be a distinct endpoint block");
+  const helper = worker.slice(helperStart, helperEnd);
+  assert.match(helper, /env\.ENABLE_TEST_HELPERS !== "true" \|\| !env\.TEST_HELPER_SECRET/);
+  assert.match(helper, /request\.headers\.get\("X-Testing-Verification-Secret"\) !== env\.TEST_HELPER_SECRET/);
+  assert.match(helper, /const applyTestApproval = body\.approve !== false/);
+  assert.match(helper, /if \(applyTestApproval\) \{[\s\S]*?SET approval_status = 'approved'/);
+  assert.match(helper, /approvalStatus: applyTestApproval \? "approved" : "pending"/);
+  assert.match(helper, /Testing account email verified; shipper approval remains pending/);
+});
+
+test("staging authentication E2E explicitly expects pending shippers to be denied login", async () => {
+  const workflow = await readFile(new URL("../../.github/workflows/staging-auth-e2e.yml", import.meta.url), "utf8");
+  assert.match(workflow, /email:\$email,approve:false/);
+  assert.match(workflow, /ACCOUNT_PENDING_APPROVAL/);
+  assert.match(workflow, /email:\$email,approve:true/);
+});
