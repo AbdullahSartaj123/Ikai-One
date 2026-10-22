@@ -37,7 +37,6 @@ test("row cancellation is disabled for statuses the API will reject", () => {
   assert.match(source, /updateOrderStatus\(order,'Cancelled'\)/);
 });
 
-const workerSource = readFileSync(new URL("../src/index.js", import.meta.url), "utf8");
 const shipmentPageSource = readFileSync(new URL("../../src/pages/Shipments.jsx", import.meta.url), "utf8");
 
 test("bulk order cancellation prevents overlapping requests and keeps selection stable while running", () => {
