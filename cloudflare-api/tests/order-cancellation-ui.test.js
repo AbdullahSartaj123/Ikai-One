@@ -21,7 +21,7 @@ test("bulk cancellation persists each eligible saved order through the status AP
 });
 
 test("bulk cancellation only includes statuses accepted by the order cancellation lifecycle", () => {
-  assert.match(source, /const cancelableOrderStatuses = \['New', 'Processing', 'Ready to Ship'\]/);
+  assert.match(source, /const cancelableOrderStatuses = \\['New', 'Processing', 'Ready to Ship', 'Pickup Scheduled'\\]/);
   assert.match(source, /cancelableOrderStatuses\.includes\(order\.status\)/);
   assert.match(source, /Only New, Processing, Ready to Ship and Pickup Scheduled orders are eligible/);
 });
