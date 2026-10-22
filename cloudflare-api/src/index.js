@@ -678,16 +678,25 @@ export default {
             WHERE user_id = ${rows[0].user_id} AND purpose = 'verify_email' AND consumed_at IS NULL
           `;
           // Test-only approval is available exclusively behind the isolated Worker secret.
-          await sql`
-            UPDATE ikai.organizations o
-            SET approval_status = 'approved', approval_reviewed_at = now(),
-                approval_note = 'Approved by isolated test helper'
-            FROM ikai.users u
-            WHERE u.id = ${rows[0].user_id}::uuid
-              AND u.organization_id = o.id
-              AND o.organization_type = 'shipper'
-          `;
-          return json(request, { message: "Testing account email verified and test approval applied." });
+          // Pass approve:false to verify email without bypassing the real approval gate in staging E2E tests.
+          const applyTestApproval = body.approve !== false;
+          if (applyTestApproval) {
+            await sql`
+              UPDATE ikai.organizations o
+              SET approval_status = 'approved', approval_reviewed_at = now(),
+                  approval_note = 'Approved by isolated test helper'
+              FROM ikai.users u
+              WHERE u.id = ${rows[0].user_id}::uuid
+                AND u.organization_id = o.id
+                AND o.organization_type = 'shipper'
+            `;
+          }
+          return json(request, {
+            message: applyTestApproval
+              ? "Testing account email verified and test approval applied."
+              : "Testing account email verified; shipper approval remains pending.",
+            approvalStatus: applyTestApproval ? "approved" : "pending",
+          });
         }
         if (url.pathname === "/api/testing/check-password-reset" && request.method === "POST") {
           if (env.ENABLE_TEST_HELPERS !== "true" || env.DISABLE_EMAIL !== "true" || !env.TEST_HELPER_SECRET) {
