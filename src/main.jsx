@@ -1,6 +1,6 @@
 import React, { Component, Suspense, lazy, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route, Navigate, useLocation, Link } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, Link, Outlet } from 'react-router-dom'
 import { ArrowUpRight, Boxes } from 'lucide-react'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 import './styles.css'
@@ -8,6 +8,7 @@ import './styles/theme.css'
 import './styles/dashboard.css'
 import './styles/auth.css'
 import './styles/ui.css'
+import './styles/admin.css'
 
 // Keep route modules in separate chunks so an issue in a dashboard-only page
 // cannot prevent the public landing page from starting.
@@ -24,6 +25,7 @@ const DashboardLayout = lazy(() => import('./layouts/DashboardLayout.jsx'))
 const Blog = lazy(() => import('./pages/Blog.jsx'))
 const PublicPages = lazy(() => import('./pages/PublicPages.jsx'))
 const NotFound = lazy(() => import('./pages/NotFound.jsx'))
+const AdminConsole = lazy(() => import('./pages/AdminConsole.jsx'))
 
 class AppErrorBoundary extends Component {
   constructor(props) {
@@ -58,6 +60,17 @@ function ScrollToTop() {
   return null
 }
 
+function PlatformAdminRoute() {
+  const { user, isAuthenticated, authLoading } = useAuth()
+  const location = useLocation()
+  if (authLoading) {
+    return <main className="app-loading" role="status" aria-live="polite"><p>Checking your secure session…</p></main>
+  }
+  if (!isAuthenticated) return <Navigate to="/login" replace state={{ from: location }} />
+  if (!user?.isPlatformAdmin) return <Navigate to="/app/dashboard" replace />
+  return <Outlet />
+}
+
 function ShipperEntry() {
   const location = useLocation()
   const { isAuthenticated, authLoading } = useAuth()
@@ -89,7 +102,12 @@ function Root() {
     <Route path="/signup" element={<Signup/>}/>
     <Route path="/verify-otp" element={<VerifyOTP/>}/>
     <Route path="/onboarding" element={<Onboarding/>}/>
-    <Route element={<ProtectedRoute/>}><Route path="/dashboard" element={<DashboardLayout/>}><Route index element={<DashboardHome/>}/></Route></Route>
+    <Route element={<ProtectedRoute/>}>
+      <Route path="/dashboard" element={<DashboardLayout/>}><Route index element={<DashboardHome/>}/></Route>
+    </Route>
+    <Route element={<PlatformAdminRoute/>}>
+      <Route path="/admin" element={<AdminConsole/>}/>
+    </Route>
     <Route path="/app" element={<ProtectedRoute/>}>
       <Route index element={<Navigate to="dashboard" replace/>}/>
       <Route path="*" element={<Dashboard/>}/>
