@@ -49,13 +49,33 @@ jobs:
             --request POST "$STAGING_API/api/testing/verify-email" \
             --header 'Content-Type: application/json' \
             --header "X-Testing-Verification-Secret: $TEST_HELPER_SECRET" \
-            --data "$(jq -n --arg email "$email" '{email:$email}')")"
+            --data "$(jq -n --arg email "$email" '{email:$email,approve:false}')")"
           cat /tmp/verify.json
           if [ "$status" = "404" ]; then
             echo "Test helper returned 404. Confirm GitHub Actions secret TEST_HELPER_SECRET exactly matches the staging Worker secret TEST_HELPER_SECRET."
             exit 1
           fi
           test "$status" = "200" || { echo "Test verification failed: HTTP $status"; exit 1; }
+          grep -q '"approvalStatus":"pending"' /tmp/verify.json
+
+          # Email verification alone must not grant dashboard access before administrator approval.
+          status="$(curl --silent --show-error --output /tmp/pending-login.json --write-out '%{http_code}' \
+            --request POST "$STAGING_API/api/auth/login" \
+            --header 'Content-Type: application/json' \
+            --data "$(jq -n --arg email "$email" --arg password "$password" '{email:$email,password:$password}')")"
+          cat /tmp/pending-login.json
+          test "$status" = "403" || { echo "Pending shipper login should be denied: HTTP $status"; exit 1; }
+          grep -q '"code":"ACCOUNT_PENDING_APPROVAL"' /tmp/pending-login.json
+
+          # Only the secret-protected staging helper may simulate the trusted admin approval.
+          status="$(curl --silent --show-error --output /tmp/approve.json --write-out '%{http_code}' \
+            --request POST "$STAGING_API/api/testing/verify-email" \
+            --header 'Content-Type: application/json' \
+            --header "X-Testing-Verification-Secret: $TEST_HELPER_SECRET" \
+            --data "$(jq -n --arg email "$email" '{email:$email,approve:true}')")"
+          cat /tmp/approve.json
+          test "$status" = "200" || { echo "Test-only approval failed: HTTP $status"; exit 1; }
+          grep -q '"approvalStatus":"approved"' /tmp/approve.json
 
           status="$(curl --silent --show-error --output /tmp/login.json --write-out '%{http_code}' \
             --request POST "$STAGING_API/api/auth/login" \
@@ -95,4 +115,4 @@ jobs:
           cat /tmp/logout.json
           test "$status" = "200" || { echo "Logout failed: HTTP $status"; exit 1; }
 
-          echo "PASS: staging registration, test verification, login, bearer session, password reset, single-use reset token, and logout."
+          echo "PASS: staging registration, email verification, pending-approval login denial, isolated test approval, login, bearer session, password reset, single-use reset token, and logout."
