@@ -708,7 +708,7 @@ export default {
             return json(request, { error: "Not found." }, 404);
           }
           const header = request.headers.get("Authorization") || "";
-          const match = header.match(/^Bearer\\s+([A-Za-z0-9_-]{30,100})$/);
+          const match = header.match(/^Bearer\s+([A-Za-z0-9_-]{30,100})$/);
           if (!match) return json(request, { error: "A valid active session is required." }, 401);
           const tokenHash = await sha256(match[1]);
           const rows = await sql`
