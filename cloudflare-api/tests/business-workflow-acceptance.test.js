@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 const worker = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
 const dashboardMetrics = await readFile(new URL("../../src/lib/dashboardMetrics.js", import.meta.url), "utf8");
 const ordersPage = await readFile(new URL("../../src/pages/Orders.jsx", import.meta.url), "utf8");
+const apiClient = await readFile(new URL("../../src/lib/api.js", import.meta.url), "utf8");
 
 test("shipper approval blocks login until approval and distinguishes rejected accounts", () => {
   assert.match(worker, /ACCOUNT_PENDING_APPROVAL/);
@@ -53,6 +54,21 @@ test("dashboard metrics derive trends, courier rankings and alerts from loaded r
   assert.match(dashboardMetrics, /buildTopCourierPartners/);
   assert.match(dashboardMetrics, /buildDashboardAlerts/);
   assert.match(dashboardMetrics, /cod_expected/);
+});
+
+test("frontend API client handles connectivity failures and preserves HTTP error details", () => {
+  assert.match(apiClient, /Unable to reach Ikai\\.One services/);
+  assert.match(apiClient, /error\\.status = response\\.status/);
+  assert.match(apiClient, /error\\.code = payload\\.code/);
+  assert.match(apiClient, /response\\.json\\(\\)\\.catch\\(\\(\\) => \\(\\{\\}\\)\\)/);
+  assert.match(apiClient, /cache: 'no-store'/);
+});
+
+test("staging API uses bearer sessions without changing production cookie behavior", () => {
+  assert.match(apiClient, /hostname\\.endsWith\\('\\.workers\\.dev'\\)/);
+  assert.match(apiClient, /credentials: USE_STAGING_BEARER \\? 'omit' : 'include'/);
+  assert.match(apiClient, /STAGING_TOKEN_KEY/);
+  assert.match(apiClient, /sessionStorage\\.removeItem\\(STAGING_TOKEN_KEY\\)/);
 });
 
 test("test-only verification endpoints are disabled unless explicitly enabled with a secret", () => {
