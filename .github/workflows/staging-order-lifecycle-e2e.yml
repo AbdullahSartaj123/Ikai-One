@@ -69,13 +69,15 @@ jobs:
           order_id="$(jq -r '.data.id // empty' /tmp/order-create.json)"
           order_number="$(jq -r '.data.order_number // empty' /tmp/order-create.json)"
           test -n "$order_id" && test -n "$order_number"
+          echo "STAGING_ORDER_ID=$order_id" >> "$GITHUB_ENV"
+          echo "STAGING_ORDER_NUMBER=$order_number" >> "$GITHUB_ENV"
           test "$(jq -r '.data.amount' /tmp/order-create.json)" = "251"
           test "$(jq -r '.data.items[0].quantity' /tmp/order-create.json)" = "2"
           test "$(jq -r '.data.status' /tmp/order-create.json)" = "New"
           grep -q 'Courier booking has not been performed' /tmp/order-create.json
           status="$(curl --silent --show-error --output /tmp/order-list.json --write-out '%{http_code}' \
             --header "Authorization: Bearer $STAGING_TOKEN" \
-            "$STAGING_API/api/orders?limit=100&search=$order_number")"
+            "$STAGING_API/api/orders?limit=100&search=$STAGING_ORDER_NUMBER")"
           test "$status" = "200" || { cat /tmp/order-list.json; echo "Order list read failed: HTTP $status"; exit 1; }
           jq -e --arg id "$order_id" --arg number "$order_number" '.data | any(.[]; .id == $id and .order_number == $number and .items[0].quantity == 2)' /tmp/order-list.json >/dev/null
           echo "Created and re-read order $order_number ($order_id) with persisted item details and total."
