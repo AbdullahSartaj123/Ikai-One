@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 
 const worker = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
 const dashboardMetrics = await readFile(new URL("../../src/lib/dashboardMetrics.js", import.meta.url), "utf8");
+const dashboardPage = await readFile(new URL("../../src/pages/Dashboard.jsx", import.meta.url), "utf8");
 const ordersPage = await readFile(new URL("../../src/pages/Orders.jsx", import.meta.url), "utf8");
 const apiClient = await readFile(new URL("../../src/lib/api.js", import.meta.url), "utf8");
 
@@ -69,6 +70,17 @@ test("staging API uses bearer sessions without changing production cookie behavi
   assert.ok(apiClient.includes("credentials: USE_STAGING_BEARER ? 'omit' : 'include'"));
   assert.ok(apiClient.includes("STAGING_TOKEN_KEY"));
   assert.ok(apiClient.includes("sessionStorage.removeItem(STAGING_TOKEN_KEY)"));
+});
+
+test("dashboard clearly distinguishes live data, loading, and sample-data fallback", () => {
+  assert.match(dashboardPage, /apiRequest\('\/api\/orders\?limit=100'\)/);
+  assert.match(dashboardPage, /apiRequest\('\/api\/shipments\?limit=100'\)/);
+  assert.match(dashboardPage, /apiRequest\('\/api\/cod-reconciliations\?limit=100'\)/);
+  assert.match(dashboardPage, /apiRequest\('\/api\/inventory\?limit=100'\)/);
+  assert.match(dashboardPage, /Live data unavailable/);
+  assert.match(dashboardPage, /Displaying clearly identified sample data/);
+  assert.match(dashboardPage, /Connected to live workspace data/);
+  assert.match(dashboardPage, /SAMPLE METRICS/);
 });
 
 test("test-only verification endpoints are disabled unless explicitly enabled with a secret", () => {
