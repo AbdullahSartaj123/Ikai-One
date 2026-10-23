@@ -647,7 +647,7 @@ export default {
       }
     }
 
-    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments" || url.pathname === "/api/inventory" || url.pathname.startsWith("/api/inventory/") || url.pathname === "/api/orders" || url.pathname.startsWith("/api/orders/") || url.pathname === "/api/cod-reconciliations" || url.pathname.startsWith("/api/cod-reconciliations/") || url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?:\/status)?$/i.test(url.pathname) || url.pathname.startsWith("/api/admin/") || url.pathname === "/api/testing/verify-email" || url.pathname === "/api/testing/check-password-reset") {
+    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments" || url.pathname === "/api/inventory" || url.pathname.startsWith("/api/inventory/") || url.pathname === "/api/orders" || url.pathname.startsWith("/api/orders/") || url.pathname === "/api/cod-reconciliations" || url.pathname.startsWith("/api/cod-reconciliations/") || url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?:\/status)?$/i.test(url.pathname) || url.pathname.startsWith("/api/admin/") || url.pathname === "/api/testing/verify-email" || url.pathname === "/api/testing/check-password-reset" || url.pathname === "/api/testing/expire-session") {
       if (!env.DATABASE_URL) return json(request, { error: "Database is not configured." }, 503);
       let sql;
       try {
@@ -697,6 +697,28 @@ export default {
               : "Testing account email verified; shipper approval remains pending.",
             approvalStatus: applyTestApproval ? "approved" : "pending",
           });
+        }
+        if (url.pathname === "/api/testing/expire-session" && request.method === "POST") {
+          // Explicitly isolated test-only endpoint: disabled unless email delivery is disabled,
+          // test helpers are enabled, and the private staging helper secret is configured.
+          if (env.ENABLE_TEST_HELPERS !== "true" || env.DISABLE_EMAIL !== "true" || !env.TEST_HELPER_SECRET) {
+            return json(request, { error: "Endpoint not found." }, 404);
+          }
+          if (request.headers.get("X-Testing-Verification-Secret") !== env.TEST_HELPER_SECRET) {
+            return json(request, { error: "Not found." }, 404);
+          }
+          const header = request.headers.get("Authorization") || "";
+          const match = header.match(/^Bearer\\s+([A-Za-z0-9_-]{30,100})$/);
+          if (!match) return json(request, { error: "A valid active session is required." }, 401);
+          const tokenHash = await sha256(match[1]);
+          const rows = await sql`
+            UPDATE ikai.auth_sessions
+            SET expires_at = LEAST(expires_at, now() - interval '1 second')
+            WHERE token_hash = ${tokenHash} AND revoked_at IS NULL
+            RETURNING token_hash
+          `;
+          if (!rows[0]) return json(request, { error: "No active session found." }, 404);
+          return json(request, { message: "Session expired for isolated staging verification." });
         }
         if (url.pathname === "/api/testing/check-password-reset" && request.method === "POST") {
           if (env.ENABLE_TEST_HELPERS !== "true" || env.DISABLE_EMAIL !== "true" || !env.TEST_HELPER_SECRET) {
