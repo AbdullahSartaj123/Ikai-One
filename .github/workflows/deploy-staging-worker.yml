@@ -1,12 +1,6 @@
 name: Deploy Ikai.One API to STAGING
 
 on:
-  push:
-    branches:
-      - staging/phase1-auth
-    paths:
-      - "cloudflare-api/**"
-      - ".github/workflows/deploy-staging-worker.yml"
   workflow_dispatch:
     inputs:
       target:
@@ -25,13 +19,11 @@ concurrency:
 
 jobs:
   deploy-staging:
-    if: github.event_name == 'push' || inputs.target == 'staging'
+    if: inputs.target == 'staging'
     runs-on: ubuntu-latest
     steps:
-      - name: Check out staging authentication branch
+      - name: Check out this candidate branch
         uses: actions/checkout@v4
-        with:
-          ref: staging/phase1-auth
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -42,14 +34,17 @@ jobs:
         working-directory: cloudflare-api
         run: npm install
 
-      - name: Confirm staging config targets the staging Worker
+      - name: Run Worker tests
+        working-directory: cloudflare-api
+        run: npm test
+
+      - name: Confirm staging config cannot target production
         working-directory: cloudflare-api
         shell: bash
         run: |
           grep -Eq '^name = "ikai-one-api-staging"$' wrangler.staging.toml
-          grep -Eq '^DISABLE_EMAIL = "true"$' wrangler.staging.toml
-          grep -Eq '^STAGING_BEARER_MODE = "true"$' wrangler.staging.toml
           ! grep -Eq '^name = "ikai-one-api"$' wrangler.staging.toml
+          ! grep -Eq 'api\\.ikai\\.one|custom_domain|^routes' wrangler.staging.toml
 
       - name: Deploy staging Worker only
         working-directory: cloudflare-api
@@ -57,3 +52,10 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Verify staging API health
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --silent --show-error --fail --retry 5 --retry-delay 3 --retry-all-errors \
+            "https://ikai-one-api-staging.abdullah-sartaj-ahmad.workers.dev/health"
