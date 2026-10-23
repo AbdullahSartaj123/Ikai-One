@@ -64,3 +64,26 @@ test("session cookie is not scoped to a parent domain and is host-only", () => {
   assert.match(wrapper, /const SESSION_COOKIE = "__Host-ikai_session"/);
   assert.doesNotMatch(wrapper, /Domain=ikai\.one/i);
 });
+
+const stagingWorkflow = await readFile(new URL("../../.github/workflows/staging-auth-e2e.yml", import.meta.url), "utf8");
+const stagingConfig = await readFile(new URL("../wrangler.staging.toml", import.meta.url), "utf8");
+
+test("forced-expiry test helper is isolated behind disabled email, test flag, and secret", () => {
+  assert.match(worker, /url\.pathname === "\/api\/testing\/expire-session" && request\.method === "POST"/);
+  assert.match(worker, /env\.ENABLE_TEST_HELPERS !== "true" \|\| env\.DISABLE_EMAIL !== "true" \|\| !env\.TEST_HELPER_SECRET/);
+  assert.match(worker, /X-Testing-Verification-Secret/);
+  assert.match(worker, /SET expires_at = LEAST\(expires_at, now\(\) - interval '1 second'\)/);
+  assert.match(wrapper, /url\.pathname === "\/api\/testing\/expire-session" && request\.method === "POST"/);
+  assert.match(stagingConfig, /DISABLE_EMAIL = "true"/);
+  assert.match(stagingConfig, /ENABLE_TEST_HELPERS = "true"/);
+  assert.match(stagingConfig, /STAGING_BEARER_MODE = "true"/);
+});
+
+test("staging E2E covers two concurrent sessions, per-session logout revocation, and expiry", () => {
+  assert.match(stagingWorkflow, /COOKIE_A/);
+  assert.match(stagingWorkflow, /COOKIE_B/);
+  assert.match(stagingWorkflow, /expire-session/);
+  assert.match(stagingWorkflow, /Session A should remain active after session B logout/);
+  assert.match(stagingWorkflow, /Session B bearer token should be revoked after logout/);
+  assert.match(stagingWorkflow, /Expired session A should be rejected/);
+});
