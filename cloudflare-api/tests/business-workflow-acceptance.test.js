@@ -57,18 +57,18 @@ test("dashboard metrics derive trends, courier rankings and alerts from loaded r
 });
 
 test("frontend API client handles connectivity failures and preserves HTTP error details", () => {
-  assert.match(apiClient, /Unable to reach Ikai\\.One services/);
-  assert.match(apiClient, /error\\.status = response\\.status/);
-  assert.match(apiClient, /error\\.code = payload\\.code/);
-  assert.match(apiClient, /response\\.json\\(\\)\\.catch\\(\\(\\) => \\(\\{\\}\\)\\)/);
-  assert.match(apiClient, /cache: 'no-store'/);
+  assert.ok(apiClient.includes("Unable to reach Ikai.One services"));
+  assert.ok(apiClient.includes("error.status = response.status"));
+  assert.ok(apiClient.includes("error.code = payload.code"));
+  assert.ok(apiClient.includes("response.json().catch(() => ({}))"));
+  assert.ok(apiClient.includes("cache: 'no-store'"));
 });
 
 test("staging API uses bearer sessions without changing production cookie behavior", () => {
-  assert.match(apiClient, /hostname\\.endsWith\\('\\.workers\\.dev'\\)/);
-  assert.match(apiClient, /credentials: USE_STAGING_BEARER \\? 'omit' : 'include'/);
-  assert.match(apiClient, /STAGING_TOKEN_KEY/);
-  assert.match(apiClient, /sessionStorage\\.removeItem\\(STAGING_TOKEN_KEY\\)/);
+  assert.ok(apiClient.includes("hostname.endsWith('.workers.dev')"));
+  assert.ok(apiClient.includes("credentials: USE_STAGING_BEARER ? 'omit' : 'include'"));
+  assert.ok(apiClient.includes("STAGING_TOKEN_KEY"));
+  assert.ok(apiClient.includes("sessionStorage.removeItem(STAGING_TOKEN_KEY)"));
 });
 
 test("test-only verification endpoints are disabled unless explicitly enabled with a secret", () => {
