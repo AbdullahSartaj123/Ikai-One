@@ -41,3 +41,26 @@ test("multiple sessions are supported independently rather than enforcing one se
   assert.doesNotMatch(worker, /DELETE FROM ikai\.auth_sessions WHERE user_id/);
   assert.doesNotMatch(worker, /UPDATE ikai\.auth_sessions SET revoked_at = now\(\) WHERE user_id/);
 });
+
+test("logout clears the browser cookie even when the API cannot reach its database", async () => {
+  const { default: wrapper } = await import("../cookie-wrapper.js");
+  const request = new Request("https://api.example.test/api/auth/logout", {
+    method: "POST",
+    headers: {
+      Cookie: "__Host-ikai_session=not-a-real-token",
+      Origin: "https://ikai.one",
+    },
+  });
+  const response = await wrapper.fetch(request, {});
+  const setCookie = response.headers.get("Set-Cookie") || "";
+  assert.match(setCookie, /^__Host-ikai_session=;/);
+  assert.match(setCookie, /HttpOnly/);
+  assert.match(setCookie, /Secure/);
+  assert.match(setCookie, /SameSite=Lax/);
+  assert.match(setCookie, /Max-Age=0/);
+});
+
+test("session cookie is not scoped to a parent domain and is host-only", () => {
+  assert.match(wrapper, /const SESSION_COOKIE = "__Host-ikai_session"/);
+  assert.doesNotMatch(wrapper, /Domain=ikai\.one/i);
+});
