@@ -7,6 +7,16 @@ on:
       - ".github/workflows/staging-auth-e2e.yml"
       - "cloudflare-api/src/index.js"
       - "cloudflare-api/cookie-wrapper.js"
+      - "cloudflare-api/tests/session-lifecycle-security.test.js"
+      - "cloudflare-api/wrangler.staging.toml"
+  pull_request:
+    branches: [integration/staging-candidate-shipper-approval]
+    paths:
+      - ".github/workflows/staging-auth-e2e.yml"
+      - "cloudflare-api/src/index.js"
+      - "cloudflare-api/cookie-wrapper.js"
+      - "cloudflare-api/tests/session-lifecycle-security.test.js"
+      - "cloudflare-api/wrangler.staging.toml"
   workflow_dispatch:
 
 permissions:
