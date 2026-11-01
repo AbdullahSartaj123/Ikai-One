@@ -1,0 +1,35 @@
+name: Package Ikai.One WordPress Theme
+
+on:
+  push:
+    branches:
+      - feature/ikai-one-whatsapp-catalogue
+    paths:
+      - "wordpress/ikai-catalogue-theme/**"
+      - ".github/workflows/package-wordpress-theme.yml"
+  workflow_dispatch:
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+      - name: Check PHP syntax
+        run: |
+          find wordpress/ikai-catalogue-theme -name "*.php" -print0 | xargs -0 -n1 php -l
+      - name: Create installable theme ZIP
+        run: |
+          mkdir -p dist
+          cd wordpress
+          zip -r ../dist/ikai-catalogue-theme.zip ikai-catalogue-theme
+      - name: Upload theme ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: ikai-catalogue-theme
+          path: dist/ikai-catalogue-theme.zip
+          if-no-files-found: error
