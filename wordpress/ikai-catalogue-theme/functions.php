@@ -12,7 +12,6 @@ add_action('after_setup_theme','ikai_catalogue_setup');
 
 function ikai_catalogue_assets() {
     wp_enqueue_style('ikai-catalogue-style', get_stylesheet_uri(), array(), '1.0.0');
-    wp_enqueue_script('ikai-catalogue-menu', get_template_directory_uri().'/assets/menu.js', array(), '1.0.0', true);
 }
 add_action('wp_enqueue_scripts','ikai_catalogue_assets');
 
