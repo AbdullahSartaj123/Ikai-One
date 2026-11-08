@@ -58,6 +58,22 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
+      - name: Apply and verify the staging shipper approval migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          status="$(curl --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors \
+            --output /tmp/migration.json --write-out '%{http_code}' \
+            --request POST "https://ikai-one-api-staging.abdullahsartaj-ahmad.workers.dev/api/testing/apply-shipper-approval-migration" \
+            --header "X-Testing-Verification-Secret: $TEST_HELPER_SECRET")"
+          cat /tmp/migration.json
+          test "$status" = "200" || { echo "Staging migration failed: HTTP $status"; exit 1; }
+          grep -q '"approval_column_exists":true' /tmp/migration.json
+          grep -q '"platform_admins_exists":true' /tmp/migration.json
+          grep -q '"platform_audit_events_exists":true' /tmp/migration.json
+        env:
+          TEST_HELPER_SECRET: ${{ secrets.TEST_HELPER_SECRET }}
+
       - name: Verify staging API health
         shell: bash
         run: |
