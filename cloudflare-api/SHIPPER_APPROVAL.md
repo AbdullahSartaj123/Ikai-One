@@ -2,8 +2,8 @@
 
 ## Migration order
 
-1. Review and apply `cloudflare-api/migrations/0008_shipper_approval.sql` to the relevant Neon database before deploying the Worker code that references the new columns and tables.
-2. Apply the migration to staging before deploying the branch to staging. Apply it to production before merging/deploying this change to production; the migration is additive and preserves existing organizations as approved.
+1. Confirm the prerequisite `ikai.organizations` and `ikai.users` foundation tables exist. Apply migrations 0001–0008 in order, then apply `cloudflare-api/migrations/0009_tenant_integrity_constraints.sql`. The 0009 migration checks for legacy cross-tenant references and aborts without changing data if any are found. Apply it only after reviewing a Neon restore point.
+2. Apply the migrations to staging before deploying the corresponding Worker. Apply the migrations to production before deploying Worker code that depends on them. Migration 0008 is additive and preserves existing organizations as approved; migration 0009 adds composite tenant-ownership foreign keys.
 3. Keep `ENABLE_TEST_HELPERS` disabled in production. The test verification helper auto-approves only when the test-only helper is enabled and its secret is supplied.
 
 ## Provision the two platform administrators
