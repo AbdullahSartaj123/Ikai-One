@@ -28,7 +28,7 @@ test("shipment events are constrained to shipments owned by the same organizatio
 });
 
 test("tenant integrity constraints are idempotently installed and verified before commit", () => {
-  assert.equal((migration.match(/IF NOT EXISTS \(/g) || []).length, 5);
+  assert.equal((migration.match(/IF NOT EXISTS \(/g) || []).length, 6);
   assert.match(migration, /AND contype = 'f' AND convalidated/);
   assert.match(migration, /BEGIN;[\s\S]*COMMIT;/);
   assert.doesNotMatch(migration, /\bDROP\s+(TABLE|SCHEMA|DATABASE|CONSTRAINT)\b/i);
