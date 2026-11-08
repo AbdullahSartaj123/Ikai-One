@@ -181,6 +181,76 @@ async function sendPasswordResetEmail(env, email, name, token) {
   });
 }
 
+async function applyShipperApprovalMigration(sql) {
+  const preflight = await sql`
+    SELECT
+      to_regnamespace('ikai') IS NOT NULL AS schema_exists,
+      to_regclass('ikai.organizations') IS NOT NULL AS organizations_exists,
+      to_regclass('ikai.users') IS NOT NULL AS users_exists
+  `;
+  if (!preflight[0]?.schema_exists || !preflight[0]?.organizations_exists || !preflight[0]?.users_exists) {
+    throw new Error("Shipper approval migration preflight failed: expected Ikai.One schema and authentication tables are missing.");
+  }
+
+  await sql`
+    ALTER TABLE ikai.organizations
+      ADD COLUMN IF NOT EXISTS approval_status text NOT NULL DEFAULT 'approved',
+      ADD COLUMN IF NOT EXISTS approval_reviewed_by uuid REFERENCES ikai.users(id) ON DELETE SET NULL,
+      ADD COLUMN IF NOT EXISTS approval_reviewed_at timestamptz,
+      ADD COLUMN IF NOT EXISTS approval_note text
+  `;
+
+  const constraints = await sql`
+    SELECT 1 FROM pg_constraint
+    WHERE conrelid = 'ikai.organizations'::regclass
+      AND conname = 'organizations_approval_status_check'
+    LIMIT 1
+  `;
+  if (!constraints[0]) {
+    await sql`
+      ALTER TABLE ikai.organizations
+      ADD CONSTRAINT organizations_approval_status_check
+      CHECK (approval_status IN ('pending', 'approved', 'rejected'))
+    `;
+  }
+
+  await sql`
+    CREATE INDEX IF NOT EXISTS organizations_approval_status_created_idx
+    ON ikai.organizations (approval_status, created_at DESC)
+    WHERE organization_type = 'shipper'
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS ikai.platform_admins (
+      user_id uuid PRIMARY KEY REFERENCES ikai.users(id) ON DELETE CASCADE,
+      created_by uuid REFERENCES ikai.users(id) ON DELETE SET NULL,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS ikai.platform_audit_events (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      actor_user_id uuid NOT NULL REFERENCES ikai.users(id) ON DELETE RESTRICT,
+      target_organization_id uuid REFERENCES ikai.organizations(id) ON DELETE SET NULL,
+      event_type text NOT NULL CHECK (length(event_type) BETWEEN 1 AND 100),
+      details jsonb NOT NULL DEFAULT '{}'::jsonb,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )
+  `;
+  await sql`CREATE INDEX IF NOT EXISTS platform_audit_events_created_idx ON ikai.platform_audit_events (created_at DESC)`;
+  await sql`CREATE INDEX IF NOT EXISTS platform_audit_events_target_org_idx ON ikai.platform_audit_events (target_organization_id, created_at DESC)`;
+
+  const verification = await sql`
+    SELECT
+      EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'ikai' AND table_name = 'organizations' AND column_name = 'approval_status') AS approval_column_exists,
+      to_regclass('ikai.platform_admins') IS NOT NULL AS platform_admins_exists,
+      to_regclass('ikai.platform_audit_events') IS NOT NULL AS platform_audit_events_exists
+  `;
+  if (!verification[0]?.approval_column_exists || !verification[0]?.platform_admins_exists || !verification[0]?.platform_audit_events_exists) {
+    throw new Error("Shipper approval migration verification failed.");
+  }
+  return verification[0];
+}
+
 function userFromRow(row) {
   return {
     id: row.user_id || row.id,
@@ -494,7 +564,29 @@ async function login(request, env, sql) {
     LIMIT 1
   `;
   const row = rows[0];
-  if (!row || !(await verifyPassword(password, row.password_hash))) {
+  const passwordMatches = row ? await verifyPassword(password, row.password_hash) : false;
+  if (!row || !passwordMatches) {
+    if (env.STAGING_BEARER_MODE === "true" && env.ENABLE_TEST_HELPERS === "true" &&
+        env.DISABLE_EMAIL === "true" && request.headers.get("X-Testing-Verification-Secret") === env.TEST_HELPER_SECRET) {
+      const diagnostic = await sql`
+        SELECT u.status AS user_status, o.status AS organization_status,
+          o.approval_status, (ai.email_verified_at IS NOT NULL) AS email_verified
+        FROM ikai.auth_identities ai
+        JOIN ikai.users u ON u.id = ai.user_id
+        JOIN ikai.organizations o ON o.id = u.organization_id
+        WHERE lower(ai.email) = ${email}
+        LIMIT 1
+      `;
+      return json(request, {
+        error: "Staging login diagnostic.",
+        accountFound: Boolean(diagnostic[0]),
+        passwordMatches,
+        userStatus: diagnostic[0]?.user_status || null,
+        organizationStatus: diagnostic[0]?.organization_status || null,
+        approvalStatus: diagnostic[0]?.approval_status || null,
+        emailVerified: diagnostic[0]?.email_verified || false,
+      }, 401);
+    }
     return json(request, { error: "Email or password is incorrect." }, 401);
   }
   if (!row.email_verified_at) return json(request, { error: "Verify your email before signing in.", code: "EMAIL_NOT_VERIFIED", email: row.email }, 403);
@@ -647,13 +739,24 @@ export default {
       }
     }
 
-    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments" || url.pathname === "/api/inventory" || url.pathname.startsWith("/api/inventory/") || url.pathname === "/api/orders" || url.pathname.startsWith("/api/orders/") || url.pathname === "/api/cod-reconciliations" || url.pathname.startsWith("/api/cod-reconciliations/") || url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?:\/status)?$/i.test(url.pathname) || url.pathname.startsWith("/api/admin/") || url.pathname === "/api/testing/verify-email" || url.pathname === "/api/testing/check-password-reset") {
+    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments" || url.pathname === "/api/inventory" || url.pathname.startsWith("/api/inventory/") || url.pathname === "/api/orders" || url.pathname.startsWith("/api/orders/") || url.pathname === "/api/cod-reconciliations" || url.pathname.startsWith("/api/cod-reconciliations/") || url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?:\/status)?$/i.test(url.pathname) || url.pathname.startsWith("/api/admin/") || url.pathname === "/api/testing/verify-email" || url.pathname === "/api/testing/check-password-reset" || url.pathname === "/api/testing/expire-session" || url.pathname === "/api/testing/apply-shipper-approval-migration") {
       if (!env.DATABASE_URL) return json(request, { error: "Database is not configured." }, 503);
       let sql;
       try {
         sql = neon(env.DATABASE_URL);
         const rateLimitError = await applyAuthRateLimit(request, url.pathname, sql);
         if (rateLimitError) return json(request, rateLimitError, 429);
+        if (url.pathname === "/api/testing/apply-shipper-approval-migration" && request.method === "POST") {
+          if (env.STAGING_BEARER_MODE !== "true" || env.ENABLE_TEST_HELPERS !== "true" ||
+              env.DISABLE_EMAIL !== "true" || !env.TEST_HELPER_SECRET) {
+            return json(request, { error: "Endpoint not found." }, 404);
+          }
+          if (request.headers.get("X-Testing-Verification-Secret") !== env.TEST_HELPER_SECRET) {
+            return json(request, { error: "Not found." }, 404);
+          }
+          const migration = await applyShipperApprovalMigration(sql);
+          return json(request, { message: "Staging shipper approval migration applied and verified.", migration });
+        }
         if (url.pathname === "/api/testing/verify-email" && request.method === "POST") {
           if (env.ENABLE_TEST_HELPERS !== "true" || !env.TEST_HELPER_SECRET) {
             return json(request, { error: "Endpoint not found." }, 404);
@@ -697,6 +800,28 @@ export default {
               : "Testing account email verified; shipper approval remains pending.",
             approvalStatus: applyTestApproval ? "approved" : "pending",
           });
+        }
+        if (url.pathname === "/api/testing/expire-session" && request.method === "POST") {
+          // Explicitly isolated test-only endpoint: disabled unless email delivery is disabled,
+          // test helpers are enabled, and the private staging helper secret is configured.
+          if (env.ENABLE_TEST_HELPERS !== "true" || env.DISABLE_EMAIL !== "true" || !env.TEST_HELPER_SECRET) {
+            return json(request, { error: "Endpoint not found." }, 404);
+          }
+          if (request.headers.get("X-Testing-Verification-Secret") !== env.TEST_HELPER_SECRET) {
+            return json(request, { error: "Not found." }, 404);
+          }
+          const header = request.headers.get("Authorization") || "";
+          const match = header.match(/^Bearer\s+([A-Za-z0-9_-]{30,100})$/);
+          if (!match) return json(request, { error: "A valid active session is required." }, 401);
+          const tokenHash = await sha256(match[1]);
+          const rows = await sql`
+            UPDATE ikai.auth_sessions
+            SET expires_at = LEAST(expires_at, now() - interval '1 second')
+            WHERE token_hash = ${tokenHash} AND revoked_at IS NULL
+            RETURNING token_hash
+          `;
+          if (!rows[0]) return json(request, { error: "No active session found." }, 404);
+          return json(request, { message: "Session expired for isolated staging verification." });
         }
         if (url.pathname === "/api/testing/check-password-reset" && request.method === "POST") {
           if (env.ENABLE_TEST_HELPERS !== "true" || env.DISABLE_EMAIL !== "true" || !env.TEST_HELPER_SECRET) {

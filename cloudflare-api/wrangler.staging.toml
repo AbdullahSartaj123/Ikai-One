@@ -2,3 +2,8 @@ name = "ikai-one-api-staging"
 main = "cookie-wrapper.js"
 compatibility_date = "2026-10-15"
 workers_dev = true
+
+[vars]
+DISABLE_EMAIL = "true"
+ENABLE_TEST_HELPERS = "true"
+STAGING_BEARER_MODE = "true"
