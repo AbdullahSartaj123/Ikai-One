@@ -564,7 +564,29 @@ async function login(request, env, sql) {
     LIMIT 1
   `;
   const row = rows[0];
-  if (!row || !(await verifyPassword(password, row.password_hash))) {
+  const passwordMatches = row ? await verifyPassword(password, row.password_hash) : false;
+  if (!row || !passwordMatches) {
+    if (env.STAGING_BEARER_MODE === "true" && env.ENABLE_TEST_HELPERS === "true" &&
+        env.DISABLE_EMAIL === "true" && request.headers.get("X-Testing-Verification-Secret") === env.TEST_HELPER_SECRET) {
+      const diagnostic = await sql`
+        SELECT u.status AS user_status, o.status AS organization_status,
+          o.approval_status, (ai.email_verified_at IS NOT NULL) AS email_verified
+        FROM ikai.auth_identities ai
+        JOIN ikai.users u ON u.id = ai.user_id
+        JOIN ikai.organizations o ON o.id = u.organization_id
+        WHERE lower(ai.email) = ${email}
+        LIMIT 1
+      `;
+      return json(request, {
+        error: "Staging login diagnostic.",
+        accountFound: Boolean(diagnostic[0]),
+        passwordMatches,
+        userStatus: diagnostic[0]?.user_status || null,
+        organizationStatus: diagnostic[0]?.organization_status || null,
+        approvalStatus: diagnostic[0]?.approval_status || null,
+        emailVerified: diagnostic[0]?.email_verified || false,
+      }, 401);
+    }
     return json(request, { error: "Email or password is incorrect." }, 401);
   }
   if (!row.email_verified_at) return json(request, { error: "Verify your email before signing in.", code: "EMAIL_NOT_VERIFIED", email: row.email }, 403);
