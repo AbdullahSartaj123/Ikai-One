@@ -2,7 +2,7 @@ name: Deploy Ikai.One API to STAGING
 
 on:
   push:
-    branches: [security/b1-session-lifecycle-tests]
+    branches: [workflow-acceptance-tests, security/b1-session-lifecycle-tests]
     paths:
       - ".github/workflows/deploy-staging-worker.yml"
       - "cloudflare-api/**"
