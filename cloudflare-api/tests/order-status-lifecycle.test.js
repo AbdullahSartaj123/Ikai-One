@@ -25,7 +25,8 @@ test("order status update is organization-scoped, concurrency-safe, and audit re
 });
 
 test("order status changes and audit events are written in one atomic SQL statement", () => {
-  const update = worker.indexOf("WITH updated AS (");
+  const orderStatusStart = worker.indexOf('const allowedStatuses = ["New", "Ready to Ship", "Processing", "Pickup Scheduled"');
+  const update = worker.indexOf("WITH updated AS (", orderStatusStart);
   const audit = worker.indexOf("INSERT INTO ikai.organization_audit_events", update);
   const result = worker.indexOf("SELECT id, order_number, status, updated_at FROM updated", update);
   const routeEnd = worker.indexOf('if (url.pathname === "/api/shipments" || url.pathname.startsWith("/api/shipments/"))', update);
