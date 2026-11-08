@@ -3,6 +3,14 @@
 -- Stores reconciliation records and audit events per organization; no payment credentials are stored here.
 BEGIN;
 
+DO $preflight$
+BEGIN
+  IF to_regnamespace('ikai') IS NULL OR NOT (to_regclass('ikai.organizations') IS NOT NULL AND to_regclass('ikai.users') IS NOT NULL) THEN
+    RAISE EXCEPTION 'Preflight failed: expected Ikai.One schema and prerequisite tables (organizations, users) are missing.';
+  END IF;
+END
+$preflight$;
+
 CREATE TABLE IF NOT EXISTS ikai.cod_reconciliations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id uuid NOT NULL REFERENCES ikai.organizations(id) ON DELETE CASCADE,
