@@ -73,6 +73,7 @@ jobs:
           status="$(curl --silent --show-error --output /tmp/pending-login.json --write-out '%{http_code}' \
             --request POST "$STAGING_API/api/auth/login" \
             --header 'Content-Type: application/json' \
+            --header "X-Testing-Verification-Secret: $TEST_HELPER_SECRET" \
             --data "$(jq -n --arg email "$email" --arg password "$password" '{email:$email,password:$password}')")"
           cat /tmp/pending-login.json
           test "$status" = "403" || { echo "Pending shipper login should be denied: HTTP $status"; exit 1; }
