@@ -25,15 +25,16 @@ test("order status update is organization-scoped, concurrency-safe, and audit re
 });
 
 test("order status changes and audit events are written in one atomic SQL statement", () => {
-  const orderStatusStart = worker.indexOf('const allowedStatuses = ["New", "Ready to Ship", "Processing", "Pickup Scheduled"');
-  const update = worker.indexOf("WITH updated AS (", orderStatusStart);
+  const update = worker.indexOf("WITH updated AS (");
   const audit = worker.indexOf("INSERT INTO ikai.organization_audit_events", update);
   const result = worker.indexOf("SELECT id, order_number, status, updated_at FROM updated", update);
-  const separateAudit = worker.slice(update, result).indexOf("await sql`INSERT INTO ikai.organization_audit_events");
+  const routeEnd = worker.indexOf('if (url.pathname === "/api/shipments" || url.pathname.startsWith("/api/shipments/"))', update);
+  const orderStatusRoute = worker.slice(update, routeEnd === -1 ? worker.length : routeEnd);
+  const separateAudit = orderStatusRoute.indexOf("await sql`INSERT INTO ikai.organization_audit_events");
   assert.ok(update >= 0, "status update must use a data-modifying CTE");
   assert.ok(audit > update && result > audit, "audit insert must share the update statement");
   assert.equal(separateAudit, -1, "status changes must not write audit events in a second query");
-  assert.match(worker.slice(update, result), /FROM updated/);
+  assert.match(orderStatusRoute, /FROM updated/);
 });
 
 test("shipment status changes and shipment audit are written in one atomic SQL statement", async () => {
