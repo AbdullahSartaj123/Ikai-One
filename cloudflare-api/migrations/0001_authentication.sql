@@ -2,6 +2,14 @@
 -- Run once in Neon SQL Editor before enabling registration.
 BEGIN;
 
+DO $preflight$
+BEGIN
+  IF to_regnamespace('ikai') IS NULL OR NOT (to_regclass('ikai.users') IS NOT NULL) THEN
+    RAISE EXCEPTION 'Preflight failed: expected Ikai.One schema and prerequisite tables (users) are missing.';
+  END IF;
+END
+$preflight$;
+
 CREATE TABLE IF NOT EXISTS ikai.auth_identities (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL UNIQUE REFERENCES ikai.users(id) ON DELETE CASCADE,
