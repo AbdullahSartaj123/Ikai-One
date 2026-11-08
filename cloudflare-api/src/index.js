@@ -1117,7 +1117,7 @@ export default {
                 !Number.isFinite(height) || height <= 0 || height > 99999999.99 || !hasAtMostDecimalPlaces(body.height ?? 1, 2) || !items.length || items.length > 100 ||
                 items.some(item => {
                   const priceCents = moneyToCents(item.price);
-                  if (!String(item.name || "").trim() || !Number.isSafeInteger(Number(item.quantity)) || Number(item.quantity) < 1 ||
+                  if (!String(item.name || "").trim() || !Number.isSafeInteger(Number(item.quantity)) || Number(item.quantity) < 1 || Number(item.quantity) > 2147483647 ||
                       priceCents === null || priceCents < 0n || priceCents > 99999999999999n) return true;
                   return BigInt(Number(item.quantity)) * priceCents > 99999999999999n;
                 })) {
