@@ -1,4 +1,13 @@
 -- Organization-scoped order records. Apply in Neon before enabling order writes.
+BEGIN;
+
+DO $preflight$
+BEGIN
+  IF to_regnamespace('ikai') IS NULL OR NOT (to_regclass('ikai.organizations') IS NOT NULL AND to_regclass('ikai.users') IS NOT NULL) THEN
+    RAISE EXCEPTION 'Expected Ikai.One prerequisite tables are missing: organizations, users.';
+  END IF;
+END
+$preflight$;
 CREATE TABLE IF NOT EXISTS ikai.orders (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id uuid NOT NULL REFERENCES ikai.organizations(id) ON DELETE CASCADE,
@@ -42,3 +51,5 @@ CREATE TABLE IF NOT EXISTS ikai.order_items (
     REFERENCES ikai.orders(id, organization_id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS order_items_org_order_idx ON ikai.order_items (organization_id, order_id);
+
+COMMIT;
