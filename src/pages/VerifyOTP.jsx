@@ -18,6 +18,8 @@ export default function VerifyOTP() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [verified, setVerified] = useState(false)
+  const [approvalStatus, setApprovalStatus] = useState('')
+  const [canContinue, setCanContinue] = useState(false)
   const processedToken = useRef('')
 
   useEffect(() => {
@@ -25,7 +27,17 @@ export default function VerifyOTP() {
     processedToken.current = token
     setBusy(true)
     verifyEmail(token)
-      .then(() => { setVerified(true); setMessage('Your email is verified and your workspace is active.') })
+      .then(result => {
+        const status = result.approvalStatus || 'approved'
+        setVerified(true)
+        setApprovalStatus(status)
+        setCanContinue(Boolean(result.token && result.user))
+        setMessage(status === 'pending'
+          ? 'Your email is verified. Your shipper application is awaiting Ikai.One administrator approval. You can sign in after approval.'
+          : status === 'rejected'
+            ? 'Your email is verified, but your shipper application was not approved. Contact Ikai.One support for next steps.'
+            : 'Your email is verified and your workspace is active.')
+      })
       .catch(requestError => setError(requestError.message || 'This verification link is invalid or expired.'))
       .finally(() => setBusy(false))
   }, [token, isReset, verifyEmail])
@@ -59,7 +71,9 @@ export default function VerifyOTP() {
   const title = isReset ? (token ? 'Choose a new password' : 'Reset your password') : (verified ? 'Email verified' : 'Check your inbox')
   const subtitle = isReset
     ? (token ? 'Choose a strong password to secure your IKAI One account.' : 'Enter your account email. If a verified account exists, we will send a secure reset link.')
-    : (verified ? 'Your account is ready. Continue to your company workspace.' : 'We will send a secure, one-time verification link to your business email.')
+    : (verified
+      ? (canContinue ? 'Your account is ready. Continue to your company workspace.' : 'Your email verification is complete. Dashboard access depends on the administrator’s decision.')
+      : 'We will send a secure, one-time verification link to your business email.')
 
   return <div className="auth-simple-page">
     <header className="auth-simple-header"><Link to="/"><Logo/></Link><span>{isReset ? 'Remembered your password?' : 'Already verified?'} <Link to="/login">Sign in</Link></span></header>
@@ -88,7 +102,8 @@ export default function VerifyOTP() {
         {busy&&<p className="auth-inline-note"><ShieldCheck size={15}/> Verifying your secure link…</p>}
         {error&&<p className="auth-error" role="alert">{error}</p>}
         {message&&<p className="auth-success" role="status"><CheckCircle2 size={15}/>{message}</p>}
-        {verified&&<button className="auth-primary" type="button" onClick={()=>navigate('/onboarding',{replace:true})}>Continue to workspace <ArrowRight size={17}/></button>}
+        {verified && canContinue && <button className="auth-primary" type="button" onClick={()=>navigate('/onboarding',{replace:true})}>Continue to workspace <ArrowRight size={17}/></button>}
+        {verified && !canContinue && <Link className="auth-primary auth-link-button" to="/">Return to IKAI One <ArrowRight size={17}/></Link>}
         {!busy&&!verified&&<button className="auth-primary" type="button" onClick={()=>navigate('/verify-otp?email='+encodeURIComponent(email||pendingSignup?.email||''),{replace:true})}>Request a new verification link <ArrowRight size={17}/></button>}
       </div>}
       {!token&&!isReset&&!verified&&<p className="auth-terms">Verification links expire after 30 minutes and can only be used once.</p>}

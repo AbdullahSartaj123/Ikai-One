@@ -168,7 +168,7 @@ async function sendVerificationEmail(env, email, name, token) {
   return sendEmail(env, {
     to: email,
     subject: "Verify your Ikai.One account",
-    html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#15212b"><h1>Welcome to Ikai.One</h1><p>Hello ${safeName(name)},</p><p>Confirm your email address to activate your workspace.</p><p><a href="${link}" style="display:inline-block;padding:13px 20px;background:#173f35;color:#fff;text-decoration:none;border-radius:8px">Verify email address</a></p><p>This link expires in 30 minutes and can only be used once.</p><p>If you did not create this account, you can ignore this message.</p></div>`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#15212b"><h1>Welcome to Ikai.One</h1><p>Hello ${safeName(name)},</p><p>Verify your email address to complete signup. Your shipper dashboard will be available after Ikai.One administrator approval.</p><p><a href="${link}" style="display:inline-block;padding:13px 20px;background:#173f35;color:#fff;text-decoration:none;border-radius:8px">Verify email address</a></p><p>This link expires in 30 minutes and can only be used once.</p><p>If you did not create this account, you can ignore this message.</p></div>`,
   });
 }
 
@@ -190,6 +190,8 @@ function userFromRow(row) {
     organizationId: row.organization_id,
     organizationName: row.organization_name,
     organizationSlug: row.organization_slug,
+    isPlatformAdmin: row.is_platform_admin === true,
+    approvalStatus: row.approval_status || "approved",
   };
 }
 
@@ -212,7 +214,8 @@ async function authenticate(request, env) {
   const sql = neon(env.DATABASE_URL);
   const rows = await sql`
     SELECT u.id AS user_id, u.organization_id, u.full_name, u.email, u.role,
-      o.name AS organization_name, o.slug AS organization_slug
+      o.name AS organization_name, o.slug AS organization_slug, o.approval_status,
+      EXISTS (SELECT 1 FROM ikai.platform_admins pa WHERE pa.user_id = u.id) AS is_platform_admin
     FROM ikai.auth_sessions s
     JOIN ikai.users u ON u.id = s.user_id
     JOIN ikai.organizations o ON o.id = u.organization_id
@@ -223,6 +226,7 @@ async function authenticate(request, env) {
       AND ai.email_verified_at IS NOT NULL
       AND u.status = 'active'
       AND o.status = 'active'
+      AND (o.approval_status = 'approved' OR EXISTS (SELECT 1 FROM ikai.platform_admins pa WHERE pa.user_id = u.id))
     LIMIT 1
   `;
   return rows[0] ? userFromRow(rows[0]) : null;
@@ -342,8 +346,8 @@ async function register(request, env, sql) {
   try {
     rows = await sql`
       WITH new_org AS (
-        INSERT INTO ikai.organizations (name, slug, organization_type, status)
-        VALUES (${companyName}, ${slug}, 'shipper', 'active')
+        INSERT INTO ikai.organizations (name, slug, organization_type, status, approval_status)
+        VALUES (${companyName}, ${slug}, 'shipper', 'active', 'pending')
         RETURNING id, name, slug
       ),
       new_user AS (
@@ -392,9 +396,12 @@ async function register(request, env, sql) {
   const user = userFromRow(rows[0]);
   const emailSent = await sendVerificationEmail(env, email, fullName, rawToken);
   return json(request, {
-    message: emailSent ? "Account created. Check your email to verify your address." : "Account created, but the verification email could not be delivered. Request a new verification email after the mail service is checked.",
+    message: emailSent
+      ? "Application received. Verify your email; an Ikai.One administrator must approve your shipper account before dashboard access is enabled."
+      : "Application received, but the verification email could not be delivered. Request a new verification email after the mail service is checked. Dashboard access remains blocked until verification and admin approval.",
     emailSent,
     email: user.email,
+    approvalStatus: "pending",
   }, 201);
 }
 
@@ -421,15 +428,27 @@ async function verifyEmail(request, env, sql) {
       RETURNING ai.user_id
     )
     SELECT u.id AS user_id, u.organization_id, u.full_name, u.email, u.role,
-      o.name AS organization_name, o.slug AS organization_slug
+      o.name AS organization_name, o.slug AS organization_slug, o.approval_status,
+      EXISTS (SELECT 1 FROM ikai.platform_admins pa WHERE pa.user_id = u.id) AS is_platform_admin
     FROM verified v
     JOIN ikai.users u ON u.id = v.user_id
     JOIN ikai.organizations o ON o.id = u.organization_id
     LIMIT 1
   `;
   if (!rows[0]) return json(request, { error: "This verification link is invalid, expired, or already used. Request a new one." }, 400);
-  const session = await createSession(sql, userFromRow(rows[0]));
-  return json(request, { message: "Email verified successfully.", ...session });
+  const user = userFromRow(rows[0]);
+  if (!user.isPlatformAdmin && user.approvalStatus !== "approved") {
+    const rejected = user.approvalStatus === "rejected";
+    return json(request, {
+      message: rejected
+        ? "Your email is verified, but your shipper application was not approved. Contact Ikai.One support for next steps."
+        : "Your email is verified. Your shipper application is awaiting Ikai.One administrator approval. You can sign in after approval.",
+      approvalStatus: user.approvalStatus,
+      emailVerified: true,
+    });
+  }
+  const session = await createSession(sql, user);
+  return json(request, { message: "Email verified successfully.", ...session, approvalStatus: user.approvalStatus });
 }
 
 async function resendVerification(request, env, sql) {
@@ -463,8 +482,9 @@ async function login(request, env, sql) {
   if (!email || !password || password.length > 128) return json(request, { error: "Enter your email and password." }, 400);
   const rows = await sql`
     SELECT u.id AS user_id, u.organization_id, u.full_name, u.email, u.role,
-      o.name AS organization_name, o.slug AS organization_slug,
-      ai.password_hash, ai.email_verified_at
+      o.name AS organization_name, o.slug AS organization_slug, o.approval_status,
+      ai.password_hash, ai.email_verified_at,
+      EXISTS (SELECT 1 FROM ikai.platform_admins pa WHERE pa.user_id = u.id) AS is_platform_admin
     FROM ikai.auth_identities ai
     JOIN ikai.users u ON u.id = ai.user_id
     JOIN ikai.organizations o ON o.id = u.organization_id
@@ -479,6 +499,12 @@ async function login(request, env, sql) {
   }
   if (!row.email_verified_at) return json(request, { error: "Verify your email before signing in.", code: "EMAIL_NOT_VERIFIED", email: row.email }, 403);
   const user = userFromRow(row);
+  if (!user.isPlatformAdmin && user.approvalStatus !== "approved") {
+    if (user.approvalStatus === "rejected") {
+      return json(request, { error: "Your shipper application was not approved. Contact Ikai.One support for next steps.", code: "ACCOUNT_REJECTED" }, 403);
+    }
+    return json(request, { error: "Your email is verified, but your shipper account is awaiting administrator approval.", code: "ACCOUNT_PENDING_APPROVAL", approvalStatus: user.approvalStatus }, 403);
+  }
   const session = await createSession(sql, user);
   return json(request, session);
 }
@@ -621,7 +647,7 @@ export default {
       }
     }
 
-    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments" || url.pathname === "/api/inventory" || url.pathname.startsWith("/api/inventory/") || url.pathname === "/api/orders" || url.pathname.startsWith("/api/orders/") || url.pathname === "/api/cod-reconciliations" || url.pathname.startsWith("/api/cod-reconciliations/") || url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f-]{36}(?:\/status)?$/i.test(url.pathname) || url.pathname === "/api/testing/verify-email" || url.pathname === "/api/testing/check-password-reset") {
+    if (url.pathname.startsWith("/api/auth/") || url.pathname === "/api/shipments" || url.pathname === "/api/inventory" || url.pathname.startsWith("/api/inventory/") || url.pathname === "/api/orders" || url.pathname.startsWith("/api/orders/") || url.pathname === "/api/cod-reconciliations" || url.pathname.startsWith("/api/cod-reconciliations/") || url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?:\/status)?$/i.test(url.pathname) || url.pathname.startsWith("/api/admin/") || url.pathname === "/api/testing/verify-email" || url.pathname === "/api/testing/check-password-reset") {
       if (!env.DATABASE_URL) return json(request, { error: "Database is not configured." }, 503);
       let sql;
       try {
@@ -651,7 +677,26 @@ export default {
             SET consumed_at = COALESCE(consumed_at, now())
             WHERE user_id = ${rows[0].user_id} AND purpose = 'verify_email' AND consumed_at IS NULL
           `;
-          return json(request, { message: "Testing account email verified." });
+          // Test-only approval is available exclusively behind the isolated Worker secret.
+          // Pass approve:false to verify email without bypassing the real approval gate in staging E2E tests.
+          const applyTestApproval = body.approve !== false;
+          if (applyTestApproval) {
+            await sql`
+              UPDATE ikai.organizations o
+              SET approval_status = 'approved', approval_reviewed_at = now(),
+                  approval_note = 'Approved by isolated test helper'
+              FROM ikai.users u
+              WHERE u.id = ${rows[0].user_id}::uuid
+                AND u.organization_id = o.id
+                AND o.organization_type = 'shipper'
+            `;
+          }
+          return json(request, {
+            message: applyTestApproval
+              ? "Testing account email verified and test approval applied."
+              : "Testing account email verified; shipper approval remains pending.",
+            approvalStatus: applyTestApproval ? "approved" : "pending",
+          });
         }
         if (url.pathname === "/api/testing/check-password-reset" && request.method === "POST") {
           if (env.ENABLE_TEST_HELPERS !== "true" || env.DISABLE_EMAIL !== "true" || !env.TEST_HELPER_SECRET) {
@@ -761,7 +806,7 @@ export default {
             return json(request, { data: rows[0] }, 201);
           }
 
-          const adjustMatch = url.pathname.match(/^\/api\/inventory\/([0-9a-f-]{36})\/adjust$/i);
+          const adjustMatch = url.pathname.match(/^\/api\/inventory\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/adjust$/i);
           if (adjustMatch && request.method === "POST") {
             const body = await readJson(request);
             const delta = Number(body.quantityDelta);
@@ -803,7 +848,7 @@ export default {
             return json(request, { data: rows[0] });
           }
 
-          const movementsMatch = url.pathname.match(/^\/api\/inventory\/([0-9a-f-]{36})\/movements$/i);
+          const movementsMatch = url.pathname.match(/^\/api\/inventory\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/movements$/i);
           if (movementsMatch && request.method === "GET") {
             const requestedLimit = Number(url.searchParams.get("limit") || "50");
             if (!Number.isInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > 100) return json(request, { error: "limit must be an integer between 1 and 100." }, 400);
@@ -912,7 +957,7 @@ export default {
             return json(request, { data: rows[0] }, 201);
           }
 
-          const reviewMatch = url.pathname.match(/^\/api\/cod-reconciliations\/([0-9a-f-]{36})\/review$/i);
+          const reviewMatch = url.pathname.match(/^\/api\/cod-reconciliations\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/review$/i);
           if (reviewMatch && request.method === "POST") {
             const body = await readJson(request);
             const note = String(body.followUpNote || "").trim().slice(0, 2000) || null;
@@ -951,7 +996,7 @@ export default {
           return json(request, { error: "Method or reconciliation route not supported." }, 405);
         }
 
-        if (url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f-]{36}(?:\/status)?$/i.test(url.pathname)) {
+        if (url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?:\/status)?$/i.test(url.pathname)) {
           const user = await authenticate(request, env);
           if (!user) return json(request, { error: "Authentication required." }, 401);
 
@@ -1014,7 +1059,725 @@ export default {
             return json(request, { data: rows[0] }, 201);
           }
 
-          const recordMatch = url.pathname.match(/^\/api\/workflows\/([0-9a-f-]{36})\/status$/i);
+          const recordMatch = url.pathname.match(/^\/api\/workflows\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/status$/i);
+          if (recordMatch && request.method === "POST") {
+            const body = await readJson(request);
+            const status = String(body.status || "").trim().slice(0, 60);
+            const reference = body.reference === undefined ? null : String(body.reference || "").trim().slice(0, 160);
+            const title = body.title === undefined ? null : String(body.title || "").trim().slice(0, 200);
+            const payload = body.payload && typeof body.payload === "object" && !Array.isArray(body.payload) ? body.payload : null;
+            if (!status) return json(request, { error: "A non-empty status is required." }, 400);
+            if (reference !== null && !reference) return json(request, { error: "Reference cannot be empty." }, 400);
+            if (title !== null && !title) return json(request, { error: "Title cannot be empty." }, 400);
+            if (payload && JSON.stringify(payload).length > 20000) return json(request, { error: "Workflow details are too large." }, 413);
+            const existingRows = await sql`
+              SELECT workflow_key, status, payload
+              FROM ikai.workflow_records
+              WHERE id = ${recordMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+              LIMIT 1
+            `;
+            if (!existingRows[0]) return json(request, { error: "Workflow record not found." }, 404);
+            if (["returns", "ndr-followups"].includes(existingRows[0].workflow_key)) {
+              const isReturn = existingRows[0].workflow_key === "returns";
+              const allowedNext = isReturn ? {
+                "Requested": ["Pickup pending"],
+                "Pickup pending": ["In transit"],
+                "In transit": ["Completed"],
+                "Completed": []
+              } : {
+                "Open": ["In progress"],
+                "In progress": ["Awaiting response"],
+                "Awaiting response": ["Reattempt scheduled"],
+                "Reattempt scheduled": ["Resolved"],
+                "Resolved": []
+              };
+              const currentStatus = existingRows[0].status;
+              if (status !== currentStatus && !(allowedNext[currentStatus] || []).includes(status)) {
+                const label = isReturn ? "Return" : "Customer follow-up";
+                return json(request, { error: `${label} status cannot move from "${currentStatus}" to "${status}". Refresh the record and choose the next allowed step.` }, 409);
+              }
+              if (isReturn) {
+                const mergedPayload = { ...(existingRows[0].payload || {}), ...(payload || {}) };
+                const linkError = await validateReturnLinks(sql, user.organizationId, mergedPayload);
+                if (linkError) return json(request, { error: linkError }, 400);
+              }
+            }
+            if (["ndr", "ndr-followups"].includes(existingRows[0].workflow_key)) {
+              const mergedPayload = { ...(existingRows[0].payload || {}), ...(payload || {}) };
+              const linkError = await validateNdrLinks(sql, user.organizationId, mergedPayload);
+              if (linkError) return json(request, { error: linkError }, 400);
+            }
+            const rows = await sql`
+              UPDATE ikai.workflow_records
+              SET status = ${status},
+                  reference = COALESCE(${reference}, reference),
+                  title = COALESCE(${title}, title),
+                  payload = CASE WHEN ${payload !== null} THEN payload || ${JSON.stringify(payload || {})}::jsonb ELSE payload END,
+                  updated_by = ${user.id}::uuid, updated_at = now()
+              WHERE id = ${recordMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+                AND (${!["returns", "ndr-followups"].includes(existingRows[0].workflow_key)} OR status = ${existingRows[0].status})
+              RETURNING id, workflow_key, reference, title, status, payload, created_at, updated_at
+            `;
+            if (!rows[0]) return json(request, { error: existingRows[0].workflow_key === "returns" ? "Return status changed concurrently. Refresh and try again." : existingRows[0].workflow_key === "ndr-followups" ? "Customer follow-up status changed concurrently. Refresh and try again." : "Workflow record not found." }, 409);
+            await sql`
+              INSERT INTO ikai.organization_audit_events
+                (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
+              VALUES
+                (${user.organizationId}::uuid, ${user.id}::uuid, 'workflow_record_updated', 'workflow_record', ${rows[0].reference},
+                 jsonb_build_object('workflowKey', ${rows[0].workflow_key}, 'status', ${status}))
+            `;
+            return json(request, { data: rows[0] });
+          }
+          return json(request, { error: "Method or workflow route not supported." }, 405);
+        }
+
+        if (url.pathname.startsWith("/api/admin/")) {
+          const user = await authenticate(request, env);
+          if (!user) return json(request, { error: "Authentication required." }, 401);
+          if (!user.isPlatformAdmin) return json(request, { error: "Platform administrator access is required." }, 403);
+
+          if (url.pathname === "/api/admin/overview" && request.method === "GET") {
+            // Platform-wide read-only aggregates. Customer-level PII is excluded from the overview; the separate admin-only records endpoint may expose operational contact details.
+            const rows = await sql`
+              SELECT
+                (SELECT COUNT(*)::int FROM ikai.organizations o WHERE o.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = o.id)) AS total_shippers,
+                (SELECT COUNT(*)::int FROM ikai.organizations o WHERE o.organization_type = 'shipper' AND o.approval_status = 'pending'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = o.id)) AS pending_shippers,
+                (SELECT COUNT(*)::int FROM ikai.organizations o WHERE o.organization_type = 'shipper' AND o.approval_status = 'approved'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = o.id)) AS approved_shippers,
+                (SELECT COUNT(*)::int FROM ikai.organizations o WHERE o.organization_type = 'shipper' AND o.approval_status = 'rejected'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = o.id)) AS rejected_shippers,
+                (SELECT COUNT(*)::int FROM ikai.orders x JOIN ikai.organizations o ON o.id = x.organization_id WHERE o.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = o.id)) AS total_orders,
+                (SELECT COUNT(*)::int FROM ikai.shipment_records x JOIN ikai.organizations o ON o.id = x.organization_id WHERE o.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = o.id)) AS total_shipments,
+                (SELECT COUNT(*)::int FROM ikai.shipment_records x JOIN ikai.organizations o ON o.id = x.organization_id WHERE o.organization_type = 'shipper'
+                  AND x.courier_booking_confirmed = true
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = o.id)) AS confirmed_courier_bookings,
+                (SELECT COUNT(*)::int FROM ikai.cod_reconciliations x JOIN ikai.organizations o ON o.id = x.organization_id WHERE o.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = o.id)) AS cod_records,
+                (SELECT COUNT(*)::int FROM ikai.cod_reconciliations x JOIN ikai.organizations o ON o.id = x.organization_id WHERE o.organization_type = 'shipper'
+                  AND x.status IN ('pending', 'under_review', 'short_paid')
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = o.id)) AS cod_attention_records,
+                (SELECT COUNT(*)::int FROM ikai.inventory_items x JOIN ikai.organizations o ON o.id = x.organization_id WHERE o.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = o.id)) AS inventory_items
+            `;
+            const organizations = await sql`
+              SELECT o.id, o.name, o.slug, o.approval_status, o.created_at,
+                COALESCE(order_stats.order_count, 0)::int AS order_count,
+                COALESCE(shipment_stats.shipment_count, 0)::int AS shipment_count,
+                COALESCE(shipment_stats.confirmed_booking_count, 0)::int AS confirmed_booking_count,
+                COALESCE(cod_stats.cod_count, 0)::int AS cod_count,
+                COALESCE(cod_stats.cod_attention_count, 0)::int AS cod_attention_count,
+                GREATEST(
+                  COALESCE(order_stats.last_order_at, 'epoch'::timestamptz),
+                  COALESCE(shipment_stats.last_shipment_at, 'epoch'::timestamptz),
+                  COALESCE(cod_stats.last_cod_at, 'epoch'::timestamptz)
+                ) AS last_activity_at
+              FROM ikai.organizations o
+              LEFT JOIN LATERAL (
+                SELECT COUNT(*) AS order_count, MAX(created_at) AS last_order_at
+                FROM ikai.orders WHERE organization_id = o.id
+              ) order_stats ON true
+              LEFT JOIN LATERAL (
+                SELECT COUNT(*) AS shipment_count,
+                  COUNT(*) FILTER (WHERE courier_booking_confirmed = true) AS confirmed_booking_count,
+                  MAX(updated_at) AS last_shipment_at
+                FROM ikai.shipment_records WHERE organization_id = o.id
+              ) shipment_stats ON true
+              LEFT JOIN LATERAL (
+                SELECT COUNT(*) AS cod_count,
+                  COUNT(*) FILTER (WHERE status IN ('pending', 'under_review', 'short_paid')) AS cod_attention_count,
+                  MAX(updated_at) AS last_cod_at
+                FROM ikai.cod_reconciliations WHERE organization_id = o.id
+              ) cod_stats ON true
+              WHERE o.organization_type = 'shipper'
+                AND NOT EXISTS (
+                  SELECT 1 FROM ikai.users pu
+                  JOIN ikai.platform_admins pa ON pa.user_id = pu.id
+                  WHERE pu.organization_id = o.id
+                )
+              ORDER BY GREATEST(
+                COALESCE(order_stats.last_order_at, 'epoch'::timestamptz),
+                COALESCE(shipment_stats.last_shipment_at, 'epoch'::timestamptz),
+                COALESCE(cod_stats.last_cod_at, 'epoch'::timestamptz),
+                o.created_at
+              ) DESC
+              LIMIT 100
+            `;
+            return json(request, { metrics: rows[0] || {}, organizations });
+          }
+
+          if (url.pathname === "/api/admin/records" && request.method === "GET") {
+            // Read-only, bounded cross-organization browsing for explicitly provisioned platform admins.
+            const type = String(url.searchParams.get("type") || "orders");
+            const allowedTypes = ["orders", "shipments", "cod", "inventory", "workflow"];
+            if (!allowedTypes.includes(type)) {
+              return json(request, { error: "type must be orders, shipments, cod, inventory, or workflow." }, 400);
+            }
+            const organizationId = String(url.searchParams.get("organization_id") || "").trim();
+            if (organizationId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(organizationId)) {
+              return json(request, { error: "organization_id must be a valid UUID." }, 400);
+            }
+            const search = String(url.searchParams.get("q") || "").trim().slice(0, 100);
+            const limit = Math.min(100, Math.max(1, Number.parseInt(url.searchParams.get("limit") || "25", 10) || 25));
+            const offset = Math.min(100000, Math.max(0, Number.parseInt(url.searchParams.get("offset") || "0", 10) || 0));
+            let rows;
+            let countRows;
+            if (type === "orders") {
+              rows = await sql`
+                SELECT o.id, o.organization_id, org.name AS organization_name, o.order_number,
+                  o.customer_name, o.phone, o.email, o.city, o.state, o.pincode, o.payment_mode,
+                  o.amount, o.status, o.courier, o.created_at, o.updated_at
+                FROM ikai.orders o JOIN ikai.organizations org ON org.id = o.organization_id
+                WHERE org.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
+                  AND (${organizationId || null}::uuid IS NULL OR o.organization_id = ${organizationId || null}::uuid)
+                  AND (${search} = '' OR o.order_number ILIKE '%' || ${search} || '%' OR o.customer_name ILIKE '%' || ${search} || '%' OR o.phone ILIKE '%' || ${search} || '%' OR o.city ILIKE '%' || ${search} || '%')
+                ORDER BY o.created_at DESC LIMIT ${limit} OFFSET ${offset}
+              `;
+              countRows = await sql`
+                SELECT COUNT(*)::int AS total FROM ikai.orders o JOIN ikai.organizations org ON org.id = o.organization_id
+                WHERE org.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
+                  AND (${organizationId || null}::uuid IS NULL OR o.organization_id = ${organizationId || null}::uuid)
+                  AND (${search} = '' OR o.order_number ILIKE '%' || ${search} || '%' OR o.customer_name ILIKE '%' || ${search} || '%' OR o.phone ILIKE '%' || ${search} || '%' OR o.city ILIKE '%' || ${search} || '%')
+              `;
+            } else if (type === "shipments") {
+              rows = await sql`
+                SELECT s.id, s.organization_id, org.name AS organization_name, s.shipment_number,
+                  s.order_id, o.order_number, s.courier, s.status, s.origin, s.destination,
+                  s.destination_postal_code, s.weight, s.amount, s.payment_mode, s.tracking_number,
+                  s.courier_booking_confirmed, s.created_at, s.updated_at
+                FROM ikai.shipment_records s JOIN ikai.organizations org ON org.id = s.organization_id
+                JOIN ikai.orders o ON o.id = s.order_id AND o.organization_id = s.organization_id
+                WHERE org.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
+                  AND (${organizationId || null}::uuid IS NULL OR s.organization_id = ${organizationId || null}::uuid)
+                  AND (${search} = '' OR s.shipment_number ILIKE '%' || ${search} || '%' OR s.tracking_number ILIKE '%' || ${search} || '%' OR o.order_number ILIKE '%' || ${search} || '%')
+                ORDER BY s.created_at DESC LIMIT ${limit} OFFSET ${offset}
+              `;
+              countRows = await sql`
+                SELECT COUNT(*)::int AS total FROM ikai.shipment_records s JOIN ikai.organizations org ON org.id = s.organization_id
+                JOIN ikai.orders o ON o.id = s.order_id AND o.organization_id = s.organization_id
+                WHERE org.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
+                  AND (${organizationId || null}::uuid IS NULL OR s.organization_id = ${organizationId || null}::uuid)
+                  AND (${search} = '' OR s.shipment_number ILIKE '%' || ${search} || '%' OR s.tracking_number ILIKE '%' || ${search} || '%' OR o.order_number ILIKE '%' || ${search} || '%')
+              `;
+            } else if (type === "cod") {
+              rows = await sql`
+                SELECT c.id, c.organization_id, org.name AS organization_name, c.order_reference, c.awb,
+                  c.courier_name, c.delivered_at, c.cod_expected, c.amount_remitted, c.status,
+                  c.follow_up_note, c.remittance_reference, c.created_at, c.updated_at
+                FROM ikai.cod_reconciliations c JOIN ikai.organizations org ON org.id = c.organization_id
+                WHERE org.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
+                  AND (${organizationId || null}::uuid IS NULL OR c.organization_id = ${organizationId || null}::uuid)
+                  AND (${search} = '' OR c.order_reference ILIKE '%' || ${search} || '%' OR c.awb ILIKE '%' || ${search} || '%' OR c.courier_name ILIKE '%' || ${search} || '%')
+                ORDER BY c.updated_at DESC LIMIT ${limit} OFFSET ${offset}
+              `;
+              countRows = await sql`
+                SELECT COUNT(*)::int AS total FROM ikai.cod_reconciliations c JOIN ikai.organizations org ON org.id = c.organization_id
+                WHERE org.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
+                  AND (${organizationId || null}::uuid IS NULL OR c.organization_id = ${organizationId || null}::uuid)
+                  AND (${search} = '' OR c.order_reference ILIKE '%' || ${search} || '%' OR c.awb ILIKE '%' || ${search} || '%' OR c.courier_name ILIKE '%' || ${search} || '%')
+              `;
+            } else if (type === "inventory") {
+              rows = await sql`
+                SELECT i.id, i.organization_id, org.name AS organization_name, i.sku, i.name,
+                  i.variant, i.warehouse, i.quantity_on_hand, i.reorder_level, i.unit_cost,
+                  i.created_at, i.updated_at
+                FROM ikai.inventory_items i JOIN ikai.organizations org ON org.id = i.organization_id
+                WHERE org.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
+                  AND (${organizationId || null}::uuid IS NULL OR i.organization_id = ${organizationId || null}::uuid)
+                  AND (${search} = '' OR i.sku ILIKE '%' || ${search} || '%' OR i.name ILIKE '%' || ${search} || '%' OR i.warehouse ILIKE '%' || ${search} || '%')
+                ORDER BY i.updated_at DESC LIMIT ${limit} OFFSET ${offset}
+              `;
+              countRows = await sql`
+                SELECT COUNT(*)::int AS total FROM ikai.inventory_items i JOIN ikai.organizations org ON org.id = i.organization_id
+                WHERE org.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
+                  AND (${organizationId || null}::uuid IS NULL OR i.organization_id = ${organizationId || null}::uuid)
+                  AND (${search} = '' OR i.sku ILIKE '%' || ${search} || '%' OR i.name ILIKE '%' || ${search} || '%' OR i.warehouse ILIKE '%' || ${search} || '%')
+              `;
+            } else {
+              rows = await sql`
+                SELECT w.id, w.organization_id, org.name AS organization_name, w.workflow_key,
+                  w.reference, w.title, w.status, w.created_at, w.updated_at
+                FROM ikai.workflow_records w JOIN ikai.organizations org ON org.id = w.organization_id
+                WHERE org.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
+                  AND (${organizationId || null}::uuid IS NULL OR w.organization_id = ${organizationId || null}::uuid)
+                  AND (${search} = '' OR w.workflow_key ILIKE '%' || ${search} || '%' OR w.reference ILIKE '%' || ${search} || '%' OR w.title ILIKE '%' || ${search} || '%' OR w.status ILIKE '%' || ${search} || '%')
+                ORDER BY w.updated_at DESC LIMIT ${limit} OFFSET ${offset}
+              `;
+              countRows = await sql`
+                SELECT COUNT(*)::int AS total FROM ikai.workflow_records w JOIN ikai.organizations org ON org.id = w.organization_id
+                WHERE org.organization_type = 'shipper'
+                  AND NOT EXISTS (SELECT 1 FROM ikai.users pu JOIN ikai.platform_admins pa ON pa.user_id = pu.id WHERE pu.organization_id = org.id)
+                  AND (${organizationId || null}::uuid IS NULL OR w.organization_id = ${organizationId || null}::uuid)
+                  AND (${search} = '' OR w.workflow_key ILIKE '%' || ${search} || '%' OR w.reference ILIKE '%' || ${search} || '%' OR w.title ILIKE '%' || ${search} || '%' OR w.status ILIKE '%' || ${search} || '%')
+              `;
+            }
+            await sql`
+              INSERT INTO ikai.platform_audit_events (actor_user_id, target_organization_id, event_type, details)
+              VALUES (${user.id}::uuid, ${organizationId || null}::uuid, 'platform_records_viewed', ${JSON.stringify({ type, organizationId: organizationId || null, searchUsed: Boolean(search), limit, offset })}::jsonb)
+            `;
+            return json(request, { type, data: rows, pagination: { total: Number(countRows[0]?.total || 0), limit, offset, has_more: offset + rows.length < Number(countRows[0]?.total || 0) } });
+          }
+
+          if (url.pathname === "/api/admin/audit" && request.method === "GET") {
+            // Read-only administrative history. The admin route guard above protects this endpoint.
+            const search = String(url.searchParams.get("q") || "").trim().slice(0, 100);
+            const limit = Math.min(100, Math.max(1, Number.parseInt(url.searchParams.get("limit") || "50", 10) || 50));
+            const offset = Math.min(100000, Math.max(0, Number.parseInt(url.searchParams.get("offset") || "0", 10) || 0));
+            const rows = await sql`
+              SELECT e.id, e.event_type, e.created_at, e.details, e.target_organization_id,
+                org.name AS organization_name, u.full_name AS actor_name, ai.email AS actor_email
+              FROM ikai.platform_audit_events e
+              JOIN ikai.users u ON u.id = e.actor_user_id
+              LEFT JOIN LATERAL (
+                SELECT email FROM ikai.auth_identities WHERE user_id = u.id ORDER BY created_at ASC LIMIT 1
+              ) ai ON true
+              LEFT JOIN ikai.organizations org ON org.id = e.target_organization_id
+              WHERE (${search} = ''
+                OR e.event_type ILIKE '%' || ${search} || '%'
+                OR COALESCE(org.name, '') ILIKE '%' || ${search} || '%'
+                OR COALESCE(ai.email, '') ILIKE '%' || ${search} || '%'
+                OR COALESCE(e.details::text, '') ILIKE '%' || ${search} || '%')
+              ORDER BY e.created_at DESC, e.id DESC
+              LIMIT ${limit} OFFSET ${offset}
+            `;
+            const countRows = await sql`
+              SELECT COUNT(*)::int AS total
+              FROM ikai.platform_audit_events e
+              JOIN ikai.users u ON u.id = e.actor_user_id
+              LEFT JOIN LATERAL (
+                SELECT email FROM ikai.auth_identities WHERE user_id = u.id ORDER BY created_at ASC LIMIT 1
+              ) ai ON true
+              LEFT JOIN ikai.organizations org ON org.id = e.target_organization_id
+              WHERE (${search} = ''
+                OR e.event_type ILIKE '%' || ${search} || '%'
+                OR COALESCE(org.name, '') ILIKE '%' || ${search} || '%'
+                OR COALESCE(ai.email, '') ILIKE '%' || ${search} || '%'
+                OR COALESCE(e.details::text, '') ILIKE '%' || ${search} || '%')
+            `;
+            return json(request, { data: rows, pagination: { total: Number(countRows[0]?.total || 0), limit, offset, has_more: offset + rows.length < Number(countRows[0]?.total || 0) } });
+          }
+
+          if (url.pathname === "/api/admin/organizations" && request.method === "GET") {
+            const requestedStatus = String(url.searchParams.get("status") || "pending");
+            if (!["pending", "approved", "rejected", "all"].includes(requestedStatus)) {
+              return json(request, { error: "status must be pending, approved, rejected, or all." }, 400);
+            }
+            const limit = Math.min(100, Math.max(1, Number.parseInt(url.searchParams.get("limit") || "25", 10) || 25));
+            const offset = Math.min(100000, Math.max(0, Number.parseInt(url.searchParams.get("offset") || "0", 10) || 0));
+            const search = String(url.searchParams.get("q") || "").trim().slice(0, 100);
+            const rows = await sql`
+              SELECT o.id, o.name, o.slug, o.organization_type, o.approval_status,
+                o.approval_note, o.created_at, o.approval_reviewed_at,
+                u.full_name AS applicant_name, ai.email AS applicant_email,
+                (ai.email_verified_at IS NOT NULL) AS email_verified
+              FROM ikai.organizations o
+              LEFT JOIN LATERAL (
+                SELECT id, full_name FROM ikai.users
+                WHERE organization_id = o.id
+                ORDER BY created_at ASC LIMIT 1
+              ) u ON true
+              LEFT JOIN ikai.auth_identities ai ON ai.user_id = u.id
+              WHERE (${requestedStatus} = 'all' OR o.approval_status = ${requestedStatus})
+                AND (${search} = '' OR o.name ILIKE '%' || ${search} || '%' OR o.slug ILIKE '%' || ${search} || '%')
+                AND o.organization_type = 'shipper'
+                AND NOT EXISTS (
+                  SELECT 1 FROM ikai.users pu
+                  JOIN ikai.platform_admins pa ON pa.user_id = pu.id
+                  WHERE pu.organization_id = o.id
+                )
+              ORDER BY CASE WHEN o.approval_status = 'pending' THEN 0 ELSE 1 END, o.created_at DESC
+              LIMIT ${limit} OFFSET ${offset}
+            `;
+            const countRows = await sql`
+              SELECT COUNT(*)::int AS total
+              FROM ikai.organizations o
+              WHERE (${requestedStatus} = 'all' OR o.approval_status = ${requestedStatus})
+                AND (${search} = '' OR o.name ILIKE '%' || ${search} || '%' OR o.slug ILIKE '%' || ${search} || '%')
+                AND o.organization_type = 'shipper'
+                AND NOT EXISTS (
+                  SELECT 1 FROM ikai.users pu
+                  JOIN ikai.platform_admins pa ON pa.user_id = pu.id
+                  WHERE pu.organization_id = o.id
+                )
+            `;
+            const total = Number(countRows[0]?.total || 0);
+            return json(request, { data: rows, pagination: { total, limit, offset, has_more: offset + rows.length < total } });
+          }
+
+          const decisionMatch = url.pathname.match(/^\/api\/admin\/organizations\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/decision$/i);
+          if (decisionMatch && request.method === "POST") {
+            const body = await readJson(request);
+            const decision = String(body.decision || "");
+            const note = String(body.note || "").trim().slice(0, 1000) || null;
+            if (!["approved", "rejected"].includes(decision)) {
+              return json(request, { error: "Decision must be approved or rejected." }, 400);
+            }
+            if (decision === "rejected" && !note) {
+              return json(request, { error: "Add a reason before rejecting an application." }, 400);
+            }
+            const applicant = await sql`
+              SELECT o.approval_status,
+                EXISTS (
+                  SELECT 1 FROM ikai.users u
+                  JOIN ikai.auth_identities ai ON ai.user_id = u.id
+                  WHERE u.organization_id = o.id AND ai.email_verified_at IS NOT NULL
+                ) AS email_verified,
+                EXISTS (
+                  SELECT 1 FROM ikai.users pu
+                  JOIN ikai.platform_admins pa ON pa.user_id = pu.id
+                  WHERE pu.organization_id = o.id
+                ) AS has_platform_admin_owner
+              FROM ikai.organizations o
+              WHERE o.id = ${decisionMatch[1]}::uuid AND o.organization_type = 'shipper'
+              LIMIT 1
+            `;
+            if (!applicant[0]) return json(request, { error: "Shipper application not found." }, 404);
+            // Defense in depth: platform-admin-owned organizations are never eligible for shipper review,
+            // even if an administrator manually calls this endpoint with a known organization UUID.
+            if (applicant[0].has_platform_admin_owner) {
+              return json(request, { error: "Platform administrator organizations cannot be reviewed as shipper applications." }, 403);
+            }
+            if (applicant[0].approval_status !== "pending") {
+              return json(request, { error: "This application is no longer pending. Refresh the list before taking another action.", approvalStatus: applicant[0].approval_status }, 409);
+            }
+            if (!applicant[0].email_verified) {
+              return json(request, { error: "The applicant must verify their email before an approval decision can be recorded." }, 409);
+            }
+            const rows = await sql`
+              WITH changed AS (
+                UPDATE ikai.organizations
+                SET approval_status = ${decision},
+                    approval_reviewed_by = ${user.id}::uuid,
+                    approval_reviewed_at = now(),
+                    approval_note = ${note},
+                    updated_at = now()
+                WHERE id = ${decisionMatch[1]}::uuid
+                  AND organization_type = 'shipper'
+                  AND approval_status = 'pending'
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM ikai.users pu
+                    JOIN ikai.platform_admins pa ON pa.user_id = pu.id
+                    WHERE pu.organization_id = ikai.organizations.id
+                  )
+                RETURNING id, name, approval_status
+              ), audited AS (
+                INSERT INTO ikai.platform_audit_events
+                  (actor_user_id, target_organization_id, event_type, details)
+                SELECT ${user.id}::uuid, id, 'shipper_application_' || approval_status,
+                  jsonb_build_object('organizationName', name, 'note', ${note})
+                FROM changed
+                RETURNING id
+              )
+              SELECT changed.id, changed.name, changed.approval_status
+              FROM changed CROSS JOIN (SELECT count(*) FROM audited) audit_count
+            `;
+            if (!rows[0]) {
+              const exists = await sql`
+                SELECT id, approval_status FROM ikai.organizations
+                WHERE id = ${decisionMatch[1]}::uuid AND organization_type = 'shipper'
+                LIMIT 1
+              `;
+              if (!exists[0]) return json(request, { error: "Shipper application not found." }, 404);
+              return json(request, { error: "This application is no longer pending. Refresh the list before taking another action.", approvalStatus: exists[0].approval_status }, 409);
+            }
+            return json(request, { message: `Shipper application ${decision} successfully.`, data: rows[0] });
+          }
+          return json(request, { error: "Admin route not found." }, 404);
+        }
+
+        if (url.pathname === "/api/inventory" || url.pathname.startsWith("/api/inventory/")) {
+          const user = await authenticate(request, env);
+          if (!user) return json(request, { error: "Authentication required." }, 401);
+
+          if (url.pathname === "/api/inventory" && request.method === "GET") {
+            const requestedLimit = Number(url.searchParams.get("limit") || "100");
+            if (!Number.isInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > 100) {
+              return json(request, { error: "limit must be an integer between 1 and 100." }, 400);
+            }
+            const search = String(url.searchParams.get("search") || "").trim().slice(0, 120);
+            const rows = search
+              ? await sql`SELECT id, sku, name, variant, warehouse, quantity_on_hand, reorder_level, unit_cost, (quantity_on_hand * unit_cost) AS stock_value, CASE WHEN quantity_on_hand = 0 THEN 'out_of_stock' WHEN quantity_on_hand <= reorder_level THEN 'low_stock' ELSE 'in_stock' END AS stock_status, created_at, updated_at FROM ikai.inventory_items WHERE organization_id = ${user.organizationId}::uuid AND (sku ILIKE ${'%' + search + '%'} OR name ILIKE ${'%' + search + '%'} OR warehouse ILIKE ${'%' + search + '%'}) ORDER BY updated_at DESC LIMIT ${requestedLimit}`
+              : await sql`SELECT id, sku, name, variant, warehouse, quantity_on_hand, reorder_level, unit_cost, (quantity_on_hand * unit_cost) AS stock_value, CASE WHEN quantity_on_hand = 0 THEN 'out_of_stock' WHEN quantity_on_hand <= reorder_level THEN 'low_stock' ELSE 'in_stock' END AS stock_status, created_at, updated_at FROM ikai.inventory_items WHERE organization_id = ${user.organizationId}::uuid ORDER BY updated_at DESC LIMIT ${requestedLimit}`;
+            return json(request, { data: rows, count: rows.length, limit: requestedLimit });
+          }
+
+          if (url.pathname === "/api/inventory" && request.method === "POST") {
+            const body = await readJson(request);
+            const sku = String(body.sku || "").trim().slice(0, 100);
+            const name = String(body.name || "").trim().slice(0, 200);
+            const variant = String(body.variant || "").trim().slice(0, 160) || null;
+            const warehouse = String(body.warehouse || "Main warehouse").trim().slice(0, 160);
+            const quantity = Number(body.quantityOnHand ?? 0);
+            const reorderLevel = Number(body.reorderLevel ?? 0);
+            const unitCost = Number(body.unitCost ?? 0);
+            if (!sku || !name || !warehouse || !Number.isSafeInteger(quantity) || quantity < 0 ||
+                !Number.isSafeInteger(reorderLevel) || reorderLevel < 0 || !Number.isFinite(unitCost) || unitCost < 0) {
+              return json(request, { error: "Provide SKU, product name, warehouse, non-negative whole-number stock/reorder level and a valid unit cost." }, 400);
+            }
+            const rows = await sql`
+              INSERT INTO ikai.inventory_items
+                (organization_id, sku, name, variant, warehouse, quantity_on_hand, reorder_level, unit_cost, created_by, updated_by)
+              VALUES
+                (${user.organizationId}::uuid, ${sku}, ${name}, ${variant}, ${warehouse}, ${quantity}, ${reorderLevel}, ${unitCost}, ${user.id}::uuid, ${user.id}::uuid)
+              RETURNING id, sku, name, variant, warehouse, quantity_on_hand, reorder_level, unit_cost, created_at, updated_at
+            `;
+            if (quantity > 0) {
+              await sql`
+                INSERT INTO ikai.inventory_movements
+                  (organization_id, item_id, movement_type, quantity_delta, quantity_before, quantity_after, reason, actor_user_id)
+                VALUES
+                  (${user.organizationId}::uuid, ${rows[0].id}::uuid, 'opening_balance', ${quantity}, 0, ${quantity}, 'Opening stock recorded when item was created', ${user.id}::uuid)
+              `;
+            }
+            await sql`INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details) VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'inventory_item_created', 'inventory_item', ${sku}, jsonb_build_object('quantityOnHand', ${quantity}, 'warehouse', ${warehouse}))`;
+            return json(request, { data: rows[0] }, 201);
+          }
+
+          const adjustMatch = url.pathname.match(/^\/api\/inventory\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/adjust$/i);
+          if (adjustMatch && request.method === "POST") {
+            const body = await readJson(request);
+            const delta = Number(body.quantityDelta);
+            const reason = String(body.reason || "").trim().slice(0, 500);
+            const reference = String(body.reference || "").trim().slice(0, 120) || null;
+            if (!Number.isSafeInteger(delta) || delta === 0 || !reason) {
+              return json(request, { error: "Enter a non-zero whole-number quantity change and a reason." }, 400);
+            }
+            const movementType = String(body.movementType || (delta > 0 ? "adjustment_in" : "adjustment_out"));
+            if (!["receipt", "adjustment_in", "adjustment_out", "correction"].includes(movementType) ||
+                (delta > 0 && movementType === "adjustment_out") || (delta < 0 && ["receipt", "adjustment_in"].includes(movementType))) {
+              return json(request, { error: "Movement type does not match the quantity change." }, 400);
+            }
+            const rows = await sql`
+              WITH changed AS (
+                UPDATE ikai.inventory_items
+                SET quantity_on_hand = quantity_on_hand + ${delta}, updated_by = ${user.id}::uuid, updated_at = now()
+                WHERE id = ${adjustMatch[1]}::uuid
+                  AND organization_id = ${user.organizationId}::uuid
+                  AND quantity_on_hand + ${delta} >= 0
+                RETURNING id, sku, name, warehouse, quantity_on_hand, reorder_level, unit_cost,
+                  quantity_on_hand - ${delta} AS quantity_before
+              ), logged AS (
+                INSERT INTO ikai.inventory_movements
+                  (organization_id, item_id, movement_type, quantity_delta, quantity_before, quantity_after, reason, reference, actor_user_id)
+                SELECT ${user.organizationId}::uuid, id, ${movementType}, ${delta}, quantity_before, quantity_on_hand, ${reason}, ${reference}, ${user.id}::uuid
+                FROM changed
+                RETURNING id, item_id, movement_type, quantity_delta, quantity_before, quantity_after, reason, reference, created_at
+              )
+              SELECT changed.*, logged.id AS movement_id, logged.movement_type, logged.quantity_delta, logged.quantity_before, logged.quantity_after
+              FROM changed JOIN logged ON logged.item_id = changed.id
+            `;
+            if (!rows[0]) {
+              const exists = await sql`SELECT id, quantity_on_hand FROM ikai.inventory_items WHERE id = ${adjustMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid LIMIT 1`;
+              if (!exists[0]) return json(request, { error: "Inventory item not found." }, 404);
+              return json(request, { error: "This adjustment would make stock negative. Current stock: " + exists[0].quantity_on_hand }, 409);
+            }
+            await sql`INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details) VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'inventory_stock_adjusted', 'inventory_item', ${rows[0].sku}, jsonb_build_object('delta', ${delta}, 'quantityBefore', ${rows[0].quantity_before}, 'quantityAfter', ${rows[0].quantity_after}, 'reason', ${reason}))`;
+            return json(request, { data: rows[0] });
+          }
+
+          const movementsMatch = url.pathname.match(/^\/api\/inventory\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/movements$/i);
+          if (movementsMatch && request.method === "GET") {
+            const requestedLimit = Number(url.searchParams.get("limit") || "50");
+            if (!Number.isInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > 100) return json(request, { error: "limit must be an integer between 1 and 100." }, 400);
+            const rows = await sql`
+              SELECT m.id, m.movement_type, m.quantity_delta, m.quantity_before, m.quantity_after, m.reason, m.reference, m.created_at, u.full_name AS actor_name
+              FROM ikai.inventory_movements m
+              LEFT JOIN ikai.users u ON u.id = m.actor_user_id
+              WHERE m.organization_id = ${user.organizationId}::uuid AND m.item_id = ${movementsMatch[1]}::uuid
+              ORDER BY m.created_at DESC LIMIT ${requestedLimit}
+            `;
+            const item = await sql`SELECT id FROM ikai.inventory_items WHERE id = ${movementsMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid LIMIT 1`;
+            if (!item[0]) return json(request, { error: "Inventory item not found." }, 404);
+            return json(request, { data: rows, count: rows.length, limit: requestedLimit });
+          }
+          return json(request, { error: "Method or inventory route not supported." }, 405);
+        }
+
+        if (url.pathname === "/api/cod-reconciliations" || url.pathname.startsWith("/api/cod-reconciliations/")) {
+          const user = await authenticate(request, env);
+          if (!user) return json(request, { error: "Authentication required." }, 401);
+
+          if (url.pathname === "/api/cod-reconciliations" && request.method === "GET") {
+            const requestedLimit = Number(url.searchParams.get("limit") || "50");
+            if (!Number.isInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > 100) {
+              return json(request, { error: "limit must be an integer between 1 and 100." }, 400);
+            }
+            const status = String(url.searchParams.get("status") || "").trim();
+            const allowedStatuses = ["pending", "matched", "short_paid", "under_review", "resolved"];
+            if (status && !allowedStatuses.includes(status)) {
+              return json(request, { error: "Invalid reconciliation status." }, 400);
+            }
+            const rows = status
+              ? await sql`SELECT id, order_reference, awb, courier_name, delivered_at, cod_expected, amount_remitted, (cod_expected - amount_remitted) AS difference, status, follow_up_note, remittance_reference, reviewed_at, created_at, updated_at FROM ikai.cod_reconciliations WHERE organization_id = ${user.organizationId}::uuid AND status = ${status} ORDER BY updated_at DESC LIMIT ${requestedLimit}`
+              : await sql`SELECT id, order_reference, awb, courier_name, delivered_at, cod_expected, amount_remitted, (cod_expected - amount_remitted) AS difference, status, follow_up_note, remittance_reference, reviewed_at, created_at, updated_at FROM ikai.cod_reconciliations WHERE organization_id = ${user.organizationId}::uuid ORDER BY updated_at DESC LIMIT ${requestedLimit}`;
+            return json(request, { data: rows, count: rows.length, limit: requestedLimit });
+          }
+
+          if (url.pathname === "/api/cod-reconciliations" && request.method === "POST") {
+            const body = await readJson(request);
+            const orderReference = String(body.orderReference || "").trim().slice(0, 100);
+            const awb = String(body.awb || "").trim().slice(0, 100) || null;
+            const courierName = String(body.courierName || "").trim().slice(0, 100);
+            const codExpected = Number(body.codExpected);
+            const amountRemitted = body.amountRemitted === undefined ? 0 : Number(body.amountRemitted);
+            const deliveredAt = body.deliveredAt ? new Date(body.deliveredAt) : null;
+            const note = String(body.followUpNote || "").trim().slice(0, 2000) || null;
+            const remittanceReference = String(body.remittanceReference || "").trim().slice(0, 100) || null;
+            if (!orderReference || !awb || !courierName || !Number.isFinite(codExpected) || codExpected < 0 ||
+                !Number.isFinite(amountRemitted) || amountRemitted < 0 || amountRemitted > codExpected ||
+                (deliveredAt && Number.isNaN(deliveredAt.getTime()))) {
+              return json(request, { error: "Provide a saved order reference, AWB, courier, and valid non-negative COD amounts where remittance does not exceed expected COD." }, 400);
+            }
+            const linkedRows = await sql`
+              SELECT o.order_number, o.payment_mode, o.amount AS order_amount,
+                s.status AS shipment_status, s.courier AS shipment_courier, s.delivered_at AS shipment_delivered_at
+              FROM ikai.orders o
+              JOIN ikai.shipment_records s
+                ON s.order_id = o.id AND s.organization_id = o.organization_id
+              WHERE o.organization_id = ${user.organizationId}::uuid
+                AND o.order_number = ${orderReference}
+                AND s.shipment_number = ${awb}
+              LIMIT 1
+            `;
+            const linked = linkedRows[0];
+            if (!linked) return json(request, { error: "The order and AWB must match a saved shipment in your organization." }, 400);
+            if (linked.payment_mode !== "COD") return json(request, { error: "Only saved COD orders can be reconciled." }, 400);
+            if (linked.shipment_status !== "Delivered") return json(request, { error: "COD reconciliation is available only after the saved shipment is marked Delivered." }, 409);
+            if (!linked.shipment_courier || linked.shipment_courier === "Not booked") return json(request, { error: "The saved shipment has no assigned courier." }, 409);
+            if (linked.shipment_courier !== courierName) return json(request, { error: "Courier partner must match the saved shipment." }, 400);
+            if (Number(linked.order_amount) !== codExpected) return json(request, { error: "Expected COD must match the saved order amount." }, 400);
+            const effectiveDeliveredAt = linked.shipment_delivered_at || deliveredAt;
+            const status = amountRemitted === 0 ? "pending" : amountRemitted === codExpected ? "matched" : "short_paid";
+            const rows = await sql`
+              INSERT INTO ikai.cod_reconciliations
+                (organization_id, order_reference, awb, courier_name, delivered_at, cod_expected, amount_remitted, status, follow_up_note, remittance_reference, created_by)
+              VALUES
+                (${user.organizationId}::uuid, ${orderReference}, ${awb}, ${courierName}, ${effectiveDeliveredAt}, ${codExpected}, ${amountRemitted}, ${status}, ${note}, ${remittanceReference}, ${user.id}::uuid)
+              ON CONFLICT (organization_id, order_reference) DO UPDATE SET
+                awb = EXCLUDED.awb, courier_name = EXCLUDED.courier_name,
+                delivered_at = EXCLUDED.delivered_at, cod_expected = EXCLUDED.cod_expected,
+                amount_remitted = EXCLUDED.amount_remitted, status = EXCLUDED.status,
+                follow_up_note = EXCLUDED.follow_up_note, remittance_reference = EXCLUDED.remittance_reference,
+                updated_at = now()
+              RETURNING id, order_reference, awb, courier_name, delivered_at, cod_expected, amount_remitted, (cod_expected - amount_remitted) AS difference, status, follow_up_note, remittance_reference, created_at, updated_at
+            `;
+            await sql`
+              INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
+              VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'cod_reconciliation_saved', 'cod_reconciliation', ${orderReference}, jsonb_build_object('status', ${status}, 'codExpected', ${codExpected}, 'amountRemitted', ${amountRemitted}))
+            `;
+            return json(request, { data: rows[0] }, 201);
+          }
+
+          const reviewMatch = url.pathname.match(/^\/api\/cod-reconciliations\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/review$/i);
+          if (reviewMatch && request.method === "POST") {
+            const body = await readJson(request);
+            const note = String(body.followUpNote || "").trim().slice(0, 2000) || null;
+            const existingRows = await sql`
+              SELECT id, order_reference, status
+              FROM ikai.cod_reconciliations
+              WHERE id = ${reviewMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid
+              LIMIT 1
+            `;
+            if (!existingRows[0]) return json(request, { error: "Reconciliation record not found." }, 404);
+            if (existingRows[0].status === "under_review") {
+              return json(request, { error: "This reconciliation is already under review." }, 409);
+            }
+            const rows = await sql`
+              UPDATE ikai.cod_reconciliations
+              SET status = 'under_review', follow_up_note = COALESCE(${note}, follow_up_note),
+                  reviewed_by = ${user.id}::uuid, reviewed_at = now(), updated_at = now()
+              WHERE id = ${reviewMatch[1]}::uuid
+                AND organization_id = ${user.organizationId}::uuid
+                AND status = ${existingRows[0].status}
+              RETURNING id, order_reference, status, follow_up_note, reviewed_at, updated_at
+            `;
+            if (!rows[0]) return json(request, { error: "Reconciliation changed concurrently. Refresh and try again." }, 409);
+            await sql`
+              INSERT INTO ikai.organization_audit_events (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
+              VALUES (${user.organizationId}::uuid, ${user.id}::uuid, 'cod_reconciliation_reviewed', 'cod_reconciliation', ${rows[0].order_reference}, jsonb_build_object('status', 'under_review'))
+            `;
+            return json(request, { data: rows[0] });
+          }
+          return json(request, { error: "Method or reconciliation route not supported." }, 405);
+        }
+
+        if (url.pathname === "/api/workflows" || /^\/api\/workflows\/[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}(?:\/status)?$/i.test(url.pathname)) {
+          const user = await authenticate(request, env);
+          if (!user) return json(request, { error: "Authentication required." }, 401);
+
+          if (url.pathname === "/api/workflows" && request.method === "GET") {
+            const workflowKey = String(url.searchParams.get("workflow") || "").trim().toLowerCase();
+            const requestedLimit = Number(url.searchParams.get("limit") || "100");
+            const search = String(url.searchParams.get("search") || "").trim().slice(0, 120);
+            const status = String(url.searchParams.get("status") || "").trim();
+            if (!/^[a-z0-9-]{1,80}$/.test(workflowKey)) return json(request, { error: "A valid workflow key is required." }, 400);
+            if (!Number.isInteger(requestedLimit) || requestedLimit < 1 || requestedLimit > 100) return json(request, { error: "limit must be an integer between 1 and 100." }, 400);
+            const rows = await sql`
+              SELECT id, workflow_key, reference, title, status, payload, created_at, updated_at
+              FROM ikai.workflow_records
+              WHERE organization_id = ${user.organizationId}::uuid
+                AND workflow_key = ${workflowKey}
+                AND (${search} = '' OR reference ILIKE '%' || ${search} || '%' OR title ILIKE '%' || ${search} || '%' OR payload::text ILIKE '%' || ${search} || '%')
+                AND (${status} = '' OR status = ${status})
+              ORDER BY updated_at DESC LIMIT ${requestedLimit}
+            `;
+            return json(request, { data: rows, count: rows.length, limit: requestedLimit, workflow: workflowKey });
+          }
+
+          if (url.pathname === "/api/workflows" && request.method === "POST") {
+            const body = await readJson(request);
+            const workflowKey = String(body.workflowKey || "").trim().toLowerCase();
+            const reference = String(body.reference || "").trim().slice(0, 160);
+            const title = String(body.title || "").trim().slice(0, 200);
+            const status = String(body.status || "Open").trim().slice(0, 60) || "Open";
+            const payload = body.payload && typeof body.payload === "object" && !Array.isArray(body.payload) ? body.payload : {};
+            if (!/^[a-z0-9-]{1,80}$/.test(workflowKey) || !reference || !title) {
+              return json(request, { error: "Provide a valid workflow key, reference and title." }, 400);
+            }
+            if (JSON.stringify(payload).length > 20000) return json(request, { error: "Workflow details are too large." }, 413);
+            if (workflowKey === "returns") {
+              if (status !== "Requested") return json(request, { error: "New return requests must start in Requested status." }, 400);
+              const linkError = await validateReturnLinks(sql, user.organizationId, payload);
+              if (linkError) return json(request, { error: linkError }, 400);
+            }
+            if (workflowKey === "ndr-followups" && status !== "Open") {
+              return json(request, { error: "New customer follow-ups must start in Open status." }, 400);
+            }
+            if (["ndr", "ndr-followups"].includes(workflowKey)) {
+              const linkError = await validateNdrLinks(sql, user.organizationId, payload);
+              if (linkError) return json(request, { error: linkError }, 400);
+            }
+            const rows = await sql`
+              INSERT INTO ikai.workflow_records
+                (organization_id, workflow_key, reference, title, status, payload, created_by, updated_by)
+              VALUES
+                (${user.organizationId}::uuid, ${workflowKey}, ${reference}, ${title}, ${status}, ${JSON.stringify(payload)}::jsonb, ${user.id}::uuid, ${user.id}::uuid)
+              RETURNING id, workflow_key, reference, title, status, payload, created_at, updated_at
+            `;
+            await sql`
+              INSERT INTO ikai.organization_audit_events
+                (organization_id, actor_user_id, event_type, entity_type, entity_reference, details)
+              VALUES
+                (${user.organizationId}::uuid, ${user.id}::uuid, 'workflow_record_created', 'workflow_record', ${reference},
+                 jsonb_build_object('workflowKey', ${workflowKey}, 'status', ${status}))
+            `;
+            return json(request, { data: rows[0] }, 201);
+          }
+
+          const recordMatch = url.pathname.match(/^\/api\/workflows\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/status$/i);
           if (recordMatch && request.method === "POST") {
             const body = await readJson(request);
             const status = String(body.status || "").trim().slice(0, 60);
@@ -1174,7 +1937,7 @@ export default {
             return json(request, { data: rows[0], message: "Order saved. Courier booking has not been performed." }, 201);
           }
 
-          const statusMatch = url.pathname.match(/^\/api\/orders\/([0-9a-f-]{36})\/status$/i);
+          const statusMatch = url.pathname.match(/^\/api\/orders\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/status$/i);
           if (statusMatch && request.method === "POST") {
             const body = await readJson(request);
             const status = String(body.status || "");
@@ -1302,13 +2065,13 @@ export default {
             return json(request, { data: rows[0], message: "Shipment record saved. Courier booking has not been performed." }, 201);
           }
 
-          const eventMatch = url.pathname.match(/^\/api\/shipments\/([0-9a-f-]{36})\/events$/i);
+          const eventMatch = url.pathname.match(/^\/api\/shipments\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/events$/i);
           if (eventMatch && request.method === "GET") {
             const rows = await sql`SELECT id, status, description, location, source, created_at FROM ikai.shipment_events WHERE shipment_id = ${eventMatch[1]}::uuid AND organization_id = ${user.organizationId}::uuid ORDER BY created_at DESC LIMIT 100`;
             return json(request, { data: rows, count: rows.length });
           }
 
-          const statusMatch = url.pathname.match(/^\/api\/shipments\/([0-9a-f-]{36})\/status$/i);
+          const statusMatch = url.pathname.match(/^\/api\/shipments\/([0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})\/status$/i);
           if (statusMatch && request.method === "POST") {
             const body = await readJson(request);
             const status = String(body.status || "").trim();
