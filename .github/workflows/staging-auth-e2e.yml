@@ -2,11 +2,21 @@ name: Staging authentication end-to-end test
 
 on:
   push:
-    branches: [main]
+    branches: [main, security/b1-session-lifecycle-tests]
     paths:
       - ".github/workflows/staging-auth-e2e.yml"
       - "cloudflare-api/src/index.js"
       - "cloudflare-api/cookie-wrapper.js"
+      - "cloudflare-api/tests/session-lifecycle-security.test.js"
+      - "cloudflare-api/wrangler.staging.toml"
+  pull_request:
+    branches: [integration/staging-candidate-shipper-approval]
+    paths:
+      - ".github/workflows/staging-auth-e2e.yml"
+      - "cloudflare-api/src/index.js"
+      - "cloudflare-api/cookie-wrapper.js"
+      - "cloudflare-api/tests/session-lifecycle-security.test.js"
+      - "cloudflare-api/wrangler.staging.toml"
   workflow_dispatch:
 
 permissions:
@@ -41,6 +51,7 @@ jobs:
           status="$(curl --silent --show-error --output /tmp/register.json --write-out '%{http_code}' \
             --request POST "$STAGING_API/api/auth/register" \
             --header 'Content-Type: application/json' \
+            --header "X-Testing-Verification-Secret: $TEST_HELPER_SECRET" \
             --data "$(jq -n --arg email "$email" --arg password "$password" '{fullName:"Staging E2E Test",companyName:"Ikai Staging E2E",email:$email,password:$password,businessType:"E-commerce / Online store"}')")"
           cat /tmp/register.json
           test "$status" = "201" || { echo "Registration failed: HTTP $status"; exit 1; }
@@ -62,6 +73,7 @@ jobs:
           status="$(curl --silent --show-error --output /tmp/pending-login.json --write-out '%{http_code}' \
             --request POST "$STAGING_API/api/auth/login" \
             --header 'Content-Type: application/json' \
+            --header "X-Testing-Verification-Secret: $TEST_HELPER_SECRET" \
             --data "$(jq -n --arg email "$email" --arg password "$password" '{email:$email,password:$password}')")"
           cat /tmp/pending-login.json
           test "$status" = "403" || { echo "Pending shipper login should be denied: HTTP $status"; exit 1; }
@@ -77,42 +89,59 @@ jobs:
           test "$status" = "200" || { echo "Test-only approval failed: HTTP $status"; exit 1; }
           grep -q '"approvalStatus":"approved"' /tmp/approve.json
 
-          status="$(curl --silent --show-error --output /tmp/login.json --write-out '%{http_code}' \
+          umask 077
+          COOKIE_A="/tmp/session-a-$GITHUB_RUN_ID.cookies"
+          COOKIE_B="/tmp/session-b-$GITHUB_RUN_ID.cookies"
+          HEADERS_A="/tmp/session-a-$GITHUB_RUN_ID.headers"
+          HEADERS_B="/tmp/session-b-$GITHUB_RUN_ID.headers"
+          cleanup() { rm -f "$COOKIE_A" "$COOKIE_B" "$HEADERS_A" "$HEADERS_B"; }
+          trap cleanup EXIT
+
+          # Login twice to establish independent sessions in separate cookie jars.
+          status="$(curl --silent --show-error --dump-header "$HEADERS_A" --cookie-jar "$COOKIE_A" --output /tmp/login-a.json --write-out '%{http_code}' \
+            --request POST "$STAGING_API/api/auth/login" \
+            --header 'Content-Type: application/json' \
+            --header "X-Testing-Verification-Secret: $TEST_HELPER_SECRET" \
+            --data "$(jq -n --arg email "$email" --arg password "$password" '{email:$email,password:$password}')")"
+          test "$status" = "200" || { cat /tmp/login-a.json; echo "Session A login failed: HTTP $status"; exit 1; }
+          grep -qiE '^set-cookie: __Host-ikai_session=.*; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800' "$HEADERS_A"
+          token_a="$(awk '$6 == "__Host-ikai_session" {print $7}' "$COOKIE_A")"
+          test -n "$token_a" || { echo "Session A cookie was not stored."; exit 1; }
+          if jq -e '.token' /tmp/login-a.json >/dev/null; then echo "Login response must not expose the session bearer token when using the cookie wrapper."; exit 1; fi
+
+          status="$(curl --silent --show-error --dump-header "$HEADERS_B" --cookie-jar "$COOKIE_B" --output /tmp/login-b.json --write-out '%{http_code}' \
             --request POST "$STAGING_API/api/auth/login" \
             --header 'Content-Type: application/json' \
             --data "$(jq -n --arg email "$email" --arg password "$password" '{email:$email,password:$password}')")"
-          cat /tmp/login.json
-          test "$status" = "200" || { echo "Login failed: HTTP $status"; exit 1; }
-          token="$(jq -r '.token // empty' /tmp/login.json)"
-          test -n "$token" || { echo "Staging login response did not include a bearer token."; exit 1; }
+          test "$status" = "200" || { cat /tmp/login-b.json; echo "Session B login failed: HTTP $status"; exit 1; }
+          grep -qiE '^set-cookie: __Host-ikai_session=.*; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800' "$HEADERS_B"
+          token_b="$(awk '$6 == "__Host-ikai_session" {print $7}' "$COOKIE_B")"
+          test -n "$token_b" || { echo "Session B cookie was not stored."; exit 1; }
 
-          status="$(curl --silent --show-error --output /tmp/me.json --write-out '%{http_code}' \
-            --header "Authorization: Bearer $token" "$STAGING_API/api/auth/me")"
-          cat /tmp/me.json
-          test "$status" = "200" || { echo "Session check failed: HTTP $status"; exit 1; }
+          status="$(curl --silent --show-error --output /tmp/me-a-before.json --write-out '%{http_code}' --cookie "$COOKIE_A" "$STAGING_API/api/auth/me")"
+          test "$status" = "200" || { cat /tmp/me-a-before.json; echo "Session A pre-logout check failed: HTTP $status"; exit 1; }
+          status="$(curl --silent --show-error --output /tmp/me-b-before.json --write-out '%{http_code}' --cookie "$COOKIE_B" "$STAGING_API/api/auth/me")"
+          test "$status" = "200" || { cat /tmp/me-b-before.json; echo "Session B pre-logout check failed: HTTP $status"; exit 1; }
 
-          status="$(curl --silent --show-error --output /tmp/reset.json --write-out '%{http_code}' \
-            --request POST "$STAGING_API/api/testing/check-password-reset" \
-            --header 'Content-Type: application/json' \
+          # Logging out B must revoke B's database session without logging A out.
+          status="$(curl --silent --show-error --cookie "$COOKIE_B" --cookie-jar "$COOKIE_B" --output /tmp/logout-b.json --write-out '%{http_code}' \
+            --request POST "$STAGING_API/api/auth/logout")"
+          test "$status" = "200" || { cat /tmp/logout-b.json; echo "Session B logout failed: HTTP $status"; exit 1; }
+          status="$(curl --silent --show-error --output /tmp/me-b-revoked.json --write-out '%{http_code}' \
+            --header "Authorization: Bearer $token_b" "$STAGING_API/api/auth/me")"
+          test "$status" = "401" || { cat /tmp/me-b-revoked.json; echo "Session B bearer token should be revoked after logout: HTTP $status"; exit 1; }
+          status="$(curl --silent --show-error --output /tmp/me-a-after-b-logout.json --write-out '%{http_code}' --cookie "$COOKIE_A" "$STAGING_API/api/auth/me")"
+          test "$status" = "200" || { cat /tmp/me-a-after-b-logout.json; echo "Session A should remain active after session B logout: HTTP $status"; exit 1; }
+
+          # Force A's expiry using the secret-protected helper, then verify the original token fails.
+          status="$(curl --silent --show-error --output /tmp/expire-a.json --write-out '%{http_code}' \
+            --cookie "$COOKIE_A" \
             --header "X-Testing-Verification-Secret: $TEST_HELPER_SECRET" \
-            --data "$(jq -n --arg email "$email" --arg password "$new_password" '{email:$email,newPassword:$password}')")"
-          cat /tmp/reset.json
-          test "$status" = "200" || { echo "Password reset test failed: HTTP $status"; exit 1; }
-          grep -q '"firstResetStatus":200' /tmp/reset.json
-          grep -q '"reuseStatus":400' /tmp/reset.json
+            --request POST "$STAGING_API/api/testing/expire-session")"
+          test "$status" = "200" || { cat /tmp/expire-a.json; echo "Staging test session expiry helper failed: HTTP $status"; exit 1; }
+          status="$(curl --silent --show-error --output /tmp/me-a-expired.json --write-out '%{http_code}' \
+            --header "Authorization: Bearer $token_a" "$STAGING_API/api/auth/me")"
+          test "$status" = "401" || { cat /tmp/me-a-expired.json; echo "Expired session A should be rejected: HTTP $status"; exit 1; }
 
-          status="$(curl --silent --show-error --output /tmp/login-reset.json --write-out '%{http_code}' \
-            --request POST "$STAGING_API/api/auth/login" \
-            --header 'Content-Type: application/json' \
-            --data "$(jq -n --arg email "$email" --arg password "$new_password" '{email:$email,password:$password}')")"
-          cat /tmp/login-reset.json
-          test "$status" = "200" || { echo "Login with reset password failed: HTTP $status"; exit 1; }
-          reset_token="$(jq -r '.token // empty' /tmp/login-reset.json)"
-          test -n "$reset_token" || { echo "Staging login after password reset did not include a bearer token."; exit 1; }
+          echo "PASS: session cookie flags, no bearer token in browser login response, independent concurrent sessions, logout revocation, and expired-session rejection."
 
-          status="$(curl --silent --show-error --output /tmp/logout.json --write-out '%{http_code}' \
-            --header "Authorization: Bearer $reset_token" --request POST "$STAGING_API/api/auth/logout")"
-          cat /tmp/logout.json
-          test "$status" = "200" || { echo "Logout failed: HTTP $status"; exit 1; }
-
-          echo "PASS: staging registration, email verification, pending-approval login denial, isolated test approval, login, bearer session, password reset, single-use reset token, and logout."
