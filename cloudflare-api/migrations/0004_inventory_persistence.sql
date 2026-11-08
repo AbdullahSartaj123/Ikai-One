@@ -1,5 +1,14 @@
 -- Ikai.One inventory persistence foundation.
 -- Apply this migration in the production Neon SQL Editor before enabling inventory writes.
+BEGIN;
+
+DO $preflight$
+BEGIN
+  IF to_regnamespace('ikai') IS NULL OR NOT (to_regclass('ikai.organizations') IS NOT NULL AND to_regclass('ikai.users') IS NOT NULL) THEN
+    RAISE EXCEPTION 'Expected Ikai.One prerequisite tables are missing: organizations, users.';
+  END IF;
+END
+$preflight$;
 CREATE TABLE IF NOT EXISTS ikai.inventory_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id uuid NOT NULL REFERENCES ikai.organizations(id) ON DELETE CASCADE,
@@ -39,3 +48,5 @@ CREATE INDEX IF NOT EXISTS inventory_movements_org_item_time_idx
   ON ikai.inventory_movements (organization_id, item_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS inventory_movements_org_time_idx
   ON ikai.inventory_movements (organization_id, created_at DESC);
+
+COMMIT;
