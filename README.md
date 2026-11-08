@@ -45,6 +45,8 @@ npm run build
 3. Verify the sender domain with Resend before expecting verification/reset email delivery.
 4. The Worker is deployed by `.github/workflows/deploy-cloudflare-worker.yml` after the changes are merged to `main`; the frontend deploys through `.github/workflows/deploy.yml`. The authentication PR is not production-active until it is merged and deployment completes.
 
+For a read-only catalog of the actual Neon schema, columns, constraints, foreign keys, indexes, and known cross-tenant reference counts, run `cloudflare-api/migrations/schema_audit.sql` in the target Neon SQL Editor. Git migration files alone cannot prove which migrations are already installed; this repository does not yet maintain a migration ledger.
+
 Registration is intentionally unavailable until the email service is configured. Existing demo credentials are removed. Do not collect bank account, IBAN, CNIC, or KYC data until those workflows have dedicated security controls.
 
 ## Netlify
