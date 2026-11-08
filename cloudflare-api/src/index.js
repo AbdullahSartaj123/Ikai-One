@@ -105,9 +105,15 @@ function validPassword(value) {
   return typeof value === "string" && value.length >= 12 && value.length <= 128;
 }
 
-function hasAtMostTwoDecimalPlaces(value) {
+function hasAtMostDecimalPlaces(value, maxPlaces) {
   const text = String(value ?? "").trim();
-  return /^\d+(?:\.\d{1,2})?$/.test(text);
+  if (!/^\d+(?:\.\d+)?$/.test(text)) return false;
+  const fraction = text.split(".")[1];
+  return !fraction || fraction.length <= maxPlaces;
+}
+
+function hasAtMostTwoDecimalPlaces(value) {
+  return hasAtMostDecimalPlaces(value, 2);
 }
 
 function safeName(value) {
@@ -1088,13 +1094,14 @@ export default {
             const paymentMode = String(body.paymentMode || "COD");
             const courier = String(body.courier || "").trim().slice(0, 100) || null;
             const weight = Number(body.weight);
-            const length = Number(body.length || 1), width = Number(body.width || 1), height = Number(body.height || 1);
+            const length = Number(body.length ?? 1), width = Number(body.width ?? 1), height = Number(body.height ?? 1);
             const notes = String(body.notes || "").trim().slice(0, 2000) || null;
             const items = Array.isArray(body.products) ? body.products : [];
             if (!customerName || !phone || !address || !pincode || !city || !state ||
-                !["COD", "Prepaid"].includes(paymentMode) || !Number.isFinite(weight) || weight <= 0 ||
-                !Number.isFinite(length) || length <= 0 || !Number.isFinite(width) || width <= 0 ||
-                !Number.isFinite(height) || height <= 0 || !items.length || items.length > 100 ||
+                !["COD", "Prepaid"].includes(paymentMode) || !Number.isFinite(weight) || weight <= 0 || weight > 9999999.999 || !hasAtMostDecimalPlaces(body.weight, 3) ||
+                !Number.isFinite(length) || length <= 0 || length > 99999999.99 || !hasAtMostDecimalPlaces(body.length ?? 1, 2) ||
+                !Number.isFinite(width) || width <= 0 || width > 99999999.99 || !hasAtMostDecimalPlaces(body.width ?? 1, 2) ||
+                !Number.isFinite(height) || height <= 0 || height > 99999999.99 || !hasAtMostDecimalPlaces(body.height ?? 1, 2) || !items.length || items.length > 100 ||
                 items.some(item => !String(item.name || "").trim() || !Number.isSafeInteger(Number(item.quantity)) || Number(item.quantity) < 1 || !hasAtMostTwoDecimalPlaces(item.price) || !Number.isFinite(Number(item.price)) || Number(item.price) < 0 || Number(item.price) > 999999999999.99 || !Number.isFinite(Number(item.quantity) * Number(item.price)) || Number(item.quantity) * Number(item.price) > 999999999999.99)) {
               return json(request, { error: "Complete customer, address, package and product details with valid quantities and prices." }, 400);
             }
