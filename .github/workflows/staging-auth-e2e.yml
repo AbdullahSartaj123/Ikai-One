@@ -101,7 +101,8 @@ jobs:
           status="$(curl --silent --show-error --dump-header "$HEADERS_A" --cookie-jar "$COOKIE_A" --output /tmp/login-a.json --write-out '%{http_code}' \
             --request POST "$STAGING_API/api/auth/login" \
             --header 'Content-Type: application/json' \
-            --data "$(jq -n --arg email "$email" --arg password "$new_password" '{email:$email,password:$password}')")"
+            --header "X-Testing-Verification-Secret: $TEST_HELPER_SECRET" \
+            --data "$(jq -n --arg email "$email" --arg password "$password" '{email:$email,password:$password}')")"
           test "$status" = "200" || { cat /tmp/login-a.json; echo "Session A login failed: HTTP $status"; exit 1; }
           grep -qiE '^set-cookie: __Host-ikai_session=.*; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800' "$HEADERS_A"
           token_a="$(awk '$6 == "__Host-ikai_session" {print $7}' "$COOKIE_A")"
@@ -111,7 +112,7 @@ jobs:
           status="$(curl --silent --show-error --dump-header "$HEADERS_B" --cookie-jar "$COOKIE_B" --output /tmp/login-b.json --write-out '%{http_code}' \
             --request POST "$STAGING_API/api/auth/login" \
             --header 'Content-Type: application/json' \
-            --data "$(jq -n --arg email "$email" --arg password "$new_password" '{email:$email,password:$password}')")"
+            --data "$(jq -n --arg email "$email" --arg password "$password" '{email:$email,password:$password}')")"
           test "$status" = "200" || { cat /tmp/login-b.json; echo "Session B login failed: HTTP $status"; exit 1; }
           grep -qiE '^set-cookie: __Host-ikai_session=.*; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=604800' "$HEADERS_B"
           token_b="$(awk '$6 == "__Host-ikai_session" {print $7}' "$COOKIE_B")"
