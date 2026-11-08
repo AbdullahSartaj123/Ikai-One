@@ -63,7 +63,6 @@ jobs:
         run: |
           set -euo pipefail
           status="$(curl --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors --connect-timeout 15 --max-time 45 \
-            --resolve "ikai-one-api-staging.abdullah-sartaj-ahmad.workers.dev:443:104.16.132.229" \
             --output /tmp/migration.json --write-out '%{http_code}' \
             --request POST "https://ikai-one-api-staging.abdullah-sartaj-ahmad.workers.dev/api/testing/apply-shipper-approval-migration" \
             --header "X-Testing-Verification-Secret: $TEST_HELPER_SECRET")"
@@ -80,5 +79,4 @@ jobs:
         run: |
           set -euo pipefail
           curl --silent --show-error --fail --retry 5 --retry-delay 3 --retry-all-errors --connect-timeout 15 --max-time 45 \
-            --resolve "ikai-one-api-staging.abdullah-sartaj-ahmad.workers.dev:443:104.16.132.229" \
             "https://ikai-one-api-staging.abdullah-sartaj-ahmad.workers.dev/health"
