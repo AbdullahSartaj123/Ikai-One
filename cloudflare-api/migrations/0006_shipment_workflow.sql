@@ -1,4 +1,13 @@
 -- Shipment records and event history for Ikai.One.
+BEGIN;
+
+DO $preflight$
+BEGIN
+  IF to_regnamespace('ikai') IS NULL OR NOT (to_regclass('ikai.organizations') IS NOT NULL AND to_regclass('ikai.users') IS NOT NULL AND to_regclass('ikai.orders') IS NOT NULL) THEN
+    RAISE EXCEPTION 'Expected Ikai.One prerequisite tables are missing: organizations, users, orders.';
+  END IF;
+END
+$preflight$;
 CREATE TABLE IF NOT EXISTS ikai.shipment_records (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id uuid NOT NULL REFERENCES ikai.organizations(id) ON DELETE CASCADE,
@@ -38,3 +47,5 @@ CREATE TABLE IF NOT EXISTS ikai.shipment_events (
 );
 CREATE INDEX IF NOT EXISTS shipment_events_org_shipment_time_idx
   ON ikai.shipment_events (organization_id, shipment_id, created_at DESC);
+
+COMMIT;
