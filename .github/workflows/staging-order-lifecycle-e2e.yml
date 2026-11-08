@@ -1,0 +1,101 @@
+name: Staging order lifecycle end-to-end test
+
+on:
+  push:
+    branches: [workflow-acceptance-tests]
+    paths:
+      - ".github/workflows/staging-order-lifecycle-e2e.yml"
+      - "cloudflare-api/src/index.js"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  staging-order-lifecycle:
+    runs-on: ubuntu-latest
+    env:
+      STAGING_API: https://ikai-one-api-staging.abdullah-sartaj-ahmad.workers.dev
+      TEST_HELPER_SECRET: ${{ secrets.TEST_HELPER_SECRET }}
+    steps:
+      - name: Check staging API and database
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --silent --show-error --fail --retry 5 --retry-delay 3 --retry-all-errors "$STAGING_API/health" | tee /tmp/health.json
+          grep -q '"status":"running"' /tmp/health.json
+          curl --silent --show-error --fail --retry 5 --retry-delay 3 --retry-all-errors "$STAGING_API/health/database" | tee /tmp/database.json
+          grep -q '"status":"connected"' /tmp/database.json
+          grep -q '"ikaiSchemaExists":true' /tmp/database.json
+          test -n "$TEST_HELPER_SECRET"
+
+      - name: Create approved staging account and log in
+        shell: bash
+        run: |
+          set -euo pipefail
+          email="staging-orders-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT@example.invalid"
+          password="Staging-Order-Test-Password-2026!"
+          status="$(curl --silent --show-error --output /tmp/register.json --write-out '%{http_code}' \
+            --request POST "$STAGING_API/api/auth/register" \
+            --header 'Content-Type: application/json' \
+            --data "$(jq -n --arg email "$email" --arg password "$password" '{fullName:"Staging Order Test",companyName:"Ikai Staging Order E2E",email:$email,password:$password,businessType:"E-commerce / Online store"}')")"
+          test "$status" = "201" || { cat /tmp/register.json; echo "Registration failed: HTTP $status"; exit 1; }
+          status="$(curl --silent --show-error --output /tmp/verify.json --write-out '%{http_code}' \
+            --request POST "$STAGING_API/api/testing/verify-email" \
+            --header 'Content-Type: application/json' \
+            --header "X-Testing-Verification-Secret: $TEST_HELPER_SECRET" \
+            --data "$(jq -n --arg email "$email" '{email:$email,approve:true}')")"
+          test "$status" = "200" || { cat /tmp/verify.json; echo "Staging test approval failed: HTTP $status"; exit 1; }
+          status="$(curl --silent --show-error --output /tmp/login.json --write-out '%{http_code}' \
+            --request POST "$STAGING_API/api/auth/login" \
+            --header 'Content-Type: application/json' \
+            --data "$(jq -n --arg email "$email" --arg password "$password" '{email:$email,password:$password}')")"
+          test "$status" = "200" || { cat /tmp/login.json; echo "Login failed: HTTP $status"; exit 1; }
+          token="$(jq -r '.token // empty' /tmp/login.json)"
+          test -n "$token" || { cat /tmp/login.json; echo "No staging bearer token returned"; exit 1; }
+          echo "STAGING_TOKEN=$token" >> "$GITHUB_ENV"
+
+      - name: Create order and verify database-backed persistence
+        shell: bash
+        run: |
+          set -euo pipefail
+          marker="STAGING-E2E-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          status="$(curl --silent --show-error --output /tmp/order-create.json --write-out '%{http_code}' \
+            --request POST "$STAGING_API/api/orders" \
+            --header "Authorization: Bearer $STAGING_TOKEN" \
+            --header 'Content-Type: application/json' \
+            --data "$(jq -n --arg marker "$marker" '{customer:$marker,phone:"03001234567",address:"Staging test address",pincode:"54000",city:"Lahore",state:"Punjab",channel:"Staging E2E",paymentMode:"COD",weight:1.25,length:10,width:10,height:10,notes:"Automated staging lifecycle test",products:[{sku:"E2E-ITEM",name:"Staging test item",quantity:2,price:125.50}]}')")"
+          test "$status" = "201" || { cat /tmp/order-create.json; echo "Order creation failed: HTTP $status"; exit 1; }
+          order_id="$(jq -r '.data.id // empty' /tmp/order-create.json)"
+          order_number="$(jq -r '.data.order_number // empty' /tmp/order-create.json)"
+          test -n "$order_id" && test -n "$order_number"
+          echo "STAGING_ORDER_ID=$order_id" >> "$GITHUB_ENV"
+          echo "STAGING_ORDER_NUMBER=$order_number" >> "$GITHUB_ENV"
+          test "$(jq -r '.data.amount' /tmp/order-create.json)" = "251"
+          test "$(jq -r '.data.items[0].quantity' /tmp/order-create.json)" = "2"
+          test "$(jq -r '.data.status' /tmp/order-create.json)" = "New"
+          grep -q 'Courier booking has not been performed' /tmp/order-create.json
+          status="$(curl --silent --show-error --output /tmp/order-list.json --write-out '%{http_code}' \
+            --header "Authorization: Bearer $STAGING_TOKEN" \
+            "$STAGING_API/api/orders?limit=100&search=$STAGING_ORDER_NUMBER")"
+          test "$status" = "200" || { cat /tmp/order-list.json; echo "Order list read failed: HTTP $status"; exit 1; }
+          jq -e --arg id "$order_id" --arg number "$order_number" '.data | any(.[]; .id == $id and .order_number == $number and .items[0].quantity == 2)' /tmp/order-list.json >/dev/null
+          echo "Created and re-read order $order_number ($order_id) with persisted item details and total."
+
+      - name: Cancel order and verify persisted lifecycle transition
+        shell: bash
+        run: |
+          set -euo pipefail
+          status="$(curl --silent --show-error --output /tmp/cancel.json --write-out '%{http_code}' \
+            --request POST "$STAGING_API/api/orders/$order_id/status" \
+            --header "Authorization: Bearer $STAGING_TOKEN" \
+            --header 'Content-Type: application/json' \
+            --data '{"status":"Cancelled}')"
+          test "$status" = "200" || { cat /tmp/cancel.json; echo "Order cancellation failed: HTTP $status"; exit 1; }
+          grep -q '"status":"Cancelled"' /tmp/cancel.json
+          status="$(curl --silent --show-error --output /tmp/cancelled-list.json --write-out '%{http_code}' \
+            --header "Authorization: Bearer $STAGING_TOKEN" \
+            "$STAGING_API/api/orders?limit=100&status=Cancelled&search=$order_number")"
+          test "$status" = "200" || { cat /tmp/cancelled-list.json; echo "Cancelled order read failed: HTTP $status"; exit 1; }
+          jq -e --arg id "$order_id" '.data | any(.[]; .id == $id and .status == "Cancelled")' /tmp/cancelled-list.json >/dev/null
+          echo "PASS: staging order creation, exact amount calculation, item persistence, order listing, cancellation, and persisted cancelled status. No courier booking was requested."
