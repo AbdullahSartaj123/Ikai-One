@@ -2,7 +2,7 @@ name: Staging authentication end-to-end test
 
 on:
   push:
-    branches: [main, security/b1-session-lifecycle-tests]
+    branches: [main]
     paths:
       - ".github/workflows/staging-auth-e2e.yml"
       - "cloudflare-api/src/index.js"
