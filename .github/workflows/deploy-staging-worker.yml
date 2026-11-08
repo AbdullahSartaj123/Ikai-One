@@ -62,7 +62,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          status="$(curl --silent --show-error --retry 5 --retry-delay 3 --retry-all-errors \
+          status="$(curl --silent --show-error --retry 20 --retry-delay 5 --retry-max-time 180 --connect-timeout 10 --max-time 30 --retry-all-errors \
             --output /tmp/migration.json --write-out '%{http_code}' \
             --request POST "https://ikai-one-api-staging.abdullahsartaj-ahmad.workers.dev/api/testing/apply-shipper-approval-migration" \
             --header "X-Testing-Verification-Secret: $TEST_HELPER_SECRET")"
@@ -78,5 +78,5 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl --silent --show-error --fail --retry 5 --retry-delay 3 --retry-all-errors \
+          curl --silent --show-error --fail --retry 20 --retry-delay 5 --retry-max-time 180 --connect-timeout 10 --max-time 30 --retry-all-errors \
             "https://ikai-one-api-staging.abdullah-sartaj-ahmad.workers.dev/health"
