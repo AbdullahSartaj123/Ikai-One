@@ -14,7 +14,7 @@ SELECT
 -- 2. Application tables and estimated row counts (catalog estimates, not exact counts).
 SELECT
   schemaname,
-  tablename,
+  relname AS tablename,
   n_live_tup AS estimated_live_rows,
   n_dead_tup AS estimated_dead_rows,
   last_analyze,
