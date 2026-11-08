@@ -1,6 +1,11 @@
 name: Deploy Ikai.One API to STAGING
 
 on:
+  push:
+    branches: [security/b1-session-lifecycle-tests]
+    paths:
+      - ".github/workflows/deploy-staging-worker.yml"
+      - "cloudflare-api/**"
   workflow_dispatch:
     inputs:
       target:
@@ -19,7 +24,7 @@ concurrency:
 
 jobs:
   deploy-staging:
-    if: inputs.target == 'staging'
+    if: github.event_name == 'push' || inputs.target == 'staging'
     runs-on: ubuntu-latest
     steps:
       - name: Check out this candidate branch
