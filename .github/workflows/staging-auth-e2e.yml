@@ -2,7 +2,7 @@ name: Staging authentication end-to-end test
 
 on:
   push:
-    branches: [main]
+    branches: [main, security/b1-session-lifecycle-tests]
     paths:
       - ".github/workflows/staging-auth-e2e.yml"
       - "cloudflare-api/src/index.js"
@@ -10,7 +10,7 @@ on:
       - "cloudflare-api/tests/session-lifecycle-security.test.js"
       - "cloudflare-api/wrangler.staging.toml"
   pull_request:
-    branches: [integration/staging-candidate-shipper-approval]
+    branches: [main]
     paths:
       - ".github/workflows/staging-auth-e2e.yml"
       - "cloudflare-api/src/index.js"
@@ -51,6 +51,7 @@ jobs:
           status="$(curl --silent --show-error --output /tmp/register.json --write-out '%{http_code}' \
             --request POST "$STAGING_API/api/auth/register" \
             --header 'Content-Type: application/json' \
+            --header "X-Testing-Verification-Secret: $TEST_HELPER_SECRET" \
             --data "$(jq -n --arg email "$email" --arg password "$password" '{fullName:"Staging E2E Test",companyName:"Ikai Staging E2E",email:$email,password:$password,businessType:"E-commerce / Online store"}')")"
           cat /tmp/register.json
           test "$status" = "201" || { echo "Registration failed: HTTP $status"; exit 1; }
