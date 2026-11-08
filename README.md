@@ -39,7 +39,8 @@ npm run build
 
 ### Required one-time setup
 
-1. Run both `cloudflare-api/migrations/0001_authentication.sql` and `cloudflare-api/migrations/0002_auth_rate_limits.sql` in the Neon SQL Editor.
+1. Confirm the pre-existing foundation tables `ikai.organizations` and `ikai.users` exist. Their baseline DDL is not yet tracked in this repository, so do not assume a fresh database can be built from the numbered migrations alone.
+2. Apply the numbered migrations in order, `0001_authentication.sql` through `0009_tenant_integrity_constraints.sql`, in the Neon SQL Editor. Take a Neon restore point first and verify each migration before continuing. The operational alternative `production_setup_all_in_one.sql` covers operational tables from 0003–0007 only; do not run it as a substitute for migrations 0001, 0002, 0008 or 0009, and do not blindly run it alongside 0003–0007.
 2. In Cloudflare Worker settings, configure secrets/variables: `RESEND_API_KEY` (secret), `EMAIL_FROM` (verified sender, e.g. `Ikai.One <no-reply@your-verified-domain>`), and `APP_URL` = `https://ikai.one`. Keep `DATABASE_URL` as a secret. Do not put secrets in Vite environment variables or frontend code.
 3. Verify the sender domain with Resend before expecting verification/reset email delivery.
 4. The Worker is deployed by `.github/workflows/deploy-cloudflare-worker.yml` after the changes are merged to `main`; the frontend deploys through `.github/workflows/deploy.yml`. The authentication PR is not production-active until it is merged and deployment completes.
