@@ -47,8 +47,7 @@ SELECT
   constraint_name,
   constraint_type,
   is_deferrable,
-  initially_deferred,
-  enforced
+  initially_deferred
 FROM information_schema.table_constraints
 WHERE table_schema = 'ikai'
 ORDER BY table_name, constraint_type, constraint_name;
