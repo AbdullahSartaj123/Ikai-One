@@ -26,6 +26,7 @@ const Blog = lazy(() => import('./pages/Blog.jsx'))
 const PublicPages = lazy(() => import('./pages/PublicPages.jsx'))
 const NotFound = lazy(() => import('./pages/NotFound.jsx'))
 const AdminConsole = lazy(() => import('./pages/AdminConsole.jsx'))
+const AdminPreview = lazy(() => import('./pages/AdminPreview.jsx'))
 
 class AppErrorBoundary extends Component {
   constructor(props) {
@@ -105,7 +106,7 @@ function Root() {
     <Route element={<ProtectedRoute/>}>
       <Route path="/dashboard" element={<DashboardLayout/>}><Route index element={<DashboardHome/>}/></Route>
     </Route>
-    <Route element={<PlatformAdminRoute/>}>
+    <Route path="/admin-preview" element={<AdminPreview/>}/>\n    <Route element={<PlatformAdminRoute/>}>
       <Route path="/admin" element={<AdminConsole/>}/>
     </Route>
     <Route path="/app" element={<ProtectedRoute/>}>
